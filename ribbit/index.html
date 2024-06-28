@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ribbit</title>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta id="extViewportMeta" name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-loadingpage" content="Ribbit Mobile App">
+    <meta name="application-name" content="Ribbit Mobile App">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <style>
+        @font-face {
+            font-family: 'NotoSansDisplay-Bold';
+            src: url('./NotoSansDisplay/NotoSansDisplay-Bold.ttf') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'NotoSansDisplay-BoldItalic';
+            src: url('./NotoSansDisplay/NotoSansDisplay-BoldItalic.ttf') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'NotoSansDisplay-Italic';
+            src: url('./NotoSansDisplay/NotoSansDisplay-Italic.ttf') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'NotoSansDisplay-Medium';
+            src: url('./NotoSansDisplay/NotoSansDisplay-Medium.ttf') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'NotoSansDisplay-MediumItalic';
+            src: url('./NotoSansDisplay/NotoSansDisplay-MediumItalic.ttf') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'NotoSansDisplay-Regular';
+            src: url('./NotoSansDisplay/NotoSansDisplay-Regular.ttf') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'NotoSansDisplay-SemiBold';
+            src: url('./NotoSansDisplay/NotoSansDisplay-SemiBold.ttf') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'NotoSansDisplay-SemiBoldItalic';
+            src: url('./NotoSansDisplay/NotoSansDisplay-SemiBoldItalic.ttf') format('truetype');
+        }
+
+        :root,
+        * {
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            font-size: 1.5svh;
+            --light-green: #7FCF21;
+            --middle-green: #509511;
+            --dark-green: #106C2F;
+            --radius: .25rem;
+            -webkit-text-size-adjust: none;
+            -moz-text-size-adjust: none;
+            -ms-text-size-adjust: none;
+        }
+
+        @media only screen and (max-device-width: 480px) {
+            body {
+                -webkit-text-size-adjust: 30%
+            }
+        }
+
+        body {
+            height: 100dvh;
+            width: 100dvw;
+            background: var(--dark-green);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-family: 'NotoSansDisplay-Regular';
+        }
+
+        #titlebar {
+            background: var(--dark-green);
+            padding: 0 .25rem 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 0 1rem black;
+            font-family: 'NotoSansDisplay-Bold';
+            font-size: 1.75rem;
+            color: var(--light-green);
+            z-index: 3;
+            height: 3rem;
+        }
+
+        #titlebar>#modeTitle {
+            font-size: .75rem;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 1rem;
+        }
+        #titleBar>#modeTitle>svg {
+            cursor: pointer;
+            height: 3rem;
+        }
+
+        #input {
+            background: var(--dark-green);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5svh 2.5svh;
+            height: 10svh;
+            z-index: 1;
+            box-shadow: 0 0 1rem black;
+        }
+
+        #input>textarea {
+            width: 80dvw;
+            overflow: hidden;
+            resize: none;
+            background: var(--light-green);
+            padding: 1svw;
+            height: -webkit-fill-available;
+            border-radius: var(--radius);
+            font-family: 'NotoSansDisplay-Regular';
+        }
+
+        #chat {
+            height: -webkit-fill-available;
+            overflow-y: scroll;
+            overflow-x: hidden;
+            background: white;
+            scrollbar-color: var(--light-green) var(--dark-green);
+            scrollbar-width: thin;
+            padding: 0.5rem;
+        }
+
+        .message {
+            margin: 0.5rem 0.25rem;
+            font-size: 1.1rem;
+        }
+
+        .message>.sender {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .message.tx>.sender {
+            flex-direction: row-reverse;
+        }
+
+        .message>.sender>.name {
+            padding: 0.25rem 1rem;
+            border-radius: 0.25rem 0.25rem 0 0;
+            font-family: 'NotoSansDisplay-Medium';
+        }
+
+        .message>.sender>.time {
+            background: none;
+            font-size: 0.8rem;
+            font-family: 'NotoSansDisplay-Italic';
+        }
+
+        p {
+            background: var(--light-green);
+            padding: 0.25rem;
+        }
+        @media screen and (orientation: landscape) {
+            :root, *{
+                font-size: 3svh;
+            }
+            #titlebar {
+                height: 3rem;
+            }
+            #input {
+                height: 20svh;
+            }
+        }
+
+    </style>
+    <script type="text/javascript">
+        const buttonPressSoundEffect = new Audio();
+        buttonPressSoundEffect.autoplay = true;
+        buttonPressSoundEffect.src = "data:audio/mpeg;base64,//OkxAAAAAAAAAAAAEluZm8AAAAPAAAAAwAABIAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq////////////////////////////////////////////AAAAOUxBTUUzLjEwMAF4AAAAAAAAAAAUYCQD+iIAAGAAAASA2xsiIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//OkxAA4rDKEAHsHkGgfYSMf8aCT8Tcl7rCcJwXBwY2dgIOJuLmccisbSVibiGEIOhkqxoeh6jQw0DQNAnBBBCAUgEAAVgHYEMB3AE4AHAFYGMXMTQI4A6AQAVAmBkMkR/Hw8iUSCQIgjn92zszXtEgAMA472MDAwPOWGCykzp2JYNAaCQeQmZmvfWGBgeUnW17mtr169/6LzsliGJZ/9KL17/0YWLHPowsWGB4scfv8zdevPzAwWLAAAAAAAA3OhwMDFuiInX0DgYGBgbn6In/1EL/0AxZxAAAQuv/XdAAAEJ//C3d3QviIiO7hwMW6KOUWE9g1Q/m9QrwkwmqE4XJBRNSWumKKphvBHhDkcpXEuwhIOUNSGpByhIRcR6Rb//OkxDA43DqMAnsNjESYQ4TYTYQoNUGqDVCbGirU6W0uKwT4TYyqWYS2i2hqQ1IuJOS3EGIUXJRCECQHlTTzK13DoShKiJQEgJCMffq17TkxWrTExPfZMRJEk962rvZOVq1atotW9lrNLjJaYnvHQlE5cur1rV/IKAgESJEkvP7a5EiRmdmcbXk0kSSeWOJEpk0iRnKqc9EiRKt8yRnHma///qvRJKqeZ/avMzNa5pFGc7VTmo5VTMtW///9iRIlVQSY2JMK6LMRkgBIyUFvL4iFOwP3Tkywocak+MSUPJCIZAE4hlQzNDYxOkqVCTniNSuZgYfRFoSRyFImDWJ5AK5grUny1qBtxUemRVKRfKaROsVuvMtHFmJokjTiyyj0//OkxF82PBm0pnsMvRaNSzXiSJI0CAwMo8xNSRpxwGYTQSInGmgR5BaJI044sxNSRE4ssw9BIiSNKKPMTUkacWXF4OCQYsyLUkROLKPdpo04sos0ouLzc/qWdrzamna43JZ4WicacKEgR6C0SRppR5BaJI0oo9BZEkJAjzzE1JETizIWCSoGTEFNRTMuMTAwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
+    </script>
+    <script type="text/javascript">
+        const UTF8ArrayToString = (heapOrArray, idx, maxBytesToRead) => {
+            var endIdx = idx + maxBytesToRead;
+            var endPtr = idx;
+            // TextDecoder needs to know the byte length in advance, it doesn't stop on
+            // null terminator by itself.  Also, use the length info to avoid running tiny
+            // strings through TextDecoder, since .subarray() allocates garbage.
+            // (As a tiny code save trick, compare endPtr against endIdx using a negation,
+            // so that undefined means Infinity)
+            while (heapOrArray[endPtr] && !(endPtr >= endIdx)) ++endPtr;
+
+            if (endPtr - idx > 16 && heapOrArray.buffer && UTF8Decoder) {
+                return UTF8Decoder.decode(heapOrArray.subarray(idx, endPtr));
+            }
+            var str = '';
+            // If building with TextDecoder, we have already computed the string length
+            // above, so test loop end condition against that
+            while (idx < endPtr) {
+                var u0 = heapOrArray[idx++];
+                if (!(u0 & 0x80)) { str += String.fromCharCode(u0); continue; }
+                var u1 = heapOrArray[idx++] & 63;
+                if ((u0 & 0xE0) == 0xC0) { str += String.fromCharCode(((u0 & 31) << 6) | u1); continue; }
+                var u2 = heapOrArray[idx++] & 63;
+                if ((u0 & 0xF0) == 0xE0) {
+                    u0 = ((u0 & 15) << 12) | (u1 << 6) | u2;
+                } else {
+                    if ((u0 & 0xF8) != 0xF0) warnOnce('Invalid UTF-8 leading byte ' + ptrToString(u0) + ' encountered when deserializing a UTF-8 string in wasm memory to a JS string!');
+                    u0 = ((u0 & 7) << 18) | (u1 << 12) | (u2 << 6) | (heapOrArray[idx++] & 63);
+                }
+
+                if (u0 < 0x10000) {
+                    str += String.fromCharCode(u0);
+                } else {
+                    var ch = u0 - 0x10000;
+                    str += String.fromCharCode(0xD800 | (ch >> 10), 0xDC00 | (ch & 0x3FF));
+                }
+            }
+            return str;
+        };
+        const printCharBuffers = [null, [], []];
+        function assert(condition, text) {
+            if (!condition) {
+                abort('Assertion failed' + (text ? ': ' + text : ''));
+            }
+        }
+        const printChar = (stream, curr) => {
+            var buffer = printCharBuffers[stream];
+            assert(buffer);
+            if (curr === 0 || curr === 10) {
+                (stream === 1 ? out : err)(UTF8ArrayToString(buffer, 0));
+                buffer.length = 0;
+            } else {
+                buffer.push(curr);
+            }
+        };
+        const ___assert_fail = (condition, filename, line, func) => {
+            abort(`Assertion failed: ${UTF8ToString(condition)}, at: ` + [filename ? UTF8ToString(filename) : 'unknown filename', line, func ? UTF8ToString(func) : 'unknown function']);
+        };
+        const _abort = (message, file, line, column) => {
+            console.error(`abort: ${UTF8ToString(message)} at ${UTF8ToString(file)}:${line}:${column}`);
+        };
+        var _emscripten_asm_const_int = (code, sigPtr, argbuf) => {
+            return runEmAsmFunction(code, sigPtr, argbuf);
+        };
+        const _emscripten_memcpy_js = (dest, src, num) => {
+            HEAPU8.set(HEAPU8.subarray(src, src + num), dest);
+            return dest;
+        };
+        const _emscripten_resize_heap = (size) => {
+            return 0;
+        };
+        const _fd_close = (fd) => {
+            return 0;
+        };
+        const _fd_seek = (fd, offset_low, offset_high, whence, newOffset) => {
+            return 0;
+        };
+        const _fd_write = (fd, iov, iovcnt, pnum) => {
+            // hack to support printf in SYSCALLS_REQUIRE_FILESYSTEM=0
+            var num = 0;
+            for (var i = 0; i < iovcnt; i++) {
+                var ptr = HEAPU32[((iov) >> 2)];
+                var len = HEAPU32[(((iov) + (4)) >> 2)];
+                iov += 8;
+                for (var j = 0; j < len; j++) {
+                    printChar(fd, HEAPU8[ptr + j]);
+                }
+                num += len;
+            }
+            HEAPU32[((pnum) >> 2)] = num;
+            return 0;
+        };
+        var HEAP, HEAP8, HEAPU8, HEAP16, HEAPU16, HEAP32, HEAPU32, HEAPF32, HEAPF64;
+        function updateMemoryViews() {
+            var b = wasmMemory.buffer;
+            Module['HEAP8'] = HEAP8 = new Int8Array(b);
+            Module['HEAP16'] = HEAP16 = new Int16Array(b);
+            Module['HEAPU8'] = HEAPU8 = new Uint8Array(b);
+            Module['HEAPU16'] = HEAPU16 = new Uint16Array(b);
+            Module['HEAP32'] = HEAP32 = new Int32Array(b);
+            Module['HEAPU32'] = HEAPU32 = new Uint32Array(b);
+            Module['HEAPF32'] = HEAPF32 = new Float32Array(b);
+            Module['HEAPF64'] = HEAPF64 = new Float64Array(b);
+        }
+        var Module = typeof Module != 'undefined' ? Module : {};
+        const out = Module['print'] || console.log.bind(console);
+        const err = Module['printErr'] || console.error.bind(console);
+        var wasmMemory;
+        var wasmExports;
+        // copied out of the generated enscripten glue code
+        const ASM_CONSTS = {
+            70060: ($0) => { encoderCreated($0); },
+            70084: ($0) => { decoderCreated($0); },
+            70108: ($0) => { mainCalled($0); },
+            70128: ($0) => { fetchDecoded($0); },
+            70150: () => { initEncoded(); },
+            70167: ($0) => { readEncoded($0); }
+        };
+        var readEmAsmArgsArray = [];
+        const readEmAsmArgs = (sigPtr, buf) => {
+            // Nobody should have mutated _readEmAsmArgsArray underneath us to be something else than an array.
+            assert(Array.isArray(readEmAsmArgsArray));
+            // The input buffer is allocated on the stack, so it must be stack-aligned.
+            assert(buf % 16 == 0);
+            readEmAsmArgsArray.length = 0;
+            var ch;
+            // Most arguments are i32s, so shift the buffer pointer so it is a plain
+            // index into HEAP32.
+            while (ch = HEAPU8[sigPtr++]) {
+                var chr = String.fromCharCode(ch);
+                var validChars = ['d', 'f', 'i', 'p'];
+                assert(validChars.includes(chr), `Invalid character ${ch}("${chr}") in readEmAsmArgs! Use only [${validChars}], and do not specify "v" for void return argument.`);
+                // Floats are always passed as doubles, so all types except for 'i'
+                // are 8 bytes and require alignment.
+                var wide = (ch != 105);
+                wide &= (ch != 112);
+                buf += wide && (buf % 8) ? 4 : 0;
+                readEmAsmArgsArray.push(
+                    // Special case for pointers under wasm64 or CAN_ADDRESS_2GB mode.
+                    ch == 112 ? HEAPU32[((buf) >> 2)] :
+                        ch == 105 ?
+                            HEAP32[((buf) >> 2)] :
+                            HEAPF64[((buf) >> 3)]
+                );
+                buf += wide ? 8 : 4;
+            }
+            return readEmAsmArgsArray;
+        };
+        var runEmAsmFunction = (code, sigPtr, argbuf) => {
+            var args = readEmAsmArgs(sigPtr, argbuf);
+            assert(ASM_CONSTS.hasOwnProperty(code), `No EM_ASM constant found at address ${code}.  The loaded WebAssembly file is likely out of sync with the generated JavaScript.`);
+            return ASM_CONSTS[code].apply(null, args);
+        };
+        var wasmImports = {
+            /** @export */
+            __assert_fail: ___assert_fail,
+            /** @export */
+            abort: _abort,
+            /** @export */
+            emscripten_asm_const_int: _emscripten_asm_const_int,
+            /** @export */
+            emscripten_memcpy_js: _emscripten_memcpy_js,
+            /** @export */
+            emscripten_resize_heap: _emscripten_resize_heap,
+            /** @export */
+            fd_close: _fd_close,
+            /** @export */
+            fd_seek: _fd_seek,
+            /** @export */
+            fd_write: _fd_write,
+        };
+        let loadPromise = new Promise((resolve, reject) => {
+            fetch('./ribbit.wasm', { credentials: 'same-origin' }).then((response) => {
+                if (!response['ok']) {
+                    throw `failed to load wasm binary file at '${binaryFile}'`;
+                }
+                return response['arrayBuffer']();
+            }).then(binary => {
+                WebAssembly.instantiate(binary, { 'env': wasmImports, 'wasi_snapshot_preview1': wasmImports }).then((result) => {
+                    wasmExports = result.instance.exports;
+                    wasmMemory = wasmExports['memory'];
+                    updateMemoryViews();
+                    resolve({ wasmExports: wasmExports, wasmMemory: wasmMemory });
+                });
+            }).catch(err => reject(err));
+        });
+        const mediaConstraints = {
+            audio: {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false
+            },
+            video: false
+        };
+        loadPromise.then(moduleInstance => {
+            const { wasmExports, wasmMemory } = moduleInstance;
+            const init = () => {
+                const _buffer = wasmMemory.buffer;
+                // the array used to feed the decoder
+                const FEED_POINTER = wasmExports['feed_pointer']();
+                const FEED_LENGTH = wasmExports['feed_length']() * Float32Array.BYTES_PER_ELEMENT;
+                const _feed = new Float32Array(_buffer, FEED_POINTER, FEED_LENGTH);
+                // bytes decoded by decoder
+                const PAYLOAD_POINTER = wasmExports['payload_pointer']();
+                const PAYLOAD_LENGTH = wasmExports['payload_length']() * Uint8Array.BYTES_PER_ELEMENT;
+                const _payload = new Uint8Array(_buffer, PAYLOAD_POINTER, PAYLOAD_LENGTH);
+                // bytes to send to the encoder
+                const MESSAGE_POINTER = wasmExports['message_pointer']();
+                const MESSAGE_LENGTH = wasmExports['message_length']() * Uint8Array.BYTES_PER_ELEMENT;
+                const _message = new Uint8Array(_buffer, MESSAGE_POINTER, MESSAGE_LENGTH);
+                // audio signal from the encoder
+                const SIGNAL_POINTER = wasmExports['signal_pointer']();
+                const SIGNAL_LENGTH = wasmExports['signal_length']() * Float32Array.BYTES_PER_ELEMENT;
+                const _signalbuffer = new Float32Array(_buffer, SIGNAL_POINTER, SIGNAL_LENGTH);
+                // required in a browser since google decided that nobody
+                // should enable audio on a web page until the user
+                // has interacted with it in some way.
+                // ignore self transmission
+                var listen = true;
+                // text to convert
+                const messagebox = document.getElementById("textarea");
+                const resizeviewport = () => {
+                    // For the rare legacy browsers that don't support it
+                    if (!window.visualViewport) {
+                        return;
+                    }
+                    const { height } = window.visualViewport;
+                    const h = height;
+                    setTimeout(() => {
+                        // console.log(window.visualViewport, h);
+                    }, 250);
+                };
+                window.addEventListener('resize', resizeviewport);
+                messagebox.onfocus = resizeviewport;
+                messagebox.onblur = resizeviewport;
+                messagebox.oninput = input => {
+                    console.log("input", input);
+                };
+                // button to trigger encoding
+                const encodebutton = document.getElementById("encodebutton");
+                const encodemessage = () => {
+                    // don't send a blank message.
+                    if (messagebox.value.length < 1) {
+                        console.log('no message to send');
+                        return;
+                    }
+                    // don't send a message while transmitting.
+                    if (!listen) { return; }
+                    const db = window.localStorage;
+                    if (!db) {
+                        console.error('Local Storage is not available.');
+                        return;
+                    }
+                    const name = db.getItem('name');
+                    const callsign = db.getItem('callsign');
+                    const gridsquare = db.getItem('gridsquare');
+                    const phone = db.getItem('phone');
+                    const header = `${name}|${callsign}|${gridsquare}|${phone}`;
+                    const text = `${header}&=${messagebox.value}`;
+                    let encoding = new TextEncoder().encode(text);
+                    const content = {
+                        name: name,
+                        callsign: callsign,
+                        gridsquare: gridsquare,
+                        phone: phone,
+                        text: text
+                    }
+                    console.log("message:", content);
+                    const event = new CustomEvent('transmitmessage', {detail:content});
+                    setTimeout(() => {
+                        document.dispatchEvent(event);
+                    }, 1600);
+
+                    for (let i = 0; i < MESSAGE_LENGTH; i++) {
+                        _message[i] = encoding[i];
+                    }
+                    wasmExports['initEncoder']();
+                    console.log("encoding message:", wasmExports['initEncoder'] === undefined ? "failed" : "success");
+                    // clear message box for next message.
+                    messagebox.value = "";
+                }
+                var tx_context;
+                encodebutton.onclick = () => {
+                    // enable audio output
+                    // after playing the audio, encode the message.
+                    encodebutton.onclick = encodemessage;
+                    tx_context = new AudioContext({ sampleRate: 8000 });
+                    buttonPressSoundEffect.play();
+                };
+                navigator.mediaDevices.getUserMedia(mediaConstraints).then(stream => {
+                    const rx_context = new AudioContext({ sampleRate: 8000 });
+                    const source = rx_context.createMediaStreamSource(stream);
+                    const streamsize = 2048;
+                    const processor = rx_context.createScriptProcessor(streamsize, 1, 1);
+                    source.connect(processor);
+                    processor.connect(rx_context.destination);
+                    // process audio
+                    processor.onaudioprocess = (audio) => {
+                        const { inputBuffer, playbackTime, timeStamp } = audio;
+                        const { duration, length, sampleRate } = inputBuffer;
+                        const input = inputBuffer.getChannelData(0);
+                        for (let i = 0; i < length; i++) {
+                            _feed[i] = listen ? input[i] : 0;
+                        }
+                        wasmExports['digestFeed']();
+                    }
+                });
+                window.initEncoded = () => {
+                    wasmExports['readEncoder']();
+                };
+                window.readEncoded = e => {
+                    const signal = tx_context.createBuffer(1, e, 8000);
+                    const bufferSouce = tx_context.createBufferSource();
+                    bufferSouce.buffer = signal;
+                    for (let i = 0; i < e; i++) {
+                        signal.getChannelData(0)[i] = _signalbuffer[i];
+                    }
+                    listen = false;
+                    console.log(e, tx_context, signal, bufferSouce);
+                    bufferSouce.connect(tx_context.destination);
+                    bufferSouce.start();
+                    bufferSouce.onended = () => listen = true;
+                };
+                window.fetchDecoded = result => {
+                    console.log('payload', _payload);
+                    const decoder = new TextDecoder();
+                    const str = decoder.decode(_payload);
+                    console.log('decoded', str);
+                    const event = new CustomEvent('receivemessage', { detail: { message: str } });
+                    document.dispatchEvent(event);
+                }
+                window.encoderCreated = () => { console.log('Encoder Created!'); };
+                window.decoderCreated = () => { console.log('Decoder Created!'); };
+                window.mainCalled = () => { console.log('Initalization Complete!'); };
+                // check if we should open the settings panel
+                // the localStorage has fields for name, callsign, gridsquare, and phone.
+                // if any of these fields are missing, open the settings panel.
+                const db = window.localStorage;
+                if (!db) {
+                    console.error('Local Storage is not available.');
+                    return;
+                }
+                const name = db.getItem('name');
+                if( !name ) {
+                    openSettings();
+                }
+            }
+            init();
+            wasmExports['main']();
+        }).catch( error => {
+            console.error(error);
+        }).finally( () => {
+            console.log('Ribbit is ready!');
+        });
+    </script>
+
+<body>
+    <div id="titlebar">
+        <b>Ribbit</b>
+        <div id="modeTitle"> CHAT
+            <svg viewBox="0 0 10 10" height="2rem" onclick="toggleSettings();">
+                <script>
+                    var settingsOpen = false;
+                    const toggleSettings = () => {
+                        if (settingsOpen) {
+                            closeSettings();
+                        } else {
+                            openSettings();
+                        }
+                    }
+                    const openSettings = () => {
+                        document.dispatchEvent(new CustomEvent('openSettings'));
+                        const elements = document.getElementsByName('close');
+                        elements.forEach(e => e.beginElement());
+                        // get number of messages in indexedDB
+                        const db = indexedDB.open('ribbit', 1);
+                        if (!db) { return; }
+                        db.onsuccess = e => {
+                            const transaction = e.target.result.transaction('messages', 'readonly');
+                            const store = transaction.objectStore('messages');
+                            const request = store.count();
+                            request.onsuccess = e => {
+                                const counter = document.querySelector('input[type="messagessaved"]');
+                                counter.value = e.target.result;
+                            }
+                        }
+                        settingsOpen = true;
+                    }
+                    const closeSettings = () => {
+                        document.dispatchEvent(new CustomEvent('closeSettings'));
+                        const elements = document.getElementsByName('open');
+                        elements.forEach(e => e.beginElement());
+                        settingsOpen = false;
+                    }
+
+                </script>
+                <line x1="1" y1="2" x2="9" y2="2" stroke="var(--light-green)" stroke-width="1" stroke-linecap="round">
+                    <animate name="close" attributeName="y2" from="2" to="8" dur=".1s" repeatCount="0" fill="freeze" />
+                    <animate name="open" attributeName="y2" from="8" to="2" dur=".1s" repeatCount="0" fill="freeze" />
+                </line>
+                <line x1="1" y1="5" x2="9" y2="5" stroke="var(--light-green)" stroke-width="1" stroke-linecap="round">
+                    <animate name="close" attributeName="x2" from="9" to="5" dur=".1s" repeatCount="0" fill="freeze" />
+                    <animate name="open" attributeName="x2" from="5" to="9" dur=".1s" repeatCount="0" fill="freeze" />
+                    <animate name="close" attributeName="x1" from="1" to="5" dur=".1s" repeatCount="0" fill="freeze" />
+                    <animate name="open" attributeName="x1" from="5" to="1" dur=".1s" repeatCount="0" fill="freeze" />
+                </line>
+                <line x1="1" y1="8" x2="9" y2="8" stroke="var(--light-green)" stroke-width="1" stroke-linecap="round">
+                    <animate name="close" attributeName="y2" from="8" to="2" dur=".1s" repeatCount="0" fill="freeze" />
+                    <animate name="open" attributeName="y2" from="2" to="8" dur=".1s" repeatCount="0" fill="freeze" />
+                </line>
+            </svg>
+        </div>
+    </div>
+    <div id="settings">
+        <div class="setting">
+            <h1>Settings</h1>
+        </div>
+        <div class="setting">
+            <label for="mode">Mode:</label>
+            <select id="mode">
+                <option selected option="Chat">Chat</option>
+                <option option="QSO">QSO (Coming Soon...)</option>
+            </select>
+        </div>
+        <div class="setting">
+            <label for="name">Name:</label>
+            <input id="name" type="name" required placeholder="John Doe">
+        </div>
+        <div class="setting">
+            <label for="Callsign">Callsign:</label>
+            <!-- force callsign to be all uppercase -->
+            <input id="Callsign" type="Callsign" required placeholder="W1AW">
+            <script>
+                // force uppercase
+                document.getElementById('Callsign').addEventListener('input', e => {
+                    e.target.value = e.target.value.toUpperCase();
+                });
+            </script>
+        </div>
+        <div class="setting">
+            <label for="phone">Phone:</label>
+            <input id="phone" type="tel" pattern="[+]{1}[0-9]{11,14}" required placeholder="1 (123) 456 - 7890">
+        </div>
+        <div class="setting">
+            <button id="updateGPS" onclick="UpdateGPSPosition();">
+                Update GPS Position
+                <svg viewBox="0 0 8 11">
+                    <path id="GPSIcon" fill="var(--dark-green)"
+                        d="M 4 11 
+                        q -4 -7 -2 -9
+                        q 2 -2 4 0
+                        q 2 2 -2 9
+                        M 5 4
+                        a 1 1 0 0 0 -2 0
+                        a 1 1 0 0 0 2 0 z"/>
+                </svg>
+            </button>
+            <div class="box">
+                <input id="latitude" type="text" readonly placeholder="Latitude">
+                <input id="longitude" type="text" readonly placeholder="Longitude">
+            </div>
+            <script>
+                UpdateGPSPosition = () => {
+                    navigator.geolocation.getCurrentPosition(location => {
+                        console.log(location.coords.latitude); // Latitude
+                        console.log(location.coords.longitude); // Longitude
+                        console.log(location.coords.accuracy); // Accuracy (in meters)
+                        document.getElementById('latitude').value = location.coords.latitude;
+                        document.getElementById('longitude').value = location.coords.longitude;
+                        document.getElementById('GPSIcon').setAttribute('fill', 'var(--light-green)');
+                        // from latitude and lontitude get grid square
+                        const lat = location.coords.latitude;
+                        const lon = location.coords.longitude;
+                        const latLonToQth = (latitude, longitude, gsLevel = 6) => {
+                            let qth = ''
+                            let spread = ''
+                            let error = ''
+                            if (gsLevel < 2 || gsLevel > 18 || gsLevel % 2 !== 0) {
+                                error += 'gsLevel must be a positive even integer between 2 and 18. '
+                            }
+
+                            if (latitude < -90.0 || latitude > 90.0) {
+                                error += 'latitude must be a float between -90.0 and +90.0. '
+                            }
+
+                            if (longitude < -180.0 || longitude > 180.0) {
+                                error += 'longitude must be a float between -180.0 and +180.0. '
+                            }
+
+                            if (error !== '') {
+                                return { qth, spread, error }
+                            }
+                            // scale for gridding
+                            latitude = (latitude + 90) / 10
+                            longitude = (longitude + 180) / 20
+                            const charA = 65
+                            let loops = gsLevel / 2 + 1
+                            for (let i = 1; i < loops; ++i) {
+                                let latInt = Math.floor(latitude)
+                                let lonInt = Math.floor(longitude)
+
+                                if (i % 2) {
+                                    const latChar = String.fromCharCode(charA + latInt)
+                                    const lonChar = String.fromCharCode(charA + lonInt)
+                                    qth += `${lonChar}${latChar}`
+                                    spread += `${lonChar}${latChar} `
+
+                                    // set up for the next level 10x10 grid
+                                    latitude = ((latitude - latInt) * 10).toFixed(6)
+                                    longitude = ((longitude - lonInt) * 10).toFixed(6)
+                                } else {
+                                    qth += `${lonInt}${latInt}`
+                                    spread += `${lonInt}${latInt} `
+
+                                    // set up for the next level 24x24 grid
+                                    latitude = ((latitude - latInt) * 24).toFixed(6)
+                                    longitude = ((longitude - lonInt) * 24).toFixed(6)
+                                }
+                            }
+                            spread = spread.trim()
+                            return { qth, spread, error }
+                        }
+                        const result = latLonToQth(lat, lon);
+                        document.getElementById('gridsquare').value = result.qth;
+                    }, err => {
+                        console.log(err);
+                        if (err.code === 1) {
+                            alert('Please enable location services.');
+                            document.getElementById('GPSIcon').setAttribute('fill', 'black');
+                        }
+                    }, {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 0
+                    });
+                }
+            </script>
+        </div>
+        <div class="setting">
+            <label for="gridsquare">Grid Square:</label>
+            <input id="gridsquare" type="text" required placeholder="FN42">
+        </div>
+        <div class="setting">
+            <label for="microphone">Microphone (Rx):</label>
+            <select id="microphone">
+                <option>Default</option>
+            </select>
+        </div>
+        <div class="setting">
+            <label for="speaker">Speaker (Tx):</label>
+            <select id="speaker">
+                <option>Default</option>
+            </select>
+        </div>
+        <div class="setting">
+            <label for="savemessages">Save Messages:</label>
+            <input id="savemessages" checked type="checkbox">
+        </div>
+        <div class="setting">
+            <label for="messagessaved" style="width:25svw;">Messages:</label>
+            <input type="messagessaved" style="width:25svw;" readonly value="0">
+            <button id="clearmessages" style="width:25svw;" onclick="showClearMessageConfirm();">Clear Messages</button>
+            <div id="clearMessagesConfirm">
+                <div id="clearMessageContainer">
+                    <h2 style="text-align: center;">Clear All Messages?</h2>
+                    <div>
+                        <button onclick="confirmClearMessages();">Yes</button>
+                        <button onclick="hideClearMessageConfirm();">No</button>
+                    </div>
+                </div>
+            </div>
+            <style>
+                #clearmessages {
+                    background: var(--light-green);
+                    color: var(--dark-green);
+                    border-radius: var(--radius);
+                    height: 3rem;
+                }
+
+                #clearMessagesConfirm {
+                    position: fixed;
+                    width: 100vw;
+                    height: 100vh;
+                    top: 0;
+                    left: 0;
+                    background: rgba(0, 0, 0, 0.75);
+                    justify-content: center;
+                    align-items: center;
+                    display: none;
+                }
+
+                #clearMessageContainer {
+                    background: var(--dark-green);
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    height: auto;
+                    padding: 3svh;
+                    width: 40svw;
+                }
+
+                #clearMessageContainer>div {
+                    display: flex;
+                    justify-content: space-around;
+                    align-items: center;
+                    width: 100%;
+                }
+
+                #clearMessageContainer>div>button {
+                    background: var(--light-green);
+                    font-family: 'NotoSansDisplay-Regular';
+                    margin: 1svh;
+                    width: -webkit-fill-available;
+                }
+            </style>
+
+            <script>
+                const showClearMessageConfirm = () => {
+                    const confirm = document.getElementById('clearMessagesConfirm');
+                    confirm.style.display = 'flex';
+                }
+                const hideClearMessageConfirm = () => {
+                    const confirm = document.getElementById('clearMessagesConfirm');
+                    confirm.style.display = 'none';
+                }
+                const confirmClearMessages = () => {
+                    const chat = document.getElementById('chat');
+                    chat.innerHTML = '';
+                    // clear messages from indexedDB
+                    const db = window.indexedDB;
+                    if (!db) {
+                        console.error('IndexedDB is not available.');
+                        return;
+                    }
+                    const request = db.open('ribbit', 1);
+                    request.onsuccess = e => {
+                        const db = e.target.result;
+                        const transaction = db.transaction('messages', 'readwrite');
+                        const store = transaction.objectStore('messages');
+                        const request = store.clear();
+                        request.onsuccess = e => {
+                            console.log('Messages cleared.');
+                        };
+                    };
+                    hideClearMessageConfirm();
+                }
+            </script>
+        </div>
+        <div class="setting">
+            <button id="cancel" onclick="closeSettings();">EXIT WITHOUT SAVING</span></button>
+            <button id="close" onclick="saveSettings();">SAVE & CLOSE</button>
+        </div>
+        <style>
+            #settings {
+                color: var(--light-green);
+                background: var(--dark-green);
+                position: fixed;
+                padding-top: 3rem;
+                width: 100svw;
+                height: 85svh;
+                /* top: 0svh; */
+                top: -100svh;
+                overflow-y: auto;
+                overflow-x: hidden;
+                transition: top .3s ease-in;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-around;
+            }
+
+            #settings>h1 {
+                font-family: 'NotoSansDisplay-Bold';
+                font-size: 2rem;
+                text-align: center;
+                height: 4rem;
+            }
+
+            .setting {
+                display: flex;
+                padding: 0.5svh 1.5svw;
+                justify-content: space-between;
+                align-items: center;
+            }
+            @media screen and (orientation: landscape) {
+                .setting {
+                    padding: 2rem 1rem;
+                }
+                #settings>h1 {
+                    font-size: 3rem;
+                }
+            }
+            .setting * {
+                padding: 1svh;
+                font-size: 1.25rem;
+                box-sizing: border-box;
+                border: none;
+                height: 3rem;
+                border-radius: var(--radius);
+            }
+
+            .setting>h2,
+            label {
+                font-family: 'NotoSansDisplay-Bold';
+                width: auto;
+            }
+
+            .setting>button,
+            .setting>select,
+            .setting>input:enabled {
+                background: var(--light-green);
+                background-color: var(--light-green);
+                color: var(--dark-green);
+                font-family: 'NotoSansDisplay-Regular';
+                padding: .5rem;
+                width: 50vw;
+            }
+
+            .setting>input:focus {
+                background: var(--light-green);
+                border: none;
+            }
+            .setting>input {
+                background: rgb(54, 45, 45);
+            }
+            .setting>button {
+                background: var(--dark-green);
+                color: var(--light-green);
+                border-radius: 0;
+                font-size: 1.125rem;
+            }
+
+            .setting>#updateGPS {
+                font-family: 'NotoSansDisplay-Bold';
+                border-radius: var(--radius);
+                border: 1px var(--light-green) solid;
+                width: auto;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+            }
+
+            .setting>#updateGPS>svg {
+                fill: var(--dark-green);
+                stroke: var(--light-green);
+                stroke-width: .3px;
+            }
+
+            .setting>.box {
+                display: flex;
+                gap: 1rem;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0;
+                width: 50svw;
+            }
+            .setting>.box>#latitude,
+            .setting>.box>#longitude {
+                background: var(--light-green);
+                width: -webkit-fill-available;
+            }
+        </style>
+        <script>
+            const saveSettings = () => {
+                const name = document.getElementById('name').value;
+                const callsign = document.getElementById('Callsign').value;
+                const phone = document.getElementById('phone').value;
+                const gps = {
+                    'longitude': document.getElementById('longitude').value,
+                    'latitude': document.getElementById('latitude').value
+                };
+                const gridsquare = document.getElementById('gridsquare').value;
+                const microphone = document.getElementById('microphone').value;
+                const speaker = document.getElementById('speaker').value;
+                const savemessages = document.getElementById('savemessages').checked;
+                console.log(name, callsign, phone, gps, gridsquare, savemessages, microphone, speaker);
+                const db = window.localStorage;
+                if (!db) {
+                    console.error('Local Storage is not available.');
+                    return;
+                }
+                db.setItem('name', name);
+                db.setItem('callsign', callsign);
+                db.setItem('gps', JSON.stringify(gps));
+                db.setItem('gridsquare', gridsquare);
+                db.setItem('phone', phone);
+                db.setItem('saveMessages', savemessages);
+                db.setItem('microphone', microphone);
+                db.setItem('speaker', speaker);
+                closeSettings();
+            }
+            document.addEventListener('openSettings', e => {
+                const settings = document.getElementById('settings');
+                settings.style.top = '0svh';
+                // check local storage for values
+                const db = window.localStorage;
+                if (!db) {
+                    console.error('Local Storage is not available.');
+                    return;
+                }
+                const name = db.getItem('name');
+                const callsign = db.getItem('callsign');
+                const phone = db.getItem('phone');
+                const gridsquare = db.getItem('gridsquare');
+                const microphone = db.getItem('microphone');
+                const speaker = db.getItem('speaker');
+                document.getElementById('name').value = name;
+                document.getElementById('Callsign').value = callsign;
+                document.getElementById('gridsquare').value = gridsquare;
+                document.getElementById('phone').value = phone;
+                document.getElementById('microphone').value = microphone;
+                document.getElementById('speaker').value = speaker;
+
+                const idb = window.indexedDB;
+                if (!idb) {
+                    console.error('IndexedDB is not available.');
+                    return;
+                }
+                // const request = idb.open('ribbit', 1);
+                // request.onsuccess = e => {
+                //     const result = e.target.result;
+                //     // update message counter
+                //     const counter = document.querySelector('input[type="messagessaved"]');
+                //     counter.value = result.length??0;
+                //     console.log('result:', result.length);
+                // };
+            });
+            document.addEventListener('closeSettings', e => {
+                const settings = document.getElementById('settings');
+                settings.style.top = '-100svh';
+            });
+        </script>
+    </div>
+    <div id="chat">
+    </div>
+    <script type="text/javascript">
+        // restore messages from localDB when DOM has loaded
+        document.addEventListener('DOMContentLoaded', e => {
+            const db = window.indexedDB;
+            if (!db) {
+                console.error('IndexedDB is not available.');
+                return;
+            }
+            console.log('db', db);
+            const request = db.open('ribbit', 1);
+            // read stored messages
+            console.log(request);
+            request.onsuccess = e => {
+                console.log('e', e);
+                const result = e.target.result;
+                console.log('result', result);
+                // check objectStoreNames
+                const names = result.objectStoreNames;
+                console.log(names);
+                if(names.length < 1) {
+                    console.log('No object stores found.');
+                    const chat = document.getElementById('chat');
+                    chat.innerHTML = '<div id="nomessages" style="text-align: center;">No Messages</div>';
+                    return;
+                }
+                const transaction = result.transaction('messages', 'readonly');
+                console.log(transaction);
+                const store = transaction.objectStore('messages');
+                const request = store.getAll();
+                request.onsuccess = e => {
+                    const messages = e.target.result;
+                    const chat = document.getElementById('chat');
+                    // update messagessaveder
+                    messages.forEach( m => {
+                        const newMessage = document.createElement('div');
+                        newMessage.classList.add('message');
+                        // get callsign and name stored in local storage
+                        const localUser = `${window.localStorage.getItem('callsign')} - ${window.localStorage.getItem('name')}`;
+                        if (m.sender === localUser) {
+                            newMessage.classList.add('tx');
+                        } else {
+                            newMessage.classList.add('rx');
+                        }
+                        const senderElement = document.createElement('div');
+                        senderElement.classList.add('sender');
+                        const nameElement = document.createElement('p');
+                        nameElement.classList.add('name');
+                        nameElement.innerText = m.sender;
+                        const timeElement = document.createElement('p');
+                        timeElement.classList.add('time');
+                        timeElement.innerText = new Date(m.timestamp).toLocaleTimeString();
+                        senderElement.appendChild(nameElement);
+                        senderElement.appendChild(timeElement);
+                        newMessage.appendChild(senderElement);
+                        const messageElement = document.createElement('p');
+                        messageElement.innerText = m.text;
+                        newMessage.appendChild(messageElement);
+                        chat.appendChild(newMessage);
+                    });
+                    chat.scrollTop = chat.scrollHeight;
+                };
+            };
+        });
+        document.addEventListener('receivemessage', e => {
+            // check if message contains '�'
+            // add incoming message to chat
+            const chat = document.getElementById('chat');
+            const newMessage = document.createElement('div');
+            newMessage.classList.add('message');
+            newMessage.classList.add('rx');
+            const senderElement = document.createElement('div');
+            senderElement.classList.add('sender');
+            const nameElement = document.createElement('p');
+            nameElement.classList.add('name');
+            console.log(e.detail);
+            const m = e.detail.message.split('&=')[1];
+            const sender = e.detail.message.split('&=')[0];
+            if (m?.includes('�')) {
+                console.error('Received message contains invalid characters.');
+                return;
+            }
+            const name = sender.split('|')[0];
+            const callsign = sender.split('|')[1];
+            const gridsquare = sender.split('|')[2];
+            const phone = sender.split('|')[3];
+            const callsignToColor = cs => {
+                // convert callsign to color
+                // use first three letters of callsign to generate color RGB
+                // callsign values are A-Z and 0-9
+                // convert to range 0-255
+                const r = (cs.charCodeAt(0) - 65) * 10;
+                const g = (cs.charCodeAt(1) - 65) * 10;
+                const b = (cs.charCodeAt(2) - 65) * 10;
+                return `rgb(${r},${g},${b})`;
+            }
+            const color = callsignToColor(callsign);
+            console.log(color);
+            nameElement.innerText = `${name}[${callsign}]@${gridsquare} ${phone}`;
+            const timeElement = document.createElement('p');
+            timeElement.classList.add('time');
+            timeElement.innerText = new Date().toLocaleTimeString();
+            senderElement.appendChild(nameElement);
+            senderElement.appendChild(timeElement);
+            newMessage.appendChild(senderElement);
+            const messageElement = document.createElement('p');
+            messageElement.innerText = m;
+            newMessage.appendChild(messageElement);
+            chat.appendChild(newMessage);
+            chat.scrollTop = chat.scrollHeight;
+            // add incoming message to indexedDB
+            const db = window.indexedDB;
+            if (!db) {
+                console.error('IndexedDB is not available.');
+                return;
+            }
+            const request = db.open('ribbit', 1);
+            request.onsuccess = e => {
+                const db = e.target.result;
+                const transaction = db.transaction('messages', 'readwrite');
+                const store = transaction.objectStore('messages');
+                const request = store.add({ sender, message, timestamp: new Date().getTime() });
+                request.onsuccess = e => {
+                    console.log('Message added to indexedDB.');
+                };
+            };
+        });
+        document.addEventListener('transmitmessage', e => {
+            console.log( e );
+            const { text } = e.detail;
+            const header = text.split('&=')[0];
+            const body = text.split('&=')[1];
+            console.log('header:', header);
+            const name = header.split('|')[0];
+            const callsign = header.split('|')[1];
+            const gridsquare = header.split('|')[2];
+            const phone = header.split('|')[3];
+            console.log('name:', name);
+            console.log('callsign:', callsign);
+            console.log('gridsquare:', gridsquare);
+            console.log('phone:', phone);
+            console.log('body:', body);
+            const chat = document.getElementById('chat');
+            const newMessage = document.createElement('div');
+            newMessage.classList.add('message');
+            newMessage.classList.add('tx');
+            const senderElement = document.createElement('div');
+            senderElement.classList.add('sender');
+            const nameElement = document.createElement('p');
+            nameElement.classList.add('name');
+            nameElement.innerText = `${name}/${callsign}/${gridsquare}/${phone}`;
+            const timeElement = document.createElement('p');
+            timeElement.classList.add('time');
+            timeElement.innerText = new Date().toLocaleTimeString();
+            senderElement.appendChild(nameElement);
+            senderElement.appendChild(timeElement);
+            newMessage.appendChild(senderElement);
+            const messageElement = document.createElement('p');
+            messageElement.innerText = body;
+            newMessage.appendChild(messageElement);
+            chat.appendChild(newMessage);
+            // scroll to the bottom of chat
+            chat.scrollTop = chat.scrollHeight;
+            // add transmitted message to indexedDB
+            // TODO: need to get localStorage and indexedDB working on ios.
+
+            const db = window.indexedDB;
+            if (!db) {
+                console.error('IndexedDB is not available.');
+                return;
+            }
+            const request = db.open('ribbit', 1);
+            request.onsuccess = e => {
+                const db = e.target.result;
+                const sender = `${window.localStorage.getItem('callsign')} - ${window.localStorage.getItem('name')}`;
+                const transaction = db.transaction('messages', 'readwrite');
+                const store = transaction.objectStore('messages');
+                const request = store.add({ sender, message, timestamp: new Date().getTime() });
+                request.onsuccess = e => {
+                    console.log('Message added to indexedDB.');
+                };
+            };
+        });
+    </script>
+    <div id="input">
+        <textarea id="textarea" placeholder="Enter Message Here."></textarea>
+        <svg id="encodebutton" viewBox="0 0 10 10" height="30">
+            <path d="m 1 4 l 1 0 l -1 -3 l 8 4 l -8 4 l 1 -3 l -1 0 z" fill="var(--light-green)" />
+        </svg>
+    </div>
+</body>
+
+</html>
