@@ -4,7 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Ribbit</title>
-    <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta id="extViewportMeta" name="viewport"
@@ -67,11 +66,13 @@
             -webkit-text-size-adjust: none;
             -moz-text-size-adjust: none;
             -ms-text-size-adjust: none;
+            text-size-adjust: none;
         }
 
         @media only screen and (max-device-width: 480px) {
             body {
-                -webkit-text-size-adjust: 30%
+                -webkit-text-size-adjust: 30%;
+                text-size-adjust: 30%;
             }
         }
 
@@ -106,6 +107,7 @@
             align-items: center;
             gap: 1rem;
         }
+
         #titleBar>#modeTitle>svg {
             cursor: pointer;
             height: 3rem;
@@ -173,18 +175,22 @@
             background: var(--light-green);
             padding: 0.25rem;
         }
+
         @media screen and (orientation: landscape) {
-            :root, *{
+
+            :root,
+            * {
                 font-size: 3svh;
             }
+
             #titlebar {
                 height: 3rem;
             }
+
             #input {
                 height: 20svh;
             }
         }
-
     </style>
     <script type="text/javascript">
         const buttonPressSoundEffect = new Audio();
@@ -449,17 +455,19 @@
                     const gridsquare = db.getItem('gridsquare');
                     const phone = db.getItem('phone');
                     const header = `${name}|${callsign}|${gridsquare}|${phone}`;
-                    const text = `${header}&=${messagebox.value}`;
-                    let encoding = new TextEncoder().encode(text);
-                    const content = {
-                        name: name,
-                        callsign: callsign,
-                        gridsquare: gridsquare,
-                        phone: phone,
-                        text: text
-                    }
-                    console.log("message:", content);
-                    const event = new CustomEvent('transmitmessage', {detail:content});
+                    const str = `${header}&=${messagebox.value}`;
+
+                    let encoding = new TextEncoder().encode(str);
+                    console.log("encoded:", str);
+                    const event = new CustomEvent('receivemessage', {
+                        detail: {
+                            save: true,
+                            type: 'text',
+                            sender: str.split('&=')[0],
+                            message: str.split('&=')[1],
+                            timestamp: new Date().toUTCString()
+                        }
+                    });
                     setTimeout(() => {
                         document.dispatchEvent(event);
                     }, 1600);
@@ -518,8 +526,18 @@
                     console.log('payload', _payload);
                     const decoder = new TextDecoder();
                     const str = decoder.decode(_payload);
-                    console.log('decoded', str);
-                    const event = new CustomEvent('receivemessage', { detail: { message: str } });
+                    console.log('decoded:', str);
+                    const sender = str.split('&=')[0];
+                    const message = str.split('&=')[1];
+                    const event = new CustomEvent('receivemessage', {
+                        detail: {
+                            save: true,
+                            type: 'text',
+                            sender: sender,
+                            message: message,
+                            timestamp: new Date().toUTCString()
+                        }
+                    });
                     document.dispatchEvent(event);
                 }
                 window.encoderCreated = () => { console.log('Encoder Created!'); };
@@ -534,15 +552,15 @@
                     return;
                 }
                 const name = db.getItem('name');
-                if( !name ) {
+                if (!name) {
                     openSettings();
                 }
             }
             init();
             wasmExports['main']();
-        }).catch( error => {
+        }).catch(error => {
             console.error(error);
-        }).finally( () => {
+        }).finally(() => {
             console.log('Ribbit is ready!');
         });
     </script>
@@ -551,8 +569,8 @@
     <div id="titlebar">
         <b>Ribbit</b>
         <div id="modeTitle"> CHAT
-            <svg viewBox="0 0 10 10" height="2rem" onclick="toggleSettings();">
-                <script>
+            <svg viewBox="0 0 10 10" onclick="toggleSettings();">
+                <script type="text/javascript">
                     var settingsOpen = false;
                     const toggleSettings = () => {
                         if (settingsOpen) {
@@ -573,7 +591,7 @@
                             const store = transaction.objectStore('messages');
                             const request = store.count();
                             request.onsuccess = e => {
-                                const counter = document.querySelector('input[type="messagessaved"]');
+                                const counter = document.querySelector('input[type="number"]');
                                 counter.value = e.target.result;
                             }
                         }
@@ -602,6 +620,11 @@
                     <animate name="open" attributeName="y2" from="2" to="8" dur=".1s" repeatCount="0" fill="freeze" />
                 </line>
             </svg>
+            <style>
+                #titlebar>#modeTitle>svg {
+                    height: 2rem;
+                }
+            </style>
         </div>
     </div>
     <div id="settings">
@@ -617,15 +640,15 @@
         </div>
         <div class="setting">
             <label for="name">Name:</label>
-            <input id="name" type="name" required placeholder="John Doe">
+            <input id="name" type="text" required placeholder="John Doe">
         </div>
         <div class="setting">
-            <label for="Callsign">Callsign:</label>
+            <label for="callsign">Callsign:</label>
             <!-- force callsign to be all uppercase -->
-            <input id="Callsign" type="Callsign" required placeholder="W1AW">
-            <script>
+            <input id="callsign" type="text" required placeholder="W1AW">
+            <script type="text/javascript">
                 // force uppercase
-                document.getElementById('Callsign').addEventListener('input', e => {
+                document.getElementById('callsign').addEventListener('input', e => {
                     e.target.value = e.target.value.toUpperCase();
                 });
             </script>
@@ -638,26 +661,22 @@
             <button id="updateGPS" onclick="UpdateGPSPosition();">
                 Update GPS Position
                 <svg viewBox="0 0 8 11">
-                    <path id="GPSIcon" fill="var(--dark-green)"
-                        d="M 4 11 
+                    <path id="GPSIcon" fill="var(--dark-green)" d="M 4 11 
                         q -4 -7 -2 -9
                         q 2 -2 4 0
                         q 2 2 -2 9
                         M 5 4
                         a 1 1 0 0 0 -2 0
-                        a 1 1 0 0 0 2 0 z"/>
+                        a 1 1 0 0 0 2 0 z" />
                 </svg>
             </button>
             <div class="box">
-                <input id="latitude" type="text" readonly placeholder="Latitude">
-                <input id="longitude" type="text" readonly placeholder="Longitude">
+                <input id="latitude" type="number" readonly placeholder="Latitude">
+                <input id="longitude" type="number" readonly placeholder="Longitude">
             </div>
-            <script>
+            <script type="text/javascript">
                 UpdateGPSPosition = () => {
                     navigator.geolocation.getCurrentPosition(location => {
-                        console.log(location.coords.latitude); // Latitude
-                        console.log(location.coords.longitude); // Longitude
-                        console.log(location.coords.accuracy); // Accuracy (in meters)
                         document.getElementById('latitude').value = location.coords.latitude;
                         document.getElementById('longitude').value = location.coords.longitude;
                         document.getElementById('GPSIcon').setAttribute('fill', 'var(--light-green)');
@@ -750,8 +769,8 @@
             <input id="savemessages" checked type="checkbox">
         </div>
         <div class="setting">
-            <label for="messagessaved" style="width:25svw;">Messages:</label>
-            <input type="messagessaved" style="width:25svw;" readonly value="0">
+            <label for="messagecount" style="width:25svw;">Messages:</label>
+            <input id="messagecount" type="messagecount" style="width:25svw;" readonly value="0">
             <button id="clearmessages" style="width:25svw;" onclick="showClearMessageConfirm();">Clear Messages</button>
             <div id="clearMessagesConfirm">
                 <div id="clearMessageContainer">
@@ -807,7 +826,7 @@
                 }
             </style>
 
-            <script>
+            <script type="text/javascript">
                 const showClearMessageConfirm = () => {
                     const confirm = document.getElementById('clearMessagesConfirm');
                     confirm.style.display = 'flex';
@@ -832,7 +851,18 @@
                         const store = transaction.objectStore('messages');
                         const request = store.clear();
                         request.onsuccess = e => {
+                            const messagecount = document.getElementById('messagecount');
+                            messagecount.value = '0';
                             console.log('Messages cleared.');
+                            const event = new CustomEvent('receivemessage', {
+                                detail: {
+                                    save: false,
+                                    type: 'alert',
+                                    message: 'Messages cleared',
+                                    timestamp: new Date().toUTCString()
+                                }
+                            });
+                            document.dispatchEvent(event);
                         };
                     };
                     hideClearMessageConfirm();
@@ -850,7 +880,7 @@
                 position: fixed;
                 padding-top: 3rem;
                 width: 100svw;
-                height: 85svh;
+                height: 95svh;
                 /* top: 0svh; */
                 top: -100svh;
                 overflow-y: auto;
@@ -859,6 +889,7 @@
                 display: flex;
                 flex-direction: column;
                 justify-content: space-around;
+                z-index: 2;
             }
 
             #settings>h1 {
@@ -874,14 +905,21 @@
                 justify-content: space-between;
                 align-items: center;
             }
+
             @media screen and (orientation: landscape) {
+                #settings {
+                    height: 91  svh;
+                }
+
                 .setting {
                     padding: 2rem 1rem;
                 }
+
                 #settings>h1 {
                     font-size: 3rem;
                 }
             }
+
             .setting * {
                 padding: 1svh;
                 font-size: 1.25rem;
@@ -912,9 +950,11 @@
                 background: var(--light-green);
                 border: none;
             }
+
             .setting>input {
                 background: rgb(54, 45, 45);
             }
+
             .setting>button {
                 background: var(--dark-green);
                 color: var(--light-green);
@@ -946,16 +986,17 @@
                 padding: 0;
                 width: 50svw;
             }
+
             .setting>.box>#latitude,
             .setting>.box>#longitude {
                 background: var(--light-green);
                 width: -webkit-fill-available;
             }
         </style>
-        <script>
+        <script type="text/javascript">
             const saveSettings = () => {
                 const name = document.getElementById('name').value;
-                const callsign = document.getElementById('Callsign').value;
+                const callsign = document.getElementById('callsign').value;
                 const phone = document.getElementById('phone').value;
                 const gps = {
                     'longitude': document.getElementById('longitude').value,
@@ -997,25 +1038,11 @@
                 const microphone = db.getItem('microphone');
                 const speaker = db.getItem('speaker');
                 document.getElementById('name').value = name;
-                document.getElementById('Callsign').value = callsign;
+                document.getElementById('callsign').value = callsign;
                 document.getElementById('gridsquare').value = gridsquare;
                 document.getElementById('phone').value = phone;
                 document.getElementById('microphone').value = microphone;
                 document.getElementById('speaker').value = speaker;
-
-                const idb = window.indexedDB;
-                if (!idb) {
-                    console.error('IndexedDB is not available.');
-                    return;
-                }
-                // const request = idb.open('ribbit', 1);
-                // request.onsuccess = e => {
-                //     const result = e.target.result;
-                //     // update message counter
-                //     const counter = document.querySelector('input[type="messagessaved"]');
-                //     counter.value = result.length??0;
-                //     console.log('result:', result.length);
-                // };
             });
             document.addEventListener('closeSettings', e => {
                 const settings = document.getElementById('settings');
@@ -1028,184 +1055,183 @@
     <script type="text/javascript">
         // restore messages from localDB when DOM has loaded
         document.addEventListener('DOMContentLoaded', e => {
+            console.log('DOM Loaded.', e);
             const db = window.indexedDB;
             if (!db) {
                 console.error('IndexedDB is not available.');
-                return;
+            } else {
+                console.log('indexedDB Available!', db);
             }
-            console.log('db', db);
             const request = db.open('ribbit', 1);
+            request.onblocked = e => {
+                console.error('blocked:', e);
+            }
             // read stored messages
-            console.log(request);
+            request.onupgradeneeded = e => {
+                const { result } = e.target;
+                console.log('upgradeneeded:', result);
+                const { objectStoreNames } = result;
+                // Check if the object store already exists
+                if (objectStoreNames.contains('messages')) {
+                    result.deleteObjectStore('messages');
+                    console.log('objectStoreNames:', objectStoreNames);
+                }
+                result.createObjectStore('messages', { keyPath: 'timestamp', autoIncrement: true });
+            }
             request.onsuccess = e => {
-                console.log('e', e);
-                const result = e.target.result;
-                console.log('result', result);
-                // check objectStoreNames
-                const names = result.objectStoreNames;
-                console.log(names);
-                if(names.length < 1) {
+                console.log('success', e);
+                const { result } = e.target;
+                const transaction = result.transaction('messages', 'readonly');
+                const store = transaction.objectStore('messages');
+                console.log('store:', store);
+                console.log('store.indexNames', store.indexNames);
+                if (transaction.objectStoreNames.length < 1) {
                     console.log('No object stores found.');
-                    const chat = document.getElementById('chat');
-                    chat.innerHTML = '<div id="nomessages" style="text-align: center;">No Messages</div>';
+                    const event = new CustomEvent('receivemessage', {
+                        detail: {
+                            save: false,
+                            type: 'alert',
+                            message: 'No Messages Found.'
+                        }
+                    });
+                    document.dispatchEvent(event);
                     return;
                 }
-                const transaction = result.transaction('messages', 'readonly');
-                console.log(transaction);
-                const store = transaction.objectStore('messages');
                 const request = store.getAll();
                 request.onsuccess = e => {
                     const messages = e.target.result;
-                    const chat = document.getElementById('chat');
-                    // update messagessaveder
-                    messages.forEach( m => {
-                        const newMessage = document.createElement('div');
-                        newMessage.classList.add('message');
-                        // get callsign and name stored in local storage
-                        const localUser = `${window.localStorage.getItem('callsign')} - ${window.localStorage.getItem('name')}`;
-                        if (m.sender === localUser) {
-                            newMessage.classList.add('tx');
-                        } else {
-                            newMessage.classList.add('rx');
-                        }
-                        const senderElement = document.createElement('div');
-                        senderElement.classList.add('sender');
-                        const nameElement = document.createElement('p');
-                        nameElement.classList.add('name');
-                        nameElement.innerText = m.sender;
-                        const timeElement = document.createElement('p');
-                        timeElement.classList.add('time');
-                        timeElement.innerText = new Date(m.timestamp).toLocaleTimeString();
-                        senderElement.appendChild(nameElement);
-                        senderElement.appendChild(timeElement);
-                        newMessage.appendChild(senderElement);
-                        const messageElement = document.createElement('p');
-                        messageElement.innerText = m.text;
-                        newMessage.appendChild(messageElement);
-                        chat.appendChild(newMessage);
+                    console.log('messages:', messages);
+                    // update messagecounter
+                    const messagecount = document.getElementById('messagecount');
+                    messagecount.value = messages.length;
+                    messages.forEach(m => {
+                        const event = new CustomEvent('receivemessage', {
+                            detail: {
+                                save: false,
+                                type: 'text',
+                                sender: m.sender,
+                                message: m.message,
+                                timestamp: m.timestamp
+                            }
+                        });
+                        document.dispatchEvent(event);
                     });
-                    chat.scrollTop = chat.scrollHeight;
                 };
             };
+            console.log('request:', request);
         });
         document.addEventListener('receivemessage', e => {
-            // check if message contains '�'
-            // add incoming message to chat
-            const chat = document.getElementById('chat');
-            const newMessage = document.createElement('div');
-            newMessage.classList.add('message');
-            newMessage.classList.add('rx');
-            const senderElement = document.createElement('div');
-            senderElement.classList.add('sender');
-            const nameElement = document.createElement('p');
-            nameElement.classList.add('name');
-            console.log(e.detail);
-            const m = e.detail.message.split('&=')[1];
-            const sender = e.detail.message.split('&=')[0];
-            if (m?.includes('�')) {
-                console.error('Received message contains invalid characters.');
-                return;
-            }
+            console.log('received message: ', e);
+            // collect data for message
+            const { save, type, sender, message, timestamp } = e.detail;
+            console.log('save:', sender);
+            console.log('type:', type);
+            console.log('sender:', sender);
+            console.log('message:', message);
+            console.log('timestamp:', timestamp);
             const name = sender.split('|')[0];
             const callsign = sender.split('|')[1];
             const gridsquare = sender.split('|')[2];
             const phone = sender.split('|')[3];
-            const callsignToColor = cs => {
-                // convert callsign to color
-                // use first three letters of callsign to generate color RGB
-                // callsign values are A-Z and 0-9
-                // convert to range 0-255
-                const r = (cs.charCodeAt(0) - 65) * 10;
-                const g = (cs.charCodeAt(1) - 65) * 10;
-                const b = (cs.charCodeAt(2) - 65) * 10;
-                return `rgb(${r},${g},${b})`;
-            }
-            const color = callsignToColor(callsign);
-            console.log(color);
-            nameElement.innerText = `${name}[${callsign}]@${gridsquare} ${phone}`;
+            console.log('name', name);
+            console.log('callsign', callsign);
+            console.log('gridsquare', gridsquare);
+            console.log('phone', phone);
+
+            // create message element
+            const chat = document.getElementById('chat');
+            const messageElement = document.createElement('p');
+            const newMessage = document.createElement('div');
+            const senderElement = document.createElement('div');
+            const nameElement = document.createElement('p');
             const timeElement = document.createElement('p');
-            timeElement.classList.add('time');
-            timeElement.innerText = new Date().toLocaleTimeString();
             senderElement.appendChild(nameElement);
             senderElement.appendChild(timeElement);
             newMessage.appendChild(senderElement);
-            const messageElement = document.createElement('p');
-            messageElement.innerText = m;
             newMessage.appendChild(messageElement);
-            chat.appendChild(newMessage);
+            newMessage.classList.add('message');
+            senderElement.classList.add('sender');
+            nameElement.classList.add('name');
+            timeElement.classList.add('time');
+
+
+            if (timestamp) {
+                // if the timestamp exists then it's restoring saved messages
+                timeElement.innerHTML = timestamp;
+            } else {
+                timeElement.innerText = new Date().toUTCString();
+            }
+            if (type == 'alert') {
+                console.warn('alert:', message);
+                messageElement.innerText = message;
+                chat.appendChild(newMessage);
+            }
+            // regex for repeating '\u0000' values and remove them
+            if (!message) {
+                console.warn('Received message is empty.');
+            } else {
+                messageElement.innerText = message;
+                chat.appendChild(newMessage);
+            }
+            const text = message.replace(/(\u0000)\1+/g, '$1');
+            console.log('message:', text);
+
+            if (message?.includes('�')) {
+                console.error('Received message contains invalid characters.');
+                return;
+            }
+            // check if the callsign is our callsign
+            if (callsign === window.localStorage.getItem('callsign')) {
+                newMessage.classList.add('tx');
+            } else {
+                newMessage.classList.add('rx');
+            }
+
+
+            // populate message element
+            if (name.length > 0 && callsign.length > 0 && gridsquare.length > 0 && phone.length > 0) {
+                nameElement.innerText = `${name} [${callsign}] @${gridsquare} ${phone}`;
+                const callsignToColor = cs => {
+                    console.log('callsign:', cs);
+                    const a = (cs.charCodeAt(0) * 11) + (cs.charCodeAt(1) * 7) + (cs.charCodeAt(2) * 3);
+                    const h = a % 360;
+                    const color = `hsl(${h}, 50%, 80%)`;
+                    return color;
+                }
+                const color = callsignToColor(callsign);
+                console.log('setting color', color);
+                nameElement.style.background = color;
+                messageElement.style.background = color;
+                console.log(nameElement);
+                console.log(messageElement);
+            } else {
+                nameElement.innerText = `unknown sender`;
+            }
+
             chat.scrollTop = chat.scrollHeight;
             // add incoming message to indexedDB
-            const db = window.indexedDB;
-            if (!db) {
-                console.error('IndexedDB is not available.');
-                return;
-            }
-            const request = db.open('ribbit', 1);
-            request.onsuccess = e => {
-                const db = e.target.result;
-                const transaction = db.transaction('messages', 'readwrite');
-                const store = transaction.objectStore('messages');
-                const request = store.add({ sender, message, timestamp: new Date().getTime() });
+            if (save) {
+                const db = window.indexedDB;
+                if (!db) {
+                    console.error('IndexedDB is not available.');
+                    return;
+                }
+                const request = db.open('ribbit', 1);
                 request.onsuccess = e => {
-                    console.log('Message added to indexedDB.');
+                    const db = e.target.result;
+                    const transaction = db.transaction('messages', 'readwrite');
+                    const store = transaction.objectStore('messages');
+                    console.log('saving message:', message);
+                    const request = store.add({ type, sender, message, timestamp: new Date().toUTCString() });
+                    request.onsuccess = e => {
+                        console.log('Message added to indexedDB.');
+                        store.getAll().onsuccess = e => {
+                            const messagecount = document.getElementById('messagecount');
+                            messagecount.value = e.target.result.length;
+                        }
+                    };
                 };
-            };
-        });
-        document.addEventListener('transmitmessage', e => {
-            console.log( e );
-            const { text } = e.detail;
-            const header = text.split('&=')[0];
-            const body = text.split('&=')[1];
-            console.log('header:', header);
-            const name = header.split('|')[0];
-            const callsign = header.split('|')[1];
-            const gridsquare = header.split('|')[2];
-            const phone = header.split('|')[3];
-            console.log('name:', name);
-            console.log('callsign:', callsign);
-            console.log('gridsquare:', gridsquare);
-            console.log('phone:', phone);
-            console.log('body:', body);
-            const chat = document.getElementById('chat');
-            const newMessage = document.createElement('div');
-            newMessage.classList.add('message');
-            newMessage.classList.add('tx');
-            const senderElement = document.createElement('div');
-            senderElement.classList.add('sender');
-            const nameElement = document.createElement('p');
-            nameElement.classList.add('name');
-            nameElement.innerText = `${name}/${callsign}/${gridsquare}/${phone}`;
-            const timeElement = document.createElement('p');
-            timeElement.classList.add('time');
-            timeElement.innerText = new Date().toLocaleTimeString();
-            senderElement.appendChild(nameElement);
-            senderElement.appendChild(timeElement);
-            newMessage.appendChild(senderElement);
-            const messageElement = document.createElement('p');
-            messageElement.innerText = body;
-            newMessage.appendChild(messageElement);
-            chat.appendChild(newMessage);
-            // scroll to the bottom of chat
-            chat.scrollTop = chat.scrollHeight;
-            // add transmitted message to indexedDB
-            // TODO: need to get localStorage and indexedDB working on ios.
-
-            const db = window.indexedDB;
-            if (!db) {
-                console.error('IndexedDB is not available.');
-                return;
             }
-            const request = db.open('ribbit', 1);
-            request.onsuccess = e => {
-                const db = e.target.result;
-                const sender = `${window.localStorage.getItem('callsign')} - ${window.localStorage.getItem('name')}`;
-                const transaction = db.transaction('messages', 'readwrite');
-                const store = transaction.objectStore('messages');
-                const request = store.add({ sender, message, timestamp: new Date().getTime() });
-                request.onsuccess = e => {
-                    console.log('Message added to indexedDB.');
-                };
-            };
         });
     </script>
     <div id="input">
