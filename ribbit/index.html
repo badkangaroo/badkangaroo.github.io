@@ -591,8 +591,8 @@
                             const store = transaction.objectStore('messages');
                             const request = store.count();
                             request.onsuccess = e => {
-                                const counter = document.querySelector('input[type="number"]');
-                                counter.value = e.target.result;
+                                const messagecount = document.getElementById('messagecount');
+                                messagecount.value = e.target.result;
                             }
                         }
                         settingsOpen = true;
@@ -683,7 +683,7 @@
                         // from latitude and lontitude get grid square
                         const lat = location.coords.latitude;
                         const lon = location.coords.longitude;
-                        const latLonToQth = (latitude, longitude, gsLevel = 6) => {
+                        const latLonToQth = (y, x, gsLevel = 6) => {
                             let qth = ''
                             let spread = ''
                             let error = ''
@@ -691,11 +691,11 @@
                                 error += 'gsLevel must be a positive even integer between 2 and 18. '
                             }
 
-                            if (latitude < -90.0 || latitude > 90.0) {
+                            if (y < -90.0 || y > 90.0) {
                                 error += 'latitude must be a float between -90.0 and +90.0. '
                             }
 
-                            if (longitude < -180.0 || longitude > 180.0) {
+                            if (x < -180.0 || x > 180.0) {
                                 error += 'longitude must be a float between -180.0 and +180.0. '
                             }
 
@@ -703,13 +703,13 @@
                                 return { qth, spread, error }
                             }
                             // scale for gridding
-                            latitude = (latitude + 90) / 10
-                            longitude = (longitude + 180) / 20
+                            y = (y + 90) / 10
+                            x = (x + 180) / 20
                             const charA = 65
                             let loops = gsLevel / 2 + 1
                             for (let i = 1; i < loops; ++i) {
-                                let latInt = Math.floor(latitude)
-                                let lonInt = Math.floor(longitude)
+                                let latInt = Math.floor(y)
+                                let lonInt = Math.floor(x)
 
                                 if (i % 2) {
                                     const latChar = String.fromCharCode(charA + latInt)
@@ -718,15 +718,15 @@
                                     spread += `${lonChar}${latChar} `
 
                                     // set up for the next level 10x10 grid
-                                    latitude = ((latitude - latInt) * 10).toFixed(6)
-                                    longitude = ((longitude - lonInt) * 10).toFixed(6)
+                                    y = ((y - latInt) * 10).toFixed(6)
+                                    x = ((x - lonInt) * 10).toFixed(6)
                                 } else {
                                     qth += `${lonInt}${latInt}`
                                     spread += `${lonInt}${latInt} `
 
                                     // set up for the next level 24x24 grid
-                                    latitude = ((latitude - latInt) * 24).toFixed(6)
-                                    longitude = ((longitude - lonInt) * 24).toFixed(6)
+                                    y = ((y - latInt) * 24).toFixed(6)
+                                    x = ((x - lonInt) * 24).toFixed(6)
                                 }
                             }
                             spread = spread.trim()
@@ -1039,6 +1039,8 @@
                 const speaker = db.getItem('speaker');
                 document.getElementById('name').value = name;
                 document.getElementById('callsign').value = callsign;
+                document.getElementById('longitude').value = JSON.parse(db.getItem('gps')).longitude;
+                document.getElementById('latitude').value = JSON.parse(db.getItem('gps')).latitude;
                 document.getElementById('gridsquare').value = gridsquare;
                 document.getElementById('phone').value = phone;
                 document.getElementById('microphone').value = microphone;
