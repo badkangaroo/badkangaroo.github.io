@@ -77,7 +77,7 @@
             font-size: 1.75rem;
             color: var(--light-green);
             z-index: 3;
-            height: 3rem;
+            height: 4rem;
         }
 
         #titlebar>#modeTitle {
@@ -99,13 +99,13 @@
             justify-content: space-between;
             align-items: center;
             padding: 1.5svh 2.5svh;
-            height: 10svh;
+            height: 5rem;
             z-index: 1;
             box-shadow: 0 0 1rem black;
         }
 
         #input>textarea {
-            width: 80dvw;
+            width: calc(100svw - 10rem);
             overflow: hidden;
             resize: none;
             background: var(--light-green);
@@ -114,7 +114,9 @@
             border-radius: var(--radius);
             font-family: 'NotoSansDisplay-Regular';
         }
-
+        #input>svg {
+            height: 4rem;
+        }
         #chat {
             height: -webkit-fill-available;
             overflow-y: scroll;
@@ -168,7 +170,10 @@
             }
 
             #input {
-                height: 20svh;
+                height: 5rem;
+            }
+            #input > svg {
+                height: 4rem;
             }
         }
     </style>
