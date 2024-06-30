@@ -19,11 +19,6 @@
         }
 
         @font-face {
-            font-family: 'NotoSansDisplay-BoldItalic';
-            src: url('./NotoSansDisplay/NotoSansDisplay-BoldItalic.ttf') format('truetype');
-        }
-
-        @font-face {
             font-family: 'NotoSansDisplay-Italic';
             src: url('./NotoSansDisplay/NotoSansDisplay-Italic.ttf') format('truetype');
         }
@@ -34,27 +29,13 @@
         }
 
         @font-face {
-            font-family: 'NotoSansDisplay-MediumItalic';
-            src: url('./NotoSansDisplay/NotoSansDisplay-MediumItalic.ttf') format('truetype');
-        }
-
-        @font-face {
             font-family: 'NotoSansDisplay-Regular';
             src: url('./NotoSansDisplay/NotoSansDisplay-Regular.ttf') format('truetype');
         }
 
-        @font-face {
-            font-family: 'NotoSansDisplay-SemiBold';
-            src: url('./NotoSansDisplay/NotoSansDisplay-SemiBold.ttf') format('truetype');
-        }
-
-        @font-face {
-            font-family: 'NotoSansDisplay-SemiBoldItalic';
-            src: url('./NotoSansDisplay/NotoSansDisplay-SemiBoldItalic.ttf') format('truetype');
-        }
-
         :root,
         * {
+            font-family: 'NotoSansDisplay-Regular';
             padding: 0;
             margin: 0;
             overflow: hidden;
@@ -69,10 +50,9 @@
             text-size-adjust: none;
         }
 
-        @media only screen and (max-device-width: 480px) {
+        @media only screen and (max-device-width: 960px) {
             body {
-                -webkit-text-size-adjust: 30%;
-                text-size-adjust: 30%;
+                font-size: 2vh;
             }
         }
 
@@ -180,7 +160,7 @@
 
             :root,
             * {
-                font-size: 3svh;
+                font-size: 2svh;
             }
 
             #titlebar {
@@ -880,7 +860,7 @@
                 position: fixed;
                 padding-top: 3rem;
                 width: 100svw;
-                height: 95svh;
+                height: calc(100svh - 3rem);
                 /* top: 0svh; */
                 top: -100svh;
                 overflow-y: auto;
@@ -908,7 +888,7 @@
 
             @media screen and (orientation: landscape) {
                 #settings {
-                    height: 91  svh;
+                    height: 91 svh;
                 }
 
                 .setting {
@@ -1037,14 +1017,17 @@
                 const gridsquare = db.getItem('gridsquare');
                 const microphone = db.getItem('microphone');
                 const speaker = db.getItem('speaker');
-                document.getElementById('name').value = name;
-                document.getElementById('callsign').value = callsign;
-                document.getElementById('longitude').value = JSON.parse(db.getItem('gps')).longitude;
-                document.getElementById('latitude').value = JSON.parse(db.getItem('gps')).latitude;
-                document.getElementById('gridsquare').value = gridsquare;
-                document.getElementById('phone').value = phone;
-                document.getElementById('microphone').value = microphone;
-                document.getElementById('speaker').value = speaker;
+                const gps = db.getItem('gps');
+                const { latitude, longitude } = JSON.parse(gps ? gps : '{}');
+
+                document.getElementById('name').value = name ? name : '';
+                document.getElementById('callsign').value = callsign ? callsign : '';
+                document.getElementById('longitude').value = longitude ? longitude : '';
+                document.getElementById('latitude').value = latitude ? latitude : '';
+                document.getElementById('gridsquare').value = gridsquare ? gridsquare : '';
+                document.getElementById('phone').value = phone ? phone : '';
+                document.getElementById('microphone').value = microphone ? microphone : '';
+                document.getElementById('speaker').value = speaker ? speaker : '';
             });
             document.addEventListener('closeSettings', e => {
                 const settings = document.getElementById('settings');
