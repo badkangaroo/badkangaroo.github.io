@@ -1,9 +1,0 @@
-{
-    "name": "Ribbit",
-    "short_name": "Ribbit",
-    "description": "A fun PWA for ribbiting sounds",
-    "start_url": "/",
-    "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#ffffff"
-}
