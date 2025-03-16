@@ -4,436 +4,37 @@
 <head>
     <title>Ribbit</title>
     <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta id="extViewportMeta" name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-loadingpage" content="Ribbit Mobile App">
     <meta name="application-name" content="Ribbit Mobile App">
     <meta name="apple-touch-fullscreen" content="yes">
     <meta property="og:image" content="ribbiticon-512.png">
     <link rel="shortcut icon" href="./favicon.ico">
+    <link rel="apple-touch-icon" href="./assets/ribbiticon-512.png">
     <link rel="manifest" href="./ribbit.webmanifest">
     <link rel="stylesheet" href="./ribbit.css">
     <script src="./ribbit.js"></script>
+    <script>
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
     <script type="text/javascript">
         const buttonPressSoundEffect = new Audio();
         buttonPressSoundEffect.autoplay = true;
         buttonPressSoundEffect.src = "data:audio/mpeg;base64,//OkxAAAAAAAAAAAAEluZm8AAAAPAAAAAwAABIAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq////////////////////////////////////////////AAAAOUxBTUUzLjEwMAF4AAAAAAAAAAAUYCQD+iIAAGAAAASA2xsiIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//OkxAA4rDKEAHsHkGgfYSMf8aCT8Tcl7rCcJwXBwY2dgIOJuLmccisbSVibiGEIOhkqxoeh6jQw0DQNAnBBBCAUgEAAVgHYEMB3AE4AHAFYGMXMTQI4A6AQAVAmBkMkR/Hw8iUSCQIgjn92zszXtEgAMA472MDAwPOWGCykzp2JYNAaCQeQmZmvfWGBgeUnW17mtr169/6LzsliGJZ/9KL17/0YWLHPowsWGB4scfv8zdevPzAwWLAAAAAAAA3OhwMDFuiInX0DgYGBgbn6In/1EL/0AxZxAAAQuv/XdAAAEJ//C3d3QviIiO7hwMW6KOUWE9g1Q/m9QrwkwmqE4XJBRNSWumKKphvBHhDkcpXEuwhIOUNSGpByhIRcR6Rb//OkxDA43DqMAnsNjESYQ4TYTYQoNUGqDVCbGirU6W0uKwT4TYyqWYS2i2hqQ1IuJOS3EGIUXJRCECQHlTTzK13DoShKiJQEgJCMffq17TkxWrTExPfZMRJEk962rvZOVq1atotW9lrNLjJaYnvHQlE5cur1rV/IKAgESJEkvP7a5EiRmdmcbXk0kSSeWOJEpk0iRnKqc9EiRKt8yRnHma///qvRJKqeZ/avMzNa5pFGc7VTmo5VTMtW///9iRIlVQSY2JMK6LMRkgBIyUFvL4iFOwP3Tkywocak+MSUPJCIZAE4hlQzNDYxOkqVCTniNSuZgYfRFoSRyFImDWJ5AK5grUny1qBtxUemRVKRfKaROsVuvMtHFmJokjTiyyj0//OkxF82PBm0pnsMvRaNSzXiSJI0CAwMo8xNSRpxwGYTQSInGmgR5BaJI044sxNSRE4ssw9BIiSNKKPMTUkacWXF4OCQYsyLUkROLKPdpo04sos0ouLzc/qWdrzamna43JZ4WicacKEgR6C0SRppR5BaJI0oo9BZEkJAjzzE1JETizIWCSoGTEFNRTMuMTAwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
-    </script>
-    <script type="text/javascript">
-        const UTF8ArrayToString = (heapOrArray, idx, maxBytesToRead) => {
-            var endIdx = idx + maxBytesToRead;
-            var endPtr = idx;
-            // TextDecoder needs to know the byte length in advance, it doesn't stop on
-            // null terminator by itself.  Also, use the length info to avoid running tiny
-            // strings through TextDecoder, since .subarray() allocates garbage.
-            // (As a tiny code save trick, compare endPtr against endIdx using a negation,
-            // so that undefined means Infinity)
-            while (heapOrArray[endPtr] && !(endPtr >= endIdx)) ++endPtr;
-
-            if (endPtr - idx > 16 && heapOrArray.buffer && UTF8Decoder) {
-                return UTF8Decoder.decode(heapOrArray.subarray(idx, endPtr));
-            }
-            var str = '';
-            // If building with TextDecoder, we have already computed the string length
-            // above, so test loop end condition against that
-            while (idx < endPtr) {
-                var u0 = heapOrArray[idx++];
-                if (!(u0 & 0x80)) { str += String.fromCharCode(u0); continue; }
-                var u1 = heapOrArray[idx++] & 63;
-                if ((u0 & 0xE0) == 0xC0) { str += String.fromCharCode(((u0 & 31) << 6) | u1); continue; }
-                var u2 = heapOrArray[idx++] & 63;
-                if ((u0 & 0xF0) == 0xE0) {
-                    u0 = ((u0 & 15) << 12) | (u1 << 6) | u2;
-                } else {
-                    if ((u0 & 0xF8) != 0xF0) warnOnce('Invalid UTF-8 leading byte ' + ptrToString(u0) + ' encountered when deserializing a UTF-8 string in wasm memory to a JS string!');
-                    u0 = ((u0 & 7) << 18) | (u1 << 12) | (u2 << 6) | (heapOrArray[idx++] & 63);
-                }
-
-                if (u0 < 0x10000) {
-                    str += String.fromCharCode(u0);
-                } else {
-                    var ch = u0 - 0x10000;
-                    str += String.fromCharCode(0xD800 | (ch >> 10), 0xDC00 | (ch & 0x3FF));
-                }
-            }
-            return str;
-        };
-        const printCharBuffers = [null, [], []];
-        function assert(condition, text) {
-            if (!condition) {
-                abort('Assertion failed' + (text ? ': ' + text : ''));
-            }
-        }
-        const printChar = (stream, curr) => {
-            var buffer = printCharBuffers[stream];
-            assert(buffer);
-            if (curr === 0 || curr === 10) {
-                (stream === 1 ? out : err)(UTF8ArrayToString(buffer, 0));
-                buffer.length = 0;
-            } else {
-                buffer.push(curr);
-            }
-        };
-        const ___assert_fail = (condition, filename, line, func) => {
-            abort(`Assertion failed: ${UTF8ToString(condition)}, at: ` + [filename ? UTF8ToString(filename) : 'unknown filename', line, func ? UTF8ToString(func) : 'unknown function']);
-        };
-        const _abort = (message, file, line, column) => {
-            console.error(`abort: ${UTF8ToString(message)} at ${UTF8ToString(file)}:${line}:${column}`);
-        };
-        var _emscripten_asm_const_int = (code, sigPtr, argbuf) => {
-            return runEmAsmFunction(code, sigPtr, argbuf);
-        };
-        const _emscripten_memcpy_js = (dest, src, num) => {
-            HEAPU8.set(HEAPU8.subarray(src, src + num), dest);
-            return dest;
-        };
-        const _emscripten_resize_heap = (size) => {
-            return 0;
-        };
-        const _fd_close = (fd) => {
-            return 0;
-        };
-        const _fd_seek = (fd, offset_low, offset_high, whence, newOffset) => {
-            return 0;
-        };
-        const _fd_write = (fd, iov, iovcnt, pnum) => {
-            // hack to support printf in SYSCALLS_REQUIRE_FILESYSTEM=0
-            var num = 0;
-            for (var i = 0; i < iovcnt; i++) {
-                var ptr = HEAPU32[((iov) >> 2)];
-                var len = HEAPU32[(((iov) + (4)) >> 2)];
-                iov += 8;
-                for (var j = 0; j < len; j++) {
-                    printChar(fd, HEAPU8[ptr + j]);
-                }
-                num += len;
-            }
-            HEAPU32[((pnum) >> 2)] = num;
-            return 0;
-        };
-        var HEAP, HEAP8, HEAPU8, HEAP16, HEAPU16, HEAP32, HEAPU32, HEAPF32, HEAPF64;
-        function updateMemoryViews() {
-            var b = wasmMemory.buffer;
-            Module['HEAP8'] = HEAP8 = new Int8Array(b);
-            Module['HEAP16'] = HEAP16 = new Int16Array(b);
-            Module['HEAPU8'] = HEAPU8 = new Uint8Array(b);
-            Module['HEAPU16'] = HEAPU16 = new Uint16Array(b);
-            Module['HEAP32'] = HEAP32 = new Int32Array(b);
-            Module['HEAPU32'] = HEAPU32 = new Uint32Array(b);
-            Module['HEAPF32'] = HEAPF32 = new Float32Array(b);
-            Module['HEAPF64'] = HEAPF64 = new Float64Array(b);
-        }
-        var Module = typeof Module != 'undefined' ? Module : {};
-        const out = Module['print'] || console.log.bind(console);
-        const err = Module['printErr'] || console.error.bind(console);
-        var wasmMemory;
-        var wasmExports;
-        // copied out of the generated enscripten glue code
-        const ASM_CONSTS = {
-            70060: ($0) => { encoderCreated($0); },
-            70084: ($0) => { decoderCreated($0); },
-            70108: ($0) => { mainCalled($0); },
-            70128: ($0) => { fetchDecoded($0); },
-            70150: () => { initEncoded(); },
-            70167: ($0) => { readEncoded($0); }
-        };
-        var readEmAsmArgsArray = [];
-        const readEmAsmArgs = (sigPtr, buf) => {
-            // Nobody should have mutated _readEmAsmArgsArray underneath us to be something else than an array.
-            assert(Array.isArray(readEmAsmArgsArray));
-            // The input buffer is allocated on the stack, so it must be stack-aligned.
-            assert(buf % 16 == 0);
-            readEmAsmArgsArray.length = 0;
-            var ch;
-            // Most arguments are i32s, so shift the buffer pointer so it is a plain
-            // index into HEAP32.
-            while (ch = HEAPU8[sigPtr++]) {
-                var chr = String.fromCharCode(ch);
-                var validChars = ['d', 'f', 'i', 'p'];
-                assert(validChars.includes(chr), `Invalid character ${ch}("${chr}") in readEmAsmArgs! Use only [${validChars}], and do not specify "v" for void return argument.`);
-                // Floats are always passed as doubles, so all types except for 'i'
-                // are 8 bytes and require alignment.
-                var wide = (ch != 105);
-                wide &= (ch != 112);
-                buf += wide && (buf % 8) ? 4 : 0;
-                readEmAsmArgsArray.push(
-                    // Special case for pointers under wasm64 or CAN_ADDRESS_2GB mode.
-                    ch == 112 ? HEAPU32[((buf) >> 2)] :
-                        ch == 105 ?
-                            HEAP32[((buf) >> 2)] :
-                            HEAPF64[((buf) >> 3)]
-                );
-                buf += wide ? 8 : 4;
-            }
-            return readEmAsmArgsArray;
-        };
-        var runEmAsmFunction = (code, sigPtr, argbuf) => {
-            var args = readEmAsmArgs(sigPtr, argbuf);
-            assert(ASM_CONSTS.hasOwnProperty(code), `No EM_ASM constant found at address ${code}.  The loaded WebAssembly file is likely out of sync with the generated JavaScript.`);
-            return ASM_CONSTS[code].apply(null, args);
-        };
-        var wasmImports = {
-            /** @export */
-            __assert_fail: ___assert_fail,
-            /** @export */
-            abort: _abort,
-            /** @export */
-            emscripten_asm_const_int: _emscripten_asm_const_int,
-            /** @export */
-            emscripten_memcpy_js: _emscripten_memcpy_js,
-            /** @export */
-            emscripten_resize_heap: _emscripten_resize_heap,
-            /** @export */
-            fd_close: _fd_close,
-            /** @export */
-            fd_seek: _fd_seek,
-            /** @export */
-            fd_write: _fd_write,
-        };
-        let loadPromise = new Promise((resolve, reject) => {
-            fetch('./ribbit.wasm', { credentials: 'same-origin' }).then((response) => {
-                if (!response['ok']) {
-                    throw `failed to load wasm binary file at '${binaryFile}'`;
-                }
-                return response['arrayBuffer']();
-            }).then(binary => {
-                WebAssembly.instantiate(binary, { 'env': wasmImports, 'wasi_snapshot_preview1': wasmImports }).then((result) => {
-                    wasmExports = result.instance.exports;
-                    wasmMemory = wasmExports['memory'];
-                    updateMemoryViews();
-                    resolve({ wasmExports: wasmExports, wasmMemory: wasmMemory });
-                });
-            }).catch(err => reject(err));
-        });
-        const mediaConstraints = {
-            audio: {
-                echoCancellation: false,
-                noiseSuppression: false,
-                autoGainControl: false
-            },
-            video: false
-        };
-        loadPromise.then(moduleInstance => {
-            const { wasmExports, wasmMemory } = moduleInstance;
-            const init = () => {
-                const _buffer = wasmMemory.buffer;
-                // the array used to feed the decoder
-                const FEED_POINTER = wasmExports['feed_pointer']();
-                const FEED_LENGTH = wasmExports['feed_length']() * Float32Array.BYTES_PER_ELEMENT;
-                const _feed = new Float32Array(_buffer, FEED_POINTER, FEED_LENGTH);
-                // bytes decoded by decoder
-                const PAYLOAD_POINTER = wasmExports['payload_pointer']();
-                const PAYLOAD_LENGTH = wasmExports['payload_length']() * Uint8Array.BYTES_PER_ELEMENT;
-                const _payload = new Uint8Array(_buffer, PAYLOAD_POINTER, PAYLOAD_LENGTH);
-                // bytes to send to the encoder
-                const MESSAGE_POINTER = wasmExports['message_pointer']();
-                const MESSAGE_LENGTH = wasmExports['message_length']() * Uint8Array.BYTES_PER_ELEMENT;
-                const _message = new Uint8Array(_buffer, MESSAGE_POINTER, MESSAGE_LENGTH);
-                // audio signal from the encoder
-                const SIGNAL_POINTER = wasmExports['signal_pointer']();
-                const SIGNAL_LENGTH = wasmExports['signal_length']() * Float32Array.BYTES_PER_ELEMENT;
-                const _signalbuffer = new Float32Array(_buffer, SIGNAL_POINTER, SIGNAL_LENGTH);
-                // required in a browser since google decided that nobody
-                // should enable audio on a web page until the user
-                // has interacted with it in some way.
-                // ignore self transmission
-                var listen = true;
-                // text to convert
-                const messagebox = document.getElementById("textarea");
-                const resizeviewport = () => {
-                    // For the rare legacy browsers that don't support it
-                    if (!window.visualViewport) {
-                        return;
-                    }
-                    const { height } = window.visualViewport;
-                    const h = height;
-                    setTimeout(() => {
-                        // console.log(window.visualViewport, h);
-                    }, 250);
-                };
-                window.addEventListener('resize', resizeviewport);
-                messagebox.onfocus = resizeviewport;
-                messagebox.onblur = resizeviewport;
-                messagebox.oninput = input => {
-                    console.log("input", input);
-                };
-                // button to trigger encoding
-                const encodebutton = document.getElementById("encodebutton");
-                const encodemessage = () => {
-                    // don't send a blank message.
-                    if (messagebox.value.length < 1) {
-                        console.log('no message to send');
-                        return;
-                    }
-                    // don't send a message while transmitting.
-                    if (!listen) { return; }
-                    const db = window.localStorage;
-                    if (!db) {
-                        console.error('Local Storage is not available.');
-                        return;
-                    }
-                    const name = db.getItem('name');
-                    const callsign = db.getItem('callsign');
-                    const gridsquare = db.getItem('gridsquare');
-                    const phone = db.getItem('phone');
-                    const header = `${name}|${callsign}|${gridsquare}|${phone}`;
-                    const str = `${header}&=${messagebox.value}`;
-
-                    let encoding = new TextEncoder().encode(str);
-                    console.log("encoded:", str);
-                    const event = new CustomEvent('receivemessage', {
-                        detail: {
-                            save: true,
-                            type: 'text',
-                            sender: str.split('&=')[0],
-                            message: str.split('&=')[1],
-                            timestamp: new Date().toUTCString()
-                        }
-                    });
-                    setTimeout(() => {
-                        document.dispatchEvent(event);
-                    }, 1600);
-
-                    for (let i = 0; i < MESSAGE_LENGTH; i++) {
-                        _message[i] = encoding[i];
-                    }
-                    wasmExports['initEncoder']();
-                    console.log("encoding message:", wasmExports['initEncoder'] === undefined ? "failed" : "success");
-                    // clear message box for next message.
-                    messagebox.value = "";
-                }
-                var tx_context;
-                var savewavfile = false;
-                encodebutton.onclick = () => {
-                    const db = window.localStorage;
-                    // enable audio output
-                    // after playing the audio, encode the message.
-                    encodebutton.onclick = encodemessage;
-                    tx_context = tx_context || new AudioContext({ sampleRate: 8000 });
-                    buttonPressSoundEffect.play();
-                };
-                const savewav = document.getElementById("savewav");
-                const saveToWav = () => {
-                    savewavfile = true;
-                    tx_context = tx_context || new AudioContext({ sampleRate: 8000 });
-                    const str = messagebox.value;
-                    let encoding = new TextEncoder().encode(str);
-                    console.log("encoded:", encoding);
-                    for (let i = 0; i < MESSAGE_LENGTH; i++) {
-                        _message[i] = encoding[i];
-                    }
-                    wasmExports['initEncoder']();
-                    console.log("encoding message:", wasmExports['initEncoder'] === undefined ? "failed" : "success");
-                }
-                savewav.onclick = saveToWav;
-
-                navigator.mediaDevices.getUserMedia(mediaConstraints).then(stream => {
-                    const rx_context = new AudioContext({ sampleRate: 8000 });
-                    const source = rx_context.createMediaStreamSource(stream);
-                    const streamsize = 2048;
-                    const processor = rx_context.createScriptProcessor(streamsize, 1, 1);
-                    source.connect(processor);
-                    processor.connect(rx_context.destination);
-                    // process audio
-                    processor.onaudioprocess = (audio) => {
-                        const { inputBuffer, playbackTime, timeStamp } = audio;
-                        const { duration, length, sampleRate } = inputBuffer;
-                        const input = inputBuffer.getChannelData(0);
-                        for (let i = 0; i < length; i++) {
-                            _feed[i] = listen ? input[i] : 0;
-                        }
-                        wasmExports['digestFeed']();
-                    }
-                });
-                window.initEncoded = () => {
-                    wasmExports['readEncoder']();
-                };
-                window.readEncoded = e => {
-                    const signal = tx_context.createBuffer(1, e, 8000);
-                    const bufferSouce = tx_context.createBufferSource();
-                    bufferSouce.buffer = signal;
-                    for (let i = 0; i < e; i++) {
-                        signal.getChannelData(0)[i] = _signalbuffer[i];
-                    }
-                    listen = false;
-                    if (savewavfile) {
-                        savewavfile = false;
-                        const wav = audioBufferToWav(bufferSouce.buffer);
-                        const url = window.URL.createObjectURL(new Blob([wav], { 'type': 'audio/wav;' }));
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.setAttribute('download', 'audio.wav'); //or any other extension
-                        document.body.appendChild(link);
-                        link.click();
-                        setTimeout(() => {
-                            revokeObjectURL(url);
-                        }, 3000);
-                        return;
-                    }
-                    console.log(e, tx_context, signal, bufferSouce);
-                    bufferSouce.connect(tx_context.destination);
-                    bufferSouce.start();
-                    bufferSouce.onended = () => listen = true;
-                };
-                window.fetchDecoded = result => {
-                    console.log('payload', _payload);
-                    const decoder = new TextDecoder();
-                    const str = decoder.decode(_payload);
-                    console.log('decoded:', str);
-                    const sender = str.split('&=')[0];
-                    const message = str.split('&=')[1];
-                    if (sender && message) {
-                        const event = new CustomEvent('receivemessage', {
-                            detail: {
-                                save: true,
-                                type: 'text',
-                                sender: sender,
-                                message: message,
-                                timestamp: new Date().toUTCString()
-                            }
-                        });
-                        document.dispatchEvent(event);
-                    } else {
-                        const event = new CustomEvent('receivemessage', {
-                            detail: {
-                                save: true,
-                                type: 'text',
-                                sender: 'unknown',
-                                callsign: '000',
-                                gridsquare: 'unknown',
-                                phone: 'unknown',
-                                message: str,
-                                timestamp: new Date().toUTCString()
-                            }
-                        });
-                        document.dispatchEvent(event);
-                    }
-                }
-                window.encoderCreated = () => { console.log('Encoder Created!'); };
-                window.decoderCreated = () => { console.log('Decoder Created!'); };
-                window.mainCalled = () => { console.log('Initalization Complete!'); };
-                // check if we should open the settings panel
-                // the localStorage has fields for name, callsign, gridsquare, and phone.
-                // if any of these fields are missing, open the settings panel.
-                const db = window.localStorage;
-                if (!db) {
-                    console.error('Local Storage is not available.');
-                    return;
-                }
-                const name = db.getItem('name');
-                if (!name) {
-                    openSettings();
-                }
-            }
-            init();
-            wasmExports['main']();
-        }).catch(error => {
-            console.error(error);
-        }).finally(() => {
-            console.log('Ribbit is ready!');
-        });
     </script>
 
 <body>
@@ -995,6 +596,247 @@
                 };
             };
             console.log('request:', request);
+            let loadPromise = new Promise((resolve, reject) => {
+                fetch('./ribbit.wasm', { credentials: 'same-origin' }).then((response) => {
+                    if (!response['ok']) {
+                        throw `failed to load wasm binary file at '${binaryFile}'`;
+                    }
+                    return response['arrayBuffer']();
+                }).then(binary => {
+                    WebAssembly.instantiate(binary, { 'env': wasmImports, 'wasi_snapshot_preview1': wasmImports }).then((result) => {
+                        wasmExports = result.instance.exports;
+                        wasmMemory = wasmExports['memory'];
+                        updateMemoryViews();
+                        resolve({ wasmExports: wasmExports, wasmMemory: wasmMemory });
+                    });
+                }).catch(err => reject(err));
+            });
+            const mediaConstraints = {
+                audio: {
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                    autoGainControl: false
+                },
+                video: false
+            };
+            loadPromise.then(moduleInstance => {
+                const { wasmExports, wasmMemory } = moduleInstance;
+                const init = () => {
+                    const _buffer = wasmMemory.buffer;
+                    // the array used to feed the decoder
+                    const FEED_POINTER = wasmExports['feed_pointer']();
+                    const FEED_LENGTH = wasmExports['feed_length']() * Float32Array.BYTES_PER_ELEMENT;
+                    const _feed = new Float32Array(_buffer, FEED_POINTER, FEED_LENGTH);
+                    // bytes decoded by decoder
+                    const PAYLOAD_POINTER = wasmExports['payload_pointer']();
+                    const PAYLOAD_LENGTH = wasmExports['payload_length']() * Uint8Array.BYTES_PER_ELEMENT;
+                    const _payload = new Uint8Array(_buffer, PAYLOAD_POINTER, PAYLOAD_LENGTH);
+                    // bytes to send to the encoder
+                    const MESSAGE_POINTER = wasmExports['message_pointer']();
+                    const MESSAGE_LENGTH = wasmExports['message_length']() * Uint8Array.BYTES_PER_ELEMENT;
+                    const _message = new Uint8Array(_buffer, MESSAGE_POINTER, MESSAGE_LENGTH);
+                    // audio signal from the encoder
+                    const SIGNAL_POINTER = wasmExports['signal_pointer']();
+                    const SIGNAL_LENGTH = wasmExports['signal_length']() * Float32Array.BYTES_PER_ELEMENT;
+                    const _signalbuffer = new Float32Array(_buffer, SIGNAL_POINTER, SIGNAL_LENGTH);
+                    // required in a browser since google decided that nobody
+                    // should enable audio on a web page until the user
+                    // has interacted with it in some way.
+                    // ignore self transmission
+                    var listen = true;
+                    // text to convert
+                    const messagebox = document.getElementById("textarea");
+                    const resizeviewport = () => {
+                        // For the rare legacy browsers that don't support it
+                        if (!window.visualViewport) {
+                            return;
+                        }
+                        const { height } = window.visualViewport;
+                        const h = height;
+                        setTimeout(() => {
+                            // console.log(window.visualViewport, h);
+                        }, 250);
+                    };
+                    window.addEventListener('resize', resizeviewport);
+                    messagebox.onfocus = resizeviewport;
+                    messagebox.onblur = resizeviewport;
+                    messagebox.oninput = input => {
+                        console.log("input", input);
+                    };
+                    // button to trigger encoding
+                    const encodebutton = document.getElementById("encodebutton");
+                    const encodemessage = () => {
+                        // don't send a blank message.
+                        if (messagebox.value.length < 1) {
+                            console.log('no message to send');
+                            return;
+                        }
+                        // don't send a message while transmitting.
+                        if (!listen) { return; }
+                        const db = window.localStorage;
+                        if (!db) {
+                            console.error('Local Storage is not available.');
+                            return;
+                        }
+                        const name = db.getItem('name');
+                        const callsign = db.getItem('callsign');
+                        const gridsquare = db.getItem('gridsquare');
+                        const phone = db.getItem('phone');
+                        const header = `${name}|${callsign}|${gridsquare}|${phone}`;
+                        const str = `${header}&=${messagebox.value}`;
+
+                        let encoding = new TextEncoder().encode(str);
+                        console.log("encoded:", str);
+                        const event = new CustomEvent('receivemessage', {
+                            detail: {
+                                save: true,
+                                type: 'text',
+                                sender: str.split('&=')[0],
+                                message: str.split('&=')[1],
+                                timestamp: new Date().toUTCString()
+                            }
+                        });
+                        setTimeout(() => {
+                            document.dispatchEvent(event);
+                        }, 1600);
+
+                        for (let i = 0; i < MESSAGE_LENGTH; i++) {
+                            _message[i] = encoding[i];
+                        }
+                        wasmExports['initEncoder']();
+                        console.log("encoding message:", wasmExports['initEncoder'] === undefined ? "failed" : "success");
+                        // clear message box for next message.
+                        messagebox.value = "";
+                    }
+                    var tx_context;
+                    var savewavfile = false;
+                    encodebutton.onclick = () => {
+                        const db = window.localStorage;
+                        // enable audio output
+                        // after playing the audio, encode the message.
+                        encodebutton.onclick = encodemessage;
+                        tx_context = tx_context || new AudioContext({ sampleRate: 8000 });
+                        buttonPressSoundEffect.play();
+                    };
+                    const savewav = document.getElementById("savewav");
+                    const saveToWav = () => {
+                        savewavfile = true;
+                        tx_context = tx_context || new AudioContext({ sampleRate: 8000 });
+                        const str = messagebox.value;
+                        let encoding = new TextEncoder().encode(str);
+                        console.log("encoded:", encoding);
+                        for (let i = 0; i < MESSAGE_LENGTH; i++) {
+                            _message[i] = encoding[i];
+                        }
+                        wasmExports['initEncoder']();
+                        console.log("encoding message:", wasmExports['initEncoder'] === undefined ? "failed" : "success");
+                    }
+                    savewav.onclick = saveToWav;
+
+                    navigator.mediaDevices.getUserMedia(mediaConstraints).then(stream => {
+                        const rx_context = new AudioContext({ sampleRate: 8000 });
+                        const source = rx_context.createMediaStreamSource(stream);
+                        const streamsize = 2048;
+                        const processor = rx_context.createScriptProcessor(streamsize, 1, 1);
+                        source.connect(processor);
+                        processor.connect(rx_context.destination);
+                        // process audio
+                        processor.onaudioprocess = (audio) => {
+                            const { inputBuffer, playbackTime, timeStamp } = audio;
+                            const { duration, length, sampleRate } = inputBuffer;
+                            const input = inputBuffer.getChannelData(0);
+                            for (let i = 0; i < length; i++) {
+                                _feed[i] = listen ? input[i] : 0;
+                            }
+                            wasmExports['digestFeed']();
+                        }
+                    });
+                    window.initEncoded = () => {
+                        wasmExports['readEncoder']();
+                    };
+                    window.readEncoded = e => {
+                        const signal = tx_context.createBuffer(1, e, 8000);
+                        const bufferSouce = tx_context.createBufferSource();
+                        bufferSouce.buffer = signal;
+                        for (let i = 0; i < e; i++) {
+                            signal.getChannelData(0)[i] = _signalbuffer[i];
+                        }
+                        listen = false;
+                        if (savewavfile) {
+                            savewavfile = false;
+                            const wav = audioBufferToWav(bufferSouce.buffer);
+                            const url = window.URL.createObjectURL(new Blob([wav], { 'type': 'audio/wav;' }));
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.setAttribute('download', 'audio.wav'); //or any other extension
+                            document.body.appendChild(link);
+                            link.click();
+                            setTimeout(() => {
+                                revokeObjectURL(url);
+                            }, 3000);
+                            return;
+                        }
+                        console.log(e, tx_context, signal, bufferSouce);
+                        bufferSouce.connect(tx_context.destination);
+                        bufferSouce.start();
+                        bufferSouce.onended = () => listen = true;
+                    };
+                    window.fetchDecoded = result => {
+                        console.log('payload', _payload);
+                        const decoder = new TextDecoder();
+                        const str = decoder.decode(_payload);
+                        console.log('decoded:', str);
+                        const sender = str.split('&=')[0];
+                        const message = str.split('&=')[1];
+                        if (sender && message) {
+                            const event = new CustomEvent('receivemessage', {
+                                detail: {
+                                    save: true,
+                                    type: 'text',
+                                    sender: sender,
+                                    message: message,
+                                    timestamp: new Date().toUTCString()
+                                }
+                            });
+                            document.dispatchEvent(event);
+                        } else {
+                            const event = new CustomEvent('receivemessage', {
+                                detail: {
+                                    save: true,
+                                    type: 'text',
+                                    sender: 'unknown',
+                                    callsign: '000',
+                                    gridsquare: 'unknown',
+                                    phone: 'unknown',
+                                    message: str,
+                                    timestamp: new Date().toUTCString()
+                                }
+                            });
+                            document.dispatchEvent(event);
+                        }
+                    }
+                    window.encoderCreated = () => { console.log('Encoder Created!'); };
+                    window.decoderCreated = () => { console.log('Decoder Created!'); };
+                    window.mainCalled = () => { console.log('Initalization Complete!'); };
+                    // check if we should open the settings panel
+                    // the localStorage has fields for name, callsign, gridsquare, and phone.
+                    // if any of these fields are missing, open the settings panel.
+                    const db = window.localStorage;
+                    if (!db) {
+                        console.error('Local Storage is not available.');
+                        return;
+                    }
+                    const name = db.getItem('name');
+                    if (!name) {
+                        openSettings();
+                    }
+                }
+                init();
+            }).catch(error => {
+                console.error(error);
+            }).finally(() => {
+                console.log('Ribbit is ready!');
+            });
         });
         document.addEventListener('receivemessage', e => {
             console.log('received message: ', e);
@@ -1066,7 +908,7 @@
 
 
             // populate message element
-            
+
             if (name.length > 0 && callsign?.length > 0 && gridsquare.length > 0 && phone.length > 0) {
                 nameElement.innerText = `${name} [${callsign}] @${gridsquare} ${phone}`;
                 const callsignToColor = cs => {
@@ -1076,7 +918,7 @@
                     const color = `hsl(${h}, 50%, 80%)`;
                     return color;
                 }
-                if(callsign) {
+                if (callsign) {
                     const color = callsignToColor(callsign);
                     console.log('setting color', color);
                     nameElement.style.background = color;
