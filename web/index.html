@@ -530,6 +530,7 @@
     <div id="chat">
     </div>
     <script type="text/javascript">
+
         // restore messages from localDB when DOM has loaded
         document.addEventListener('DOMContentLoaded', e => {
             console.log('DOM Loaded.', e);
@@ -597,19 +598,29 @@
             };
             console.log('request:', request);
             let loadPromise = new Promise((resolve, reject) => {
-                fetch('./ribbit.wasm', { credentials: 'same-origin' }).then((response) => {
-                    if (!response['ok']) {
-                        throw `failed to load wasm binary file at '${binaryFile}'`;
-                    }
-                    return response['arrayBuffer']();
-                }).then(binary => {
-                    WebAssembly.instantiate(binary, { 'env': wasmImports, 'wasi_snapshot_preview1': wasmImports }).then((result) => {
+                fetch('./ribbit.wasm', { credentials: 'same-origin' })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to load ribbit.wasm');
+                        }
+                        return response.arrayBuffer();
+                    })
+                    .then(binary => {
+                        return WebAssembly.instantiate(binary, {
+                            'env': wasmImports,
+                            'wasi_snapshot_preview1': wasmImports
+                        });
+                    })
+                    .then(result => {
                         wasmExports = result.instance.exports;
-                        wasmMemory = wasmExports['memory'];
+                        wasmMemory = wasmExports.memory;
                         updateMemoryViews();
-                        resolve({ wasmExports: wasmExports, wasmMemory: wasmMemory });
+                        resolve({ wasmExports, wasmMemory });
+                    })
+                    .catch(err => {
+                        console.error('Failed to load WASM:', err);
+                        reject(err);
                     });
-                }).catch(err => reject(err));
             });
             const mediaConstraints = {
                 audio: {
