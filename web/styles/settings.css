@@ -1,0 +1,161 @@
+#clearmessages {
+    background: var(--light-green);
+    color: var(--dark-green);
+    border-radius: var(--radius);
+    height: 3rem;
+}
+
+#clearMessagesConfirm {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.75);
+    justify-content: center;
+    align-items: center;
+    display: none;
+}
+
+#clearMessageContainer {
+    background: var(--dark-green);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: auto;
+    padding: 3svh;
+    width: 40svw;
+}
+
+#clearMessageContainer>div {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+}
+
+#clearMessageContainer>div>button {
+    background: var(--light-green);
+    font-family: 'NotoSansDisplay-Regular';
+    margin: 1svh;
+    width: -webkit-fill-available;
+}
+
+#settings {
+    color: var(--light-green);
+    background: var(--dark-green);
+    position: fixed;
+    padding-top: 3rem;
+    width: 100svw;
+    height: calc(100svh - 3rem);
+    /* top: 0svh; */
+    top: -100svh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: top .3s ease-in;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    z-index: 2;
+}
+
+#settings>h1 {
+    font-family: 'NotoSansDisplay-Bold';
+    font-size: 2rem;
+    text-align: center;
+    height: 4rem;
+}
+
+.setting {
+    display: flex;
+    padding: 0.5svh 1.5svw;
+    justify-content: space-between;
+    align-items: center;
+}
+
+@media screen and (orientation: landscape) {
+    #settings {
+        height: 91 svh;
+    }
+
+    .setting {
+        padding: 2rem 1rem;
+    }
+
+    #settings>h1 {
+        font-size: 3rem;
+    }
+}
+
+.setting * {
+    padding: 1svh;
+    font-size: 1.25rem;
+    box-sizing: border-box;
+    border: none;
+    height: 3rem;
+    border-radius: var(--radius);
+}
+
+.setting>h2,
+label {
+    font-family: 'NotoSansDisplay-Bold';
+    width: auto;
+}
+
+.setting>button,
+.setting>select,
+.setting>input:enabled {
+    background: var(--light-green);
+    background-color: var(--light-green);
+    color: var(--dark-green);
+    font-family: 'NotoSansDisplay-Regular';
+    padding: .5rem;
+    width: 50vw;
+}
+
+.setting>input:focus {
+    background: var(--light-green);
+    border: none;
+}
+
+.setting>input {
+    background: rgb(54, 45, 45);
+}
+
+.setting>button {
+    background: var(--dark-green);
+    color: var(--light-green);
+    border-radius: 0;
+    font-size: 1.125rem;
+}
+
+.setting>#updateGPS {
+    font-family: 'NotoSansDisplay-Bold';
+    border-radius: var(--radius);
+    border: 1px var(--light-green) solid;
+    width: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.setting>#updateGPS>svg {
+    fill: var(--dark-green);
+    stroke: var(--light-green);
+    stroke-width: .3px;
+}
+
+.setting>.box {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0;
+    width: 50svw;
+}
+
+.setting>.box>#latitude,
+.setting>.box>#longitude {
+    background: var(--light-green);
+    width: -webkit-fill-available;
+}
