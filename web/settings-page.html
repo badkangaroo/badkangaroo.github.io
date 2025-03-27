@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Ribbit - Development</title>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+    <link rel="stylesheet" href="./styles/ribbit.css">
+    <link rel="stylesheet" href="./styles/settings.css">
+    <script src="./scripts/gps.js"></script>
+    <script src="./scripts/settings.js"></script>
+</head>
+
+<body>
+    <div id="settings">
+        <div class="setting">
+            <h1>Settings</h1>
+        </div>
+        <div class="setting">
+            <label for="mode">Mode:</label>
+            <select id="mode">
+                <option selected option="Chat">Chat</option>
+                <option option="QSO">QSO (Coming Soon...)</option>
+            </select>
+        </div>
+        <div class="setting">
+            <label for="name">Operator Name:</label>
+            <input id="name" type="text" required placeholder="John Doe">
+        </div>
+        <div class="setting">
+            <label for="callsign">Callsign:</label>
+            <!-- force callsign to be all uppercase -->
+            <input id="callsign" type="text" required placeholder="W1AW">
+            <script type="text/javascript">
+            </script>
+        </div>
+        <div class="setting">
+            <label for="phone">Phone:</label>
+            <input id="phone" type="tel" pattern="[+]{1}[0-9]{11,14}" required placeholder="1 (123) 456 - 7890">
+        </div>
+        <div class="setting">
+            <button id="updateGPS" onclick="UpdateGPSPosition();">
+                Update GPS Position
+                <svg viewBox="0 0 8 11">
+                    <path id="GPSIcon" fill="var(--dark-green)" d="M 4 11 
+                        q -4 -7 -2 -9
+                        q 2 -2 4 0
+                        q 2 2 -2 9
+                        M 5 4
+                        a 1 1 0 0 0 -2 0
+                        a 1 1 0 0 0 2 0 z" />
+                </svg>
+            </button>
+            <div class="box">
+                <input id="latitude" type="number" readonly placeholder="Latitude">
+                <input id="longitude" type="number" readonly placeholder="Longitude">
+            </div>
+            <script type="text/javascript">
+            </script>
+        </div>
+        <div class="setting">
+            <label for="gridsquare">Grid Square:</label>
+            <input id="gridsquare" type="text" required placeholder="FN42">
+        </div>
+        <div class="setting">
+            <label for="microphone">Microphone (Rx):</label>
+            <select id="microphone">
+                <option>Default</option>
+            </select>
+        </div>
+        <div class="setting">
+            <label for="speaker">Speaker (Tx):</label>
+            <select id="speaker">
+                <option>Default</option>
+            </select>
+        </div>
+        <div class="setting">
+            <label for="savemessages">Save Messages:</label>
+            <input id="savemessages" checked type="checkbox">
+        </div>
+        <div class="setting">
+            <label for="messagecount" style="width:25svw;">Messages:</label>
+            <input id="messagecount" type="messagecount" style="width:25svw;" readonly value="0">
+            <button id="clearmessages" style="width:25svw;" onclick="showClearMessageConfirm();">Clear Messages</button>
+            <div id="clearMessagesConfirm">
+                <div id="clearMessageContainer">
+                    <h2 style="text-align: center;">Clear All Messages?</h2>
+                    <div>
+                        <button onclick="confirmClearMessages();">Yes</button>
+                        <button onclick="hideClearMessageConfirm();">No</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="setting">
+            <button id="cancel" onclick="closeSettings();">EXIT WITHOUT SAVING</span></button>
+            <button id="close" onclick="saveSettings();">SAVE & CLOSE</button>
+        </div>
+    </div>
+</body>
+
+</html>

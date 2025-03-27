@@ -1,3 +1,36 @@
-#titlebar>#modeTitle>svg {
+#titlebar {
+    background: var(--dark-green);
+    padding: 0 0.25rem 0 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 0 1rem black;
+    font-family: "NotoSansDisplay-Bold";
+    font-size: 1.75rem;
+    color: var(--light-green);
+    z-index: 3;
+    height: 4rem;
+}
+
+#titlebar > #modeTitle {
+    font-size: 0.75rem;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
+}
+
+#titleBar > #modeTitle > svg {
+    cursor: pointer;
+    height: 3rem;
+}
+
+#titlebar > #modeTitle > svg {
     height: 2rem;
+}
+
+@media screen and (orientation: landscape) {
+    #titlebar {
+        height: 3rem;
+    }
 }

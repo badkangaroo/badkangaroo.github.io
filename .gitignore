@@ -4,4 +4,4 @@
 /web/run.bat
 .prettierrc
 .vscode
-src/build
+src/ribbit/build/
