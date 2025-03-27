@@ -89,6 +89,13 @@ EXTERN EMSCRIPTEN_KEEPALIVE int payload_length()
 {
     return PAYLOAD_LENGTH; // Return the payload length for the audio input
 }
+/* While the decoder is fed with chunks of audio data,
+ * the decoder waits for a message to be detected.
+ * When a message is detected, the decoder returns true
+ * which triggers the fetchDecoded function in the javascript
+ * which will then look at the payload memory address then
+ * the bytes are converted to a string and then split into
+ * a sender and message. */
 EXTERN EMSCRIPTEN_KEEPALIVE void feedDecoder()
 {
     if (decoder == nullptr)
