@@ -85,3 +85,12 @@ If you prefer manual setup or are not using Windows, follow these steps:
 - C++ source code is in the `src/ribbit` directory
 - The WebAssembly build output goes to the `web` directory
 - Emscripten SDK is not included in git (see `.gitignore`)
+
+## Coming Features
+
+### Contact Logging
+
+Saving and exporting contacts
+
+- ADIF logging support
+- Cabrillo logging support
