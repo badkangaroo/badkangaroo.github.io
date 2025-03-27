@@ -95,7 +95,8 @@ EXTERN EMSCRIPTEN_KEEPALIVE int payload_length()
  * which triggers the fetchDecoded function in the javascript
  * which will then look at the payload memory address then
  * the bytes are converted to a string and then split into
- * a sender and message. */
+ * a sender and message.
+ */
 EXTERN EMSCRIPTEN_KEEPALIVE void feedDecoder()
 {
     if (decoder == nullptr)
@@ -112,58 +113,90 @@ EXTERN EMSCRIPTEN_KEEPALIVE void feedDecoder()
         EM_ASM({ fetchDecoded($0); }, outputresult); // Call the fetchDecoded function
     }
 }
-// digestFeed from overflow and feed
-// fill the chunk for the decoder and request
-// the decoder to be fed
-// store the overflow
+/* 
+ * digestFeed: Processes audio data from Web Audio API into fixed-size chunks for decoder
+ * 
+ * Memory Management:
+ * - Uses static buffers defined at the top of the file:
+ *   - feed[FEED_LENGTH]: Input buffer from Web Audio API (power-of-2 size)
+ *   - overflow[CHUNK_LENGTH]: Temporary buffer for partial chunks
+ *   - chunk[CHUNK_LENGTH]: Fixed-size buffer for decoder input (160 samples)
+ * 
+ * Web Audio API Integration:
+ * - Web Audio API provides data in power-of-2 buffer sizes (e.g., 256, 512, 1024)
+ * - This function bridges the gap between Web Audio's buffer size and the decoder's
+ *   required chunk size of 160 samples
+ * - The overflow buffer ensures no data is lost between Web Audio API callbacks
+ * 
+ * Performance Considerations:
+ * - JavaScript side should use the largest possible buffer size that Web Audio API
+ *   supports (typically 2048 or 4096) to minimize callback frequency
+ * - Larger buffer sizes reduce the number of JavaScript-to-WASM transitions
+ * - The function is optimized to minimize memory copies and avoid stack allocations
+ * 
+ * Operation Flow:
+ * 1. Process any existing overflow data first
+ * 2. For each Web Audio API buffer:
+ *    - Copy data into overflow buffer
+ *    - When overflow buffer reaches CHUNK_LENGTH (160):
+ *      * Copy to chunk buffer
+ *      * Feed to decoder
+ *      * Reset overflow counter
+ * 3. Any remaining data stays in overflow buffer for next call
+ */
 EXTERN EMSCRIPTEN_KEEPALIVE void digestFeed()
 {
-    int totalLength = over + FEED_LENGTH; // Define the totalLength for the audio input
-    // printf("totalLength: %d\n", totalLength);
-    // new array for overflow with feed concatenated
-    float localArray[totalLength]; // Define the localArray for the audio input
-    int index = 0;                 // Define the index for the audio input
-    for (int i = 0; i < over; i++) // Loop through the over for the audio input
-    {
-        // fill in from overflow
-        localArray[index++] = overflow[i]; // Fill in from overflow
-    }
-    for (int i = 0; i < FEED_LENGTH; i++) // Loop through the feed for the audio input
-    {
-        // concatenate from feed
-        localArray[index++] = feed[i]; // Fill in from feed
-    }
-    // fill the chunk for the decoder and request
-    // the decoder to be fed
-    int fedTo = 0;                                      // Define the fedTo for the audio input
-    for (int i = 0; i < totalLength; i += CHUNK_LENGTH) // Loop through the totalLength for the audio input
-    {
-        if (i + CHUNK_LENGTH < totalLength)
-        {
-            // printf("chunk[%d-%d]", i, i + CHUNK_LENGTH);
-            // fill chunk before feeding to decoder
-            for (int j = 0; j < CHUNK_LENGTH; j++)
-            {
-                chunk[j] = localArray[i + j]; // Fill the chunk before feeding to decoder
+    // Process overflow first if any exists
+    if (over > 0) {
+        // Fill chunk with overflow data
+        int copySize = std::min(CHUNK_LENGTH, over);
+        for (int i = 0; i < copySize; i++) {
+            chunk[i] = overflow[i];
+        }
+        
+        // If we have a full chunk, process it
+        if (copySize == CHUNK_LENGTH) {
+            feedDecoder();
+            // Move remaining overflow data to start of overflow array
+            for (int i = 0; i < over - CHUNK_LENGTH; i++) {
+                overflow[i] = overflow[i + CHUNK_LENGTH];
             }
-            feedDecoder(); // Feed the decoder
-        }
-        else
-        {
-            // what has not been fed to the decoder
-            // will be stored in the overflow
-            fedTo = i; // Set the fedTo for the audio input
+            over -= CHUNK_LENGTH;
+        } else {
+            // Not enough data for a full chunk, just store in overflow
+            for (int i = 0; i < copySize; i++) {
+                overflow[i] = overflow[i];
+            }
+            over = copySize;
         }
     }
-    // store the overflow
-    if (fedTo >= 0) // If the fedTo is greater than 0
-    {
-        over = totalLength - fedTo;    // Set the over for the audio input
-        for (int i = 0; i < over; i++) // Loop through the over for the audio input
-        {
-            overflow[i] = localArray[fedTo + i]; // Fill the overflow for the audio input
+
+    // Process feed data in chunks
+    int processed = 0;
+    while (processed < FEED_LENGTH) {
+        // Calculate how much space we have in the current chunk
+        int spaceInChunk = CHUNK_LENGTH - over;
+        
+        // Calculate how much data we can copy from feed
+        int copySize = std::min(spaceInChunk, FEED_LENGTH - processed);
+        
+        // Copy data from feed to overflow
+        for (int i = 0; i < copySize; i++) {
+            overflow[over + i] = feed[processed + i];
         }
-        fedTo = 0; // Set the fedTo for the audio input
+        
+        processed += copySize;
+        over += copySize;
+        
+        // If we have a full chunk, process it
+        if (over == CHUNK_LENGTH) {
+            // Copy overflow to chunk
+            for (int i = 0; i < CHUNK_LENGTH; i++) {
+                chunk[i] = overflow[i];
+            }
+            feedDecoder();
+            over = 0;
+        }
     }
 }
 EXTERN EMSCRIPTEN_KEEPALIVE void initEncoder()
