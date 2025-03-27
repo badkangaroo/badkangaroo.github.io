@@ -1,9 +1,17 @@
 #settings {
+}
+#settings * {
+    padding: 1svh;
+    box-sizing: border-box;
+    width: 100%;
+    border-radius: 0.5svh;
+}
+#settings > .page {
     background: var(--dark-green);
     color: var(--light-green);
     display: flex;
     flex-direction: column;
-    height: 100svh;
+    padding: 1svh 4svw;
     justify-content: space-around;
     overflow-y: auto;
     overflow-x: hidden;
@@ -11,119 +19,49 @@
     /* top: -100svh; */
     top: 0;
     transition: top .3s ease-in;
-    width: 100svw;
     z-index: 2;
-}
-
-#settings * {
-    font-size: 2svh;
-    border: none;
-    height: 3svh;
-    box-sizing: border-box;
-}
-
-#settings> .setting > h1 {
     font-family: 'NotoSansDisplay-Bold';
-    font-size: 3svh;
+}
+
+#settings > .page > h1 {
     text-align: center;
-    width: 100%;
+    font-size: 4svw;
 }
-
-#settings > .setting {
+#settings > .page > .setting {
     display: flex;
-    padding: 0.5svh 1.5svw;
     justify-content: space-between;
-    align-items: center;
+    gap: 1svh;
 }
-
-#settings > .setting > button,
-#settings > .setting > select,
-#settings > .setting > input:enabled {
-    background: var(--light-green);
+#settings > .page > .setting > button,
+#settings > .page > .setting > select,
+#settings > .page > .setting > input,
+#settings > .page > .setting > input:enabled {
+    text-align: left;
     background-color: var(--light-green);
     color: var(--dark-green);
-    font-family: 'NotoSansDisplay-Regular';
-    font-size: 2svh;
-    width: 49svw;
+    border: none;
 }
-
-#settings > .setting > button {
+#settings > .page > .setting > button {
     background: var(--dark-green);
     color: var(--light-green);
     border-radius: 0;
-    font-size: 1.125rem;
 }
-
-#settings > .setting > #updateGPS {
-    font-family: 'NotoSansDisplay-Bold';
-    border-radius: var(--radius);
-    border: 1px var(--light-green) solid;
-    width: auto;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
+#settings > .page > .setting > #cancel,
+#settings > .page > .setting > #close {
+    text-align: center;
 }
-
-#settings > .setting > #updateGPS > svg {
-    fill: var(--dark-green);
-    stroke: var(--light-green);
-    stroke-width: .3px;
-}
-
-#settings > .setting > .box {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 49svw;
-    gap: 1svw;
-}
-
-#settings > .setting > .box > #latitude,
-#settings > .setting > .box > #longitude {
-    background: var(--light-green);
-    width: 50%;
-}
-
-
-#settings > .setting > #clearmessages {
+#settings > .page > .setting > #close {
     background: var(--light-green);
     color: var(--dark-green);
-    border-radius: var(--radius);
-    height: 3svh;
 }
-
-#settings > .setting > #clearMessagesConfirm {
-    position: fixed;
-    width: 100vw;
-    height: 100vh;
-    top: 0;
-    left: 0;
-    background: rgba(0, 0, 0, 0.75);
-    justify-content: center;
-    align-items: center;
-    display: none;
+#settings > .page > .setting > * {
+    font-size: 3svw;
 }
-
-#settings > .setting > #clearMessageContainer {
-    background: var(--dark-green);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    height: auto;
-    padding: 3svh;
-    width: 40svw;
-}
-
-#settings > .setting > #clearMessageContainer>div {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    width: 100%;
-}
-
-#settings > .setting > #clearMessageContainer>div>button {
-    background: var(--light-green);
-    font-family: 'NotoSansDisplay-Regular';
-    margin: 1svh;
-    width: -webkit-fill-available;
+@media (min-aspect-ratio: 1/1) {
+    #settings > .page > h1 {
+        font-size: 4svh;
+    }
+    #settings > .page > .setting > * {
+        font-size: 3svh;
+    }
 }
