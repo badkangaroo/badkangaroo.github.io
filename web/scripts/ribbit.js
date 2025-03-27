@@ -962,11 +962,10 @@ function dbg(text) {
 // === Body ===
 
 var ASM_CONSTS = {
-  70188: ($0) => { encoderCreated($0); },  
- 70212: ($0) => { decoderCreated($0); },  
- 70236: ($0) => { mainCalled($0); },  
- 70256: ($0) => { fetchDecoded($0); },  
- 70278: ($0) => { readEncoded($0); }
+  70172: ($0) => { encoderCreated($0); },  
+ 70196: ($0) => { decoderCreated($0); },  
+ 70220: ($0) => { fetchDecoded($0); },  
+ 70242: ($0) => { readEncoded($0); }
 };
 
 
@@ -1438,7 +1437,6 @@ var wasmExports = createWasm();
 var ___wasm_call_ctors = createExportWrapper('__wasm_call_ctors');
 var _createEncoder = Module['_createEncoder'] = createExportWrapper('createEncoder');
 var _createDecoder = Module['_createDecoder'] = createExportWrapper('createDecoder');
-var ___original_main = Module['___original_main'] = createExportWrapper('__original_main');
 var _feed_pointer = Module['_feed_pointer'] = createExportWrapper('feed_pointer');
 var _feed_length = Module['_feed_length'] = createExportWrapper('feed_length');
 var _message_pointer = Module['_message_pointer'] = createExportWrapper('message_pointer');
@@ -1451,7 +1449,6 @@ var _feedDecoder = Module['_feedDecoder'] = createExportWrapper('feedDecoder');
 var _digestFeed = Module['_digestFeed'] = createExportWrapper('digestFeed');
 var _initEncoder = Module['_initEncoder'] = createExportWrapper('initEncoder');
 var _readEncoder = Module['_readEncoder'] = createExportWrapper('readEncoder');
-var _main = createExportWrapper('main');
 var _fflush = createExportWrapper('fflush');
 var _malloc = Module['_malloc'] = createExportWrapper('malloc');
 var _free = Module['_free'] = createExportWrapper('free');

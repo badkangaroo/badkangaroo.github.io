@@ -138,13 +138,6 @@ EXTERN EMSCRIPTEN_KEEPALIVE void myFunction()
     printf("my function called!\n");
     return;
 }
-EXTERN EMSCRIPTEN_KEEPALIVE int main()
-{
-    for (int i = 0; i < spectrogram.width; ++i)
-        spectrogram.vline(i, rainbow((float)i / spectrogram.width));
-    printf("hello world\n");
-    return 0;
-}
 template <typename TYPE, int BINS, int OVERLAP>
 class STFT
 {

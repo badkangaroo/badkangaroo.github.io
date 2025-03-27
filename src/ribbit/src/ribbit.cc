@@ -49,15 +49,6 @@ EXTERN EMSCRIPTEN_KEEPALIVE void createDecoder()
         EM_ASM({ decoderCreated($0); }, (int)decoder); // Call the decoderCreated function
     }
 }
-EXTERN EMSCRIPTEN_KEEPALIVE int main()
-{
-    printf("wasmModule loaded!\n"); // Print the wasmModule loaded message
-    createEncoder();                // Create a new encoder
-    createDecoder();                // Create a new decoder
-    EM_ASM({ mainCalled($0); }, 1); // Call the mainCalled function
-    return 0;
-}
-
 static const int FEED_LENGTH = 2048;                                  // Define the feed length for the audio input
 float feed[FEED_LENGTH];                                              // Define the feed array for the audio input
 EXTERN EMSCRIPTEN_KEEPALIVE float *feed_pointer() { return feed; }    // Define the feed pointer for the audio input
@@ -114,12 +105,10 @@ EXTERN EMSCRIPTEN_KEEPALIVE void feedDecoder()
         EM_ASM({ fetchDecoded($0); }, outputresult); // Call the fetchDecoded function
     }
 }
-
 // digestFeed from overflow and feed
 // fill the chunk for the decoder and request
 // the decoder to be fed
 // store the overflow
-
 EXTERN EMSCRIPTEN_KEEPALIVE void digestFeed()
 {
     int totalLength = over + FEED_LENGTH; // Define the totalLength for the audio input
@@ -137,7 +126,6 @@ EXTERN EMSCRIPTEN_KEEPALIVE void digestFeed()
         // concatenate from feed
         localArray[index++] = feed[i]; // Fill in from feed
     }
-
     // fill the chunk for the decoder and request
     // the decoder to be fed
     int fedTo = 0;                                      // Define the fedTo for the audio input
@@ -160,7 +148,6 @@ EXTERN EMSCRIPTEN_KEEPALIVE void digestFeed()
             fedTo = i; // Set the fedTo for the audio input
         }
     }
-
     // store the overflow
     if (fedTo >= 0) // If the fedTo is greater than 0
     {
@@ -172,12 +159,10 @@ EXTERN EMSCRIPTEN_KEEPALIVE void digestFeed()
         fedTo = 0; // Set the fedTo for the audio input
     }
 }
-
 EXTERN EMSCRIPTEN_KEEPALIVE void initEncoder()
 {
     encoder->init(message); // Initialize the encoder with the message
 }
-
 EXTERN EMSCRIPTEN_KEEPALIVE void readEncoder()
 {
     encoder->read(signal, SIGNAL_LENGTH); // Read the encoder with the signal and SIGNAL_LENGTH
