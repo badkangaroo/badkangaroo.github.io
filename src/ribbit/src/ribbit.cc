@@ -1,7 +1,15 @@
 /*
-WebAssembly Example 3
+██████╗ ██╗██████╗ ██████╗ ██╗████████╗
+██╔══██╗██║██╔══██╗██╔══██╗██║╚══██╔══╝
+██████╔╝██║██████╔╝██████╔╝██║   ██║   
+██╔══██╗██║██╔══██╗██╔══██╗██║   ██║   
+██║  ██║██║██████╔╝██████╔╝██║   ██║   
+╚═╝  ╚═╝╚═╝╚═════╝ ╚═════╝ ╚═╝   ╚═╝   
 
+WebAssembly Example 3
 Copyright 2019 Ahmet Inan <inan@aicodix.de>
+Additional modifications by:
+- Alex Okita [KO6BVA] <alex@okita.io>
 */
 #include <emscripten.h>   // Include the emscripten library for web assembly
 #include <stdio.h>        // Include the stdio library for input and output
