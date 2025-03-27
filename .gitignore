@@ -2,3 +2,6 @@
 /web/localhost-key.pem
 /web/localhost-cert.pem
 /web/run.bat
+.prettierrc
+.vscode
+src/build
