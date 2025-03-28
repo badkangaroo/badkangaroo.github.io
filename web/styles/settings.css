@@ -1,12 +1,17 @@
 #settings {
+    background: var(--dark-green);
 }
 #settings * {
     padding: 1svh;
     box-sizing: border-box;
     width: 100%;
-    border-radius: 0.5svh;
+    border-radius: 1dvi;
 }
 #settings > .page {
+    display: flex;
+    flex-direction: column;
+}
+#settings > .page-content {
     background: var(--dark-green);
     color: var(--light-green);
     display: flex;
@@ -16,52 +21,84 @@
     overflow-y: auto;
     overflow-x: hidden;
     position: fixed;
-    /* top: -100svh; */
-    top: 0;
     transition: top .3s ease-in;
     z-index: 2;
     font-family: 'NotoSansDisplay-Bold';
 }
-
-#settings > .page > h1 {
+#settings > .page > input {
+    display: none;
+}
+#settings > .page > label {
     text-align: center;
     font-size: 4svw;
+    font-weight: bold;
+    color: var(--light-green);
 }
-#settings > .page > .setting {
+#settings > .page > label:has(+ input:checked) {
+    background: var(--middle-green);
+    color: var(--light-green);
+    border-radius: 1.5dvi 1.5dvi 0dvi 0dvi;
+}
+.setting {
     display: flex;
     justify-content: space-between;
     gap: 1svh;
 }
-#settings > .page > .setting > button,
-#settings > .page > .setting > select,
-#settings > .page > .setting > input,
-#settings > .page > .setting > input:enabled {
+.setting > label {
+    color: var(--light-green);
+}
+.setting > button,
+.setting > select,
+.setting > input,
+.setting > input:enabled {
     text-align: left;
     background-color: var(--light-green);
     color: var(--dark-green);
     border: none;
 }
-#settings > .page > .setting > button {
+.setting > button {
     background: var(--dark-green);
     color: var(--light-green);
     border-radius: 0;
+    border: 1px solid var(--light-green);
 }
-#settings > .page > .setting > #cancel,
-#settings > .page > .setting > #close {
+.setting > #cancel,
+.setting > #close {
     text-align: center;
 }
-#settings > .page > .setting > #close {
+.setting > #close {
     background: var(--light-green);
     color: var(--dark-green);
 }
-#settings > .page > .setting > * {
+.setting > #close:hover {
+    background: var(--light-green);
+    color: var(--dark-green);
+}
+.setting > * {
     font-size: 3svw;
 }
+#settings > .page > .page-content {
+    display: none;
+}
+#settings > .page > input:checked + .page-content {
+    display: block;
+    background: var(--middle-green);
+    border-radius: 0 0 1.5dvi 1.5dvi;
+}
+
+#settings > .page > .setting > #cancel,
+#settings > .page > .setting > #close {
+    width: 50%;
+}
+
 @media (min-aspect-ratio: 1/1) {
-    #settings > .page > h1 {
+    #settings > .page > label {
         font-size: 4svh;
     }
-    #settings > .page > .setting > * {
+    .setting > label {
+        font-size: 4svh;
+    }
+    .setting > * {
         font-size: 3svh;
     }
 }

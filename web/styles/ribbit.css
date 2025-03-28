@@ -24,8 +24,9 @@
     padding: 0;
     margin: 0;
     --light-green: #7fcf21;
-    --middle-green: #509511;
+    --middle-green: #333;
     --dark-green: #106c2f;
+    --border-radius: 2dvi;
 }
 
 body {
