@@ -6,6 +6,7 @@
     box-sizing: border-box;
     width: 100%;
     border-radius: 1dvi;
+    font-size: 3svw;
 }
 #settings > .page {
     display: flex;
@@ -33,6 +34,7 @@
     font-size: 4svw;
     font-weight: bold;
     color: var(--light-green);
+    text-decoration: underline;
 }
 #settings > .page > label:has(+ input:checked) {
     background: var(--middle-green);
@@ -46,6 +48,11 @@
 }
 .setting > label {
     color: var(--light-green);
+}
+.page-content > h2 {
+    color: var(--light-green);
+    font-size: 3dvi;
+    text-align: center;
 }
 .setting > button,
 .setting > select,
@@ -70,13 +77,7 @@
     background: var(--light-green);
     color: var(--dark-green);
 }
-.setting > #close:hover {
-    background: var(--light-green);
-    color: var(--dark-green);
-}
-.setting > * {
-    font-size: 3svw;
-}
+
 #settings > .page > .page-content {
     display: none;
 }
@@ -85,12 +86,10 @@
     background: var(--middle-green);
     border-radius: 0 0 1.5dvi 1.5dvi;
 }
-
 #settings > .page > .setting > #cancel,
 #settings > .page > .setting > #close {
     width: 50%;
 }
-
 @media (min-aspect-ratio: 1/1) {
     #settings > .page > label {
         font-size: 4svh;
@@ -101,4 +100,46 @@
     .setting > * {
         font-size: 3svh;
     }
+}
+
+.setting > label:hover + .info,
+.setting > label:focus + .info,
+.setting > label:active + .info,
+.setting > label:focus-within + .info,
+.setting > button:hover + .info {
+    display: block;
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100svw;
+    height: 100svh;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    pointer-events: none;
+    border: none !important;
+    color: var(--dark-green);
+    border: 1dvi solid var(--dark-green);
+    margin: 0;
+    padding: 0 !important;
+}
+.setting > .info {
+    display: none;
+}
+.setting > .info > p {
+    background: white;
+    color: var(--dark-green);
+    font-size: 3svw;
+    margin: 0;
+    padding: 0;
+    padding: 1svh;
+    box-sizing: border-box;
+    width: 60% !important;
+    border-radius: 0 0 2dvi 2dvi !important;
+}
+.setting > .info > p:before {
+    content: '📝';
+    font-size: 3svw;
 }
