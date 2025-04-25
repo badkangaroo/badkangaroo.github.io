@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta id="extViewportMeta" name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Ribbit - Development</title>
+    <script type="module" src="./scripts/encoder.js"></script>
+</head>
+
+<body>
+    <div id="encoder">
+        <div id="encoder-content">
+            <h1>Header Encoding Test</h1>
+            <p>
+                The header element of a ribbit message is a blob of bits that contains the following information:
+                <ul>
+                    <li>Version number</li>
+                    <li>Version bits</li>
+                    <li>Gridsquare</li>
+                    <li>Name</li>
+                    <li>Time</li>
+                </ul>
+                Following is a list of the fields and their bit lengths:
+                4bit (0-9) "nibble"<br>
+                5bit (A-Z, -, space) "nibblebit"<br>
+                Callsign is 8 character long to accommodate all countries.
+                Location is encoded as Gridsquare8.
+                Name is limited to 16+16 characters.
+                Year/month is a number starting Jan2025
+                Time is a number starting on 1st of the month with a 14h offset to account for the date change time zone
+                line. Each 2sec increment is a unit. 30 (2sec)×60min×24h×31.5 days
+            </p>
+            <table id="encoder-form">
+                <tr>
+                    <td>
+                        <p>
+                            The version number is a nibble for 4 bits. Range: 0-15
+                            This comes first in the header.
+                        </p>
+                    </td>
+                    <td>
+                        <label for="version">Version</label>
+                        <input type="text" id="version" placeholder="0">
+                    </td>
+                    <td>
+                        <label for="version-bits">4 bits</label>
+                        <input type="text" id="version-bits" placeholder="0000">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p>
+                            The gridsquare is a 6 character string that follows the pattern
+                            letter, letter, number, number, letter, letter. This Encoding allows for
+                            a pair of 5 bits, a pair of 4 bits, and a last pair of 5 bits for a
+                            total of 10bits 8bits 10bits, or 28bits.
+                        </p>
+                    </td>
+                    <td>
+                        <label for="gridsquare">Gridsquare</label>
+                        <input type="text" id="gridsquare" placeholder="AB12CD">
+                    </td>
+                    <td>
+                        <label for="gridsquare-bits">28 bits</label>
+                        <textarea type="text" id="gridsquare-bits" placeholder="00000, 00000, 0000, 0000, 00000, 00000"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p>
+                            The name is a 32 character string using only letters. The so we only
+                            need 5 bits per character. But we need to encode all 32 characters to
+                            ensure the header is always the same length so the total is 160 bits.
+                        </p>
+                    </td>
+                    <td>
+                        <label for="name">Name</label>
+                        <input type="text" id="name" placeholder="John Doe">
+                    </td>
+                    <td>
+                        <label for="name-bits">160 bits</label>
+                        <textarea type="text" id="name-bits" placeholder="00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p>
+                            The callsign is a 8 character string using only letters. The so we only
+                            need 5 bits per character. But we need to encode all 8 characters to
+                            ensure the header is always the same length so the total is 40 bits.
+                        </p>
+                    </td>
+                    <td>
+                        <label for="callsign">Callsign</label>
+                        <input type="text" id="callsign" placeholder="W1AW">
+                    </td>
+                    <td>
+                        <label for="callsign-bits">40 bits</label>
+                        <textarea type="text" id="callsign-bits" placeholder="00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <p>
+                            Year/month is a number starting Jan2025
+                            Time is a number starting on 1st of the month with a 14h offset to account for the date change time zone
+                            line. Each 2sec increment is a unit. 30 (2sec)x60minx24hx31.5 days
+                        </p>
+                    </td>
+                    <td>
+                        <label for="time">Time</label>
+                        <input type="text" id="time" placeholder="1234567890">
+                    </td>
+                    <td>
+                        <label for="time-bits">14 bits</label>
+                        <textarea type="text" id="time-bits" placeholder="00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000"></textarea>
+                    </td>
+                </tr>
+            </table>
+            <script type="module">
+                (() => {
+                    const encoder = document.getElementById('encoder');
+                    const encoderForm = document.getElementById('encoder-form');
+                    const encoderOutput = document.getElementById('encoder-output');
+                    const encoderButtons = document.getElementById('encoder-buttons');
+                    encoder.addEventListener('click', (e) => {
+
+                    });
+                })();
+            </script>
+            <div id="encoder-output">
+                <h1>Output</h1>
+                <pre id="output">0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000</pre>
+            </div>
+            <div id="encoder-buttons">
+                <button id="encode">Encode</button>
+                <button id="decode">Decode</button>
+            </div>
+        </div>
+    </div>
+    <style>
+        body {
+            background-color: #222;
+            color: #9f9;
+        }
+        body, * {
+            font-family: monospace;
+        }
+        #encoder-form {
+            border: 1px solid #8ff;
+            width: 100%;
+        }
+        #encoder-form td {
+            border: 1px solid #8ff;
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+        }
+        #encoder-form tr {
+            border: 1px solid #8ff;
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+        }
+        #encoder-form label {
+            font-size: 18px;
+        }
+    </style>
+</body>
