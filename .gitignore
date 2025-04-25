@@ -5,3 +5,4 @@
 .prettierrc
 .vscode
 src/ribbit/build/
+./web/scraps/
