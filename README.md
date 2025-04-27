@@ -96,6 +96,9 @@ If you prefer manual setup or are not using Windows, follow these steps:
 
 ## Coming Features
 
+- minor updates for some of the header encoding and decoding, this is locaed in the web directory as [headerEncoder](./web/headerEncoder.html) where the script [headerEncoder.js](./web/scripts/headerEncoder.js) makes use of special bit formats that use various short bit types, nibbles (4bit), nibbits (5bits), and nibblits (6bits) to encode common numbers and letters into shorter bit formats that are shorter than bytes to save on final bit array sizes.
+- this includes some unit tests so various edge cases can be discovered before the encoding/decoding can cause problems.
+
 ### Contact Logging
 
 Saving and exporting contacts
