@@ -56,12 +56,14 @@
                             The gridsquare is a 6 character string that follows the pattern
                             letter, letter, number, number, letter, letter. This Encoding allows for
                             a pair of 5 bits, a pair of 4 bits, and a last pair of 5 bits for a
-                            total of 10bits 8bits 10bits, or 28bits.
+                            total of 10bits 8bits 10bits, or 28bits. The first two letters are
+                            called the "Field", the next two numbers are the "Square", and the last
+                            two letters are the "Locator".
                         </p>
                     </td>
                     <td>
                         <label for="gridsquare">Gridsquare</label>
-                        <input type="text" id="gridsquare" placeholder="AB12CD">
+                        <input type="text" id="gridsquare" placeholder="AB12cd">
                     </td>
                     <td>
                         <label for="gridsquare-bits">28 bits</label>
@@ -120,24 +122,45 @@
                     </td>
                 </tr>
             </table>
-            <script type="module">
-                (() => {
-                    const encoder = document.getElementById('encoder');
-                    const encoderForm = document.getElementById('encoder-form');
-                    const encoderOutput = document.getElementById('encoder-output');
-                    const encoderButtons = document.getElementById('encoder-buttons');
-                    encoder.addEventListener('click', (e) => {
-
-                    });
-                })();
-            </script>
             <div id="encoder-output">
                 <h1>Output</h1>
                 <pre id="output">0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000</pre>
             </div>
-            <div id="encoder-buttons">
-                <button id="encode">Encode</button>
-                <button id="decode">Decode</button>
+            <div id="decoded-output">
+                <h1>Decoded Output</h1>
+                <pre id="decoded-output"></pre>
+                <table id="decoded-output-table">
+                    <tr>
+                        <td id="decoded-version">
+                            <label for="decoded-version-value">Version</label>
+                            <input type="text" id="decoded-version-value" placeholder="0">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td id="decoded-gridsquare">
+                            <label for="decoded-gridsquare-value">Gridsquare</label>
+                            <input type="text" id="decoded-gridsquare-value" placeholder="AB12cd">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td id="decoded-name">
+                            <label for="decoded-name-value">Name</label>
+                            <input type="text" id="decoded-name-value" placeholder="John Doe">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td id="decoded-callsign">
+                            <label for="decoded-callsign-value">Callsign</label>
+                            <input type="text" id="decoded-callsign-value" placeholder="W1AW">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td id="decoded-time">
+                            <label for="decoded-time-value">Time</label>
+                            <input type="text" id="decoded-time-value" placeholder="1234567890">
+                        </td>
+                    </tr>
+                </table>
             </div>
         </div>
     </div>
@@ -168,5 +191,21 @@
         #encoder-form label {
             font-size: 18px;
         }
+        #decoded-output-table {
+            border: 1px solid #8ff;
+            width: 100%;
+        }
+        #decoded-output-table td {
+            border: 1px solid #8ff;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
     </style>
+    <script type="module">
+        import { HeaderEncoder } from './scripts/headerEncoder.js';
+        (() => {
+            const headerEncoder = new HeaderEncoder();
+        })();
+    </script>
 </body>
