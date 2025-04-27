@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encoder Tests</title>
+    <style>
+        body { font-family: sans-serif; }
+        .test-results div { margin-bottom: 5px; }
+        .pass { color: green; }
+        .fail { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Encoder Class Tests</h1>
+
+    <!-- Hidden DOM elements required by Encoder constructor -->
+    <div style="display: none;">
+        <input id="version" type="text">
+        <output id="version-bits"></output>
+        <input id="gridsquare" type="text">
+        <output id="gridsquare-bits"></output>
+        <input id="name" type="text">
+        <output id="name-bits"></output>
+        <input id="callsign" type="text">
+        <output id="callsign-bits"></output>
+        <input id="time" type="text">
+        <output id="time-bits"></output>
+        <button id="encode">Encode</button>
+        <button id="decode">Decode</button>
+        <output id="output"></output>
+    </div>
+
+    <div class="test-results" id="testResults">Running tests...</div>
+
+    <!-- Load Encoder script as module -->
+    <script type="module" src="scripts/encoder.js"></script>
+    <!-- Load Test script as module -->
+    <script type="module" src="scripts/encoder_tests.js"></script>
+
+</body>
+</html> 
