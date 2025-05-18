@@ -47,92 +47,231 @@
         </div>
     </div>
     <div id="settings">
-        <div class="setting">
-            <h1>Settings</h1>
-        </div>
-        <div class="setting">
-            <label for="mode">Mode:</label>
-            <select id="mode">
-                <option selected option="Chat">Chat</option>
-                <option option="QSO">QSO (Coming Soon...)</option>
-            </select>
-        </div>
-        <div class="setting">
-            <label for="name">Name:</label>
-            <input id="name" type="text" required placeholder="John Doe">
-        </div>
-        <div class="setting">
-            <label for="callsign">Callsign:</label>
-            <!-- force callsign to be all uppercase -->
-            <input id="callsign" type="text" required placeholder="W1AW">
-            <script type="text/javascript">
-                // force uppercase
-                document.getElementById('callsign').addEventListener('input', e => {
-                    e.target.value = e.target.value.toUpperCase();
-                });
-            </script>
-        </div>
-        <div class="setting">
-            <label for="phone">Phone:</label>
-            <input id="phone" type="tel" pattern="[+]{1}[0-9]{11,14}" required placeholder="1 (123) 456 - 7890">
-        </div>
-        <div class="setting">
-            <button id="updateGPS" onclick="UpdateGPSPosition();">
-                Update GPS Position
-                <svg viewBox="0 0 8 11">
-                    <path id="GPSIcon" fill="var(--dark-green)" d="M 4 11 
-                        q -4 -7 -2 -9
-                        q 2 -2 4 0
-                        q 2 2 -2 9
-                        M 5 4
-                        a 1 1 0 0 0 -2 0
-                        a 1 1 0 0 0 2 0 z" />
-                </svg>
-            </button>
-            <div class="box">
-                <input id="latitude" type="number" readonly placeholder="Latitude">
-                <input id="longitude" type="number" readonly placeholder="Longitude">
+        <div class="page">
+            <label for="settings-1">User Settings</label>
+            <input type="radio" name="settings" id="settings-1" checked>
+            <div class="page-content">
+                <div class="setting">
+                    <label for="mode">Mode:</label>
+                    <div class="info">
+                        <p>
+                            Chat: The default mode for Ribbit. It allows
+                            you to chat with other users in real-time.<br>
+                            QSO: A mode that allows automatic logging of
+                            contacts to and from other users.
+                        </p>
+                    </div>
+                    <select id="mode">
+                        <option selected option="Chat">Chat</option>
+                        <option option="QSO">QSO (Coming Soon...)</option>
+                    </select>
+                </div>
+                <div class="setting">
+                    <label for="name">Operator Name:</label>
+                    <div class="info">
+                        <p>
+                            The name of the operator. This will be displayed to
+                            other users. Character limit is 32 characters.
+                        </p>
+                    </div>
+                    <input id="name" type="text" required placeholder="John Doe">
+                </div>
+                <div class="setting">
+                    <label for="callsign">Callsign:</label>
+                    <div class="info">
+                        <p>
+                            The callsign of the operator. This will be displayed
+                            to other users. Character limit is 8 characters.
+                        </p>
+                    </div>
+                    <!-- force callsign to be all uppercase -->
+                    <input id="callsign" type="text" required placeholder="W1AW">
+                    <script type="text/javascript">
+                    </script>
+                </div>
+                <h2>GPS:</h2>
+                <div class="setting">
+                    <button id="updateGPS" onclick="UpdateGPSPosition();">
+                        Update GPS
+                    </button>
+                    <div class="info">
+                        <p>
+                            The current latitude and longitude of the operator.
+                            This will be displayed to other users. Click the
+                            button to update the GPS position, and to update the
+                            grid square.
+                        </p>
+                    </div>
+                    <input id="latitude" type="number" readonly placeholder="Latitude">
+                    <input id="longitude" type="number" readonly placeholder="Longitude">
+                </div>
+                <div class="setting">
+                    <label for="gridsquare">Grid Square:</label>
+                    <div class="info">
+                        <p>
+                            The grid square of the operator. This will be displayed
+                            to other users.
+                        </p>
+                    </div>
+                    <input id="gridsquare" type="text" required placeholder="FN42">
+                </div>
             </div>
-            <script type="text/javascript">
-            </script>
-        </div>
-        <div class="setting">
-            <label for="gridsquare">Grid Square:</label>
-            <input id="gridsquare" type="text" required placeholder="FN42">
-        </div>
-        <div class="setting">
-            <label for="microphone">Microphone (Rx):</label>
-            <select id="microphone">
-                <option>Default</option>
-            </select>
-        </div>
-        <div class="setting">
-            <label for="speaker">Speaker (Tx):</label>
-            <select id="speaker">
-                <option>Default</option>
-            </select>
-        </div>
-        <div class="setting">
-            <label for="savemessages">Save Messages:</label>
-            <input id="savemessages" checked type="checkbox">
-        </div>
-        <div class="setting">
-            <label for="messagecount" style="width:25svw;">Messages:</label>
-            <input id="messagecount" type="messagecount" style="width:25svw;" readonly value="0">
-            <button id="clearmessages" style="width:25svw;" onclick="showClearMessageConfirm();">Clear Messages</button>
-            <div id="clearMessagesConfirm">
-                <div id="clearMessageContainer">
-                    <h2 style="text-align: center;">Clear All Messages?</h2>
-                    <div>
-                        <button onclick="confirmClearMessages();">Yes</button>
-                        <button onclick="hideClearMessageConfirm();">No</button>
+            <label for="settings-2">Application Settings</label>
+            <input type="radio" name="settings" id="settings-2">
+            <div class="page-content">
+                <div class="setting">
+                    <label for="Theme">Theme:</label>
+                    <div class="info">
+                        <p>
+                            Set color scheme of the application.
+                        </p>
+                    </div>
+                    <select id="Theme">
+                        <option selected option="Ribbit">Ribbit (Default)</option>
+                        <option option="World Radio League">World Radio League</option>
+                        <option option="Muted Light">Muted Light</option>
+                        <option option="Muted Dark">Muted Dark</option>
+                    </select>
+                </div>
+                <div class="setting">
+                    <label for="microphone">Microphone (Rx):</label>
+                    <div class="info">
+                        <p>
+                            Select the microphone to use for receiving audio.
+                        </p>
+                    </div>
+                    <select id="microphone">
+                        <option>Default</option>
+                    </select>
+                </div>
+                <div class="setting">
+                    <label for="speaker">Speaker (Tx):</label>
+                    <div class="info">
+                        <p>
+                            Select the speaker to use for transmitting audio.
+                            You will need to manually activate your transmitter
+                            to transmit the generated audio signal.
+                        </p>
+                    </div>
+                    <select id="speaker">
+                        <option>Default</option>
+                    </select>
+                </div>
+                <div class="setting">
+                    <label for="timeOffset">Time Offset:</label>
+                    <div class="info">
+                        <p>
+                            The time offset of the operator. Your time zone is
+                            set by the GPS coordinates. But you can modify it
+                            here if needed. +/- 12 hours. 0 means you'll see 
+                            UTC time.
+                        </p>
+                    </div>
+                    <input id="timeOffset" type="number" readonly placeholder="0">
+                </div>
+                <div class="setting">
+                    <label for="savemessages">Save Messages:</label>
+                    <div class="info">
+                        <p>
+                            Save messages to the local device. This will allow
+                            you to view messages offline. Closing the app without
+                            saving will restore the messages on the next launch.
+                        </p>
+                    </div>
+                    <input id="savemessages" checked type="checkbox">
+                </div>
+                <div class="setting">
+                    <label for="messagecount">Messages:</label>
+                    <div class="info">
+                        <p>
+                            The number of messages saved to the local device.
+                        </p>
+                    </div>
+                    <input id="messagecount" type="messagecount" readonly value="0">
+                    <button id="clearmessages" onclick="showClearMessageConfirm();">Clear Messages</button>
+                    <div class="info">
+                        <p>
+                            Clear all messages from the local device. This will
+                            not delete the messages from other users.
+                        </p>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="setting">
-            <button id="cancel" onclick="closeSettings();">EXIT WITHOUT SAVING</span></button>
-            <button id="close" onclick="saveSettings();">SAVE & CLOSE</button>
+            <label for="settings-3">System Settings</label>
+            <input type="radio" name="settings" id="settings-3">
+            <div class="page-content">
+                <h2>Updates:</h2>
+                <div class="setting">
+                    <button id="checkForUpdates">Check for Updates</button>
+                    <div class="info">
+                        <p>
+                            Check for updates from the server. This will check
+                            for updates and notify you if there is a new version.
+                        </p>
+                    </div>
+                    <button id="InstallApp">Install App</button>
+                    <div class="info">
+                        <p>
+                            Install the app on your device. This will allow you
+                            to use the app offline.
+                        </p>
+                    </div>
+                </div>
+                <h2>Configuration:</h2>
+                <div class="setting">
+                    <button id="resetConfig" onclick="resetConfig();">Restore Default</button>
+                    <div class="info">
+                        <p>
+                            Restore the default configuration. This will restore
+                            all settings to the default values.
+                        </p>
+                    </div>
+                    <button id="saveConfig" onclick="saveConfig();">Save Config</button>
+                    <div class="info">
+                        <p>
+                            Save the current configuration. This will save the
+                            current configuration to the local device.
+                        </p>
+                    </div>
+                    <button id="loadConfig" onclick="loadConfig();">Load Config</button>
+                    <div class="info">
+                        <p>
+                            Load the saved configuration. This will load the
+                            saved configuration from the local device.
+                        </p>
+                    </div>
+                </div>
+                <h2>Logs:</h2>
+                <div class="setting">
+                    <button id="clearCache" onclick="clearCache();">Clear Messages Log</button>
+                    <div class="info">
+                        <p>
+                            Clear the messages log. This will clear the messages
+                            log from the local device.
+                        </p>
+                    </div>
+                </div>
+                <div class="setting">
+                    <button id="exportCardillioLogs">Export Cardillio Logs</button>
+                    <div class="info">
+                        <p>
+                            Export the cardillio logs. This will export the
+                            cardillio logs to a file.
+                        </p>
+                    </div>
+                    <button id="exportADIFLogs">Export ADIF Logs</button>
+                    <div class="info">
+                        <p>
+                            Export the ADIF logs. This will export the ADIF logs
+                            to a file.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="setting">
+                <button id="cancel" onclick="closeSettings();">CONTINUE WITHOUT SAVING</span></button>
+                <button id="close" onclick="saveSettings();">SAVE & CONTINUE</button>
+            </div>
         </div>
     </div>
     <div id="chat">
