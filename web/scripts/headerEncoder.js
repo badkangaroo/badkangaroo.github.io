@@ -6,8 +6,10 @@ export class HeaderEncoder {
         console.log("Encoder constructor");
         this.version = 0;
         this.versionBits = 0;
-        this.time = 0;
-        this.timeBits = 0;
+        this.month = 0;
+        this.monthBits = 0;
+        this.seconds = 0;
+        this.secondsBits = 0;
         this.gridsquare = "";
         this.gridsquareBits = 0;
         this.callsign = "";
@@ -17,7 +19,10 @@ export class HeaderEncoder {
         // inputs
         this.versionInput = document.getElementById("version");
         this.versionBitResult = document.getElementById("version-bits");
-        this.timeInput = document.getElementById("time");
+        this.monthInput = document.getElementById("month");
+        this.monthBitResult = document.getElementById("month-bits");
+        this.secondsInput = document.getElementById("seconds");
+        this.secondsBitResult = document.getElementById("seconds-bits");
         this.timeBitResult = document.getElementById("time-bits");
         this.gridsquareInput = document.getElementById("gridsquare");
         this.gridsquareBitResult = document.getElementById("gridsquare-bits");
@@ -54,49 +59,38 @@ export class HeaderEncoder {
                 const hexChar = versionNumber.toString(16).toUpperCase();
                 // update the version bits using the nibble map
                 const nibbleValue = nibble[hexChar];
-                this.versionBitResult.value = nibbleValue.toString(2).padStart(4, "0");
-                this.versionBits = this.versionBitResult.value;
-                // console log the version bits
-                console.log(this.versionBitResult.value);
+                const versionBits = `0b${nibbleValue.toString(2).padStart(4, "0")}`;
+                this.versionBitResult.value = versionBits;
+                this.versionBits = versionBits;
             }
         }
         // time automatic update
         setInterval(()=>{
             const time = new Date();
-            // last two digits of the year
-            const year = time.getFullYear().toString().slice(-2);
-            // regular byte (5 bits)
-            // should be good till the
-            // next version of the app
-            // so 2025 - 2050
-            const yearBits = Number(year).toString(2).padStart(5, "0");
-            // encode month into one nibble 0 - 11
-            // should note that january is 0
+            // encode month into one nibble 4 bit value with a range of 0 to 11
+            // note: january is 0
             const month = time.getMonth();
-            const monthBits = nibble[month].toString(2).padStart(4, "0");
-            // get the day and store that as a regular 5 bit value
-            const day = time.getDate();
-            const dayBits = Number(day).toString(2).padStart(5, "0");
-            // get the hour and store that as a regular 5 bit value
-            const hour = time.getHours();
-            const hourBits = Number(hour).toString(2).padStart(5, "0");
-            // get the minute of the hour
-            // and store that as a regular 5 bit value
-            const minute = time.getMinutes();
-            const minuteBits = Number(minute).toString(2).padStart(5, "0");
-            // get every other second of the minute
-            // and store that as a regular 4 bit value
-            // as we don't expect to see messages arrive
-            // less than a second apart so we only need to see
-            // every other second so this value is 0 to 30, but
-            // in reality we can decode it to 0 to 60 by multiplying
-            // by 2
-            const actualSeconds = time.getSeconds(); // 0 to 59
-            // every other second
-            const second = Math.floor(actualSeconds / 2); // 0 to 29
-            const secondBits = Number(second).toString(2).padStart(5, "0"); // 0 to 31
-            this.timeInput.value = year + " " + month + " " + day + " " + hour + " " + minute + " " + (second * 2);
-            this.timeBitResult.value = yearBits + ", " + monthBits + ", " + dayBits + ", " + hourBits + ", " + minuteBits + ", " + secondBits;
+            const monthBits = `0b${month.toString(2).padStart(4, "0")}`;
+            this.month = month;
+            this.monthBits = monthBits;
+            // encode the number of seconds since the start of the month
+            const seconds = time.getSeconds(); // (0 to 59) / 2
+            // pad value with 1 0 if one digit.
+            document.getElementById("time-second").innerHTML = seconds.toString().padStart(2, "0");
+            // calculate seconds since start of month
+            const startOfMonth = new Date(time.getFullYear(), time.getMonth(), 1);
+            const result = Math.floor((time - startOfMonth) / 2000);
+            // format with commas to show the result in human readable format
+            const resultString = result.toLocaleString();
+            document.getElementById("time-result").innerHTML = resultString;
+            // every other second is a 21 bit value to save bits
+            const second = Math.floor(result); // 0 to 29
+            const secondBits = `0b${second.toString(2).padStart(21, "0")}`;
+            this.seconds = second;
+            this.secondsBits = secondBits;
+            this.secondsInput.value = secondBits;
+            this.monthInput.value = monthBits;
+            this.timeBitResult.value = `${this.monthBits}, ${this.secondsBits}`;
         }, 1000);
         // gridsquare user input
         this.gridsquareInput.oninput = () => {

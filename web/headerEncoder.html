@@ -46,24 +46,38 @@
                     </td>
                     <td>
                         <label for="version-bits">4 bits</label>
-                        <input type="text" id="version-bits" placeholder="0000">
+                        <input type="text" id="version-bits" placeholder="0b0000">
                     </td>
                 </tr>
                 <tr id="table-time">
                     <td>
                         <p>
-                            Year/month is a number starting Jan2025
-                            Time is a number starting on 1st of the month with a 14h offset to account for the date change time zone
-                            line. Each 2sec increment is a unit. 30 (2sec)x60minx24hx31.5 days
+                            Time is a number starting with a month, the year is
+                            assumed since messages are not expected to be stored
+                            for less than a year.<br>
+                            A 14 hour offset to account for the date change time
+                            zone line. Each 2sec increment is a unit.
+                        </p>
+                        <p>
+                            Get how many seconds have passed since the start of
+                            the month
+                            (<span id="time-second">00</span> Seconds, *
+                            <span id="time-minute">60</span> Minutes, *
+                            <span id="time-hour">24</span> Hours, *
+                            <span id="time-day">00</span> Days) =
+                            <span id="time-result">0</span>
+                            seconds.
                         </p>
                     </td>
                     <td>
-                        <label for="time">Time</label>
-                        <input type="text" id="time" placeholder="1234567890">
+                        <label for="month">Month - 4bits</label>
+                        <input type="text" id="month" placeholder="0b0000">
+                        <label for="seconds">Seconds - 21bits</label>
+                        <input type="text" id="seconds" placeholder="0b0000000000000000000">
                     </td>
                     <td>
-                        <label for="time-bits">14 bits</label>
-                        <textarea type="text" id="time-bits" placeholder="00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000"></textarea>
+                        <label for="time-bits">25 bits</label>
+                        <textarea type="text" id="time-bits" placeholder="0b0100, 0b000000000000000000000"></textarea>
                     </td>
                 </tr>
                 <tr id="table-gridsquare">
