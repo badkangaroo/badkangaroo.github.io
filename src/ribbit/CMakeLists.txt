@@ -7,9 +7,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find Emscripten
 if(EMSCRIPTEN)
+    # Emscripten-specific settings
     set(CMAKE_EXECUTABLE_SUFFIX ".js")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s WASM=1 -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap'] -s EXPORTED_FUNCTIONS=['_malloc','_free']")
-    include_directories(${EMSCRIPTEN_ROOT_PATH}/cache/sysroot/include)
+    
+    # Add Emscripten include directories
+    include_directories(${EMSDK}/upstream/emscripten/system/include)
+    include_directories(${EMSDK}/upstream/emscripten/cache/sysroot/include)
+else()
+    # Regular build settings
+    message(STATUS "Building for native platform")
 endif()
 
 # Add source files

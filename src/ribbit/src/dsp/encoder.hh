@@ -127,7 +127,6 @@ class Encoder {
 
 	// Preamble Generation (Encoder Side):
 	// - Generates a preamble sequence for synchronization and metadata transmission
-	// - Includes: version, timestamp, grid square, callsign, and name
 	// - Encoded using simplex code for error correction
 	// - Scrambled using Maximum Length Sequence (MLS) with polynomial 0b1000011
 	// - Guard interval for OFDM symbol protection
@@ -140,8 +139,7 @@ class Encoder {
 		for (int i = 0; i < meta_len; ++i)
 			freq[first_subcarrier + 1 + i] = freq[first_subcarrier + i] * 
 				cmplx(meta[i] * nrz(seq()));
-		
-		symbol();
+		symbol(); // Call the symbol function for the encoder
 	}
 
 	void payload_symbol() { // Define the payload symbol function for the encoder
@@ -223,6 +221,19 @@ public:
 		}
         EM_ASM({readEncoded($0);}, sample_count); // Call the readEncoded function for the encoder
 		return !buffer.size(); // Return true if the buffer is empty for the encoder
+	}
+
+	// Function to expose metadata to JavaScript
+	void expose_metadata(int data) {
+		simplex(meta, data);  // Encode metadata using simplex code
+		// Convert metadata to a JavaScript array and expose it
+		EM_ASM({
+			var metadata = new Array($1);
+			for(var i = 0; i < $1; i++) {
+				metadata[i] = HEAP8[$0 + i];
+			}
+			metadataExposed(metadata);
+		}, meta, meta_len);
 	}
 
 	void init(const uint8_t *payload) {

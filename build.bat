@@ -21,7 +21,7 @@ REM Compile directly to WebAssembly
 call emcc src/ribbit/src/ribbit.cc -o web/ribbit.js ^
     -s WASM=1 ^
     -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap'] ^
-    -s EXPORTED_FUNCTIONS=['_malloc','_free'] ^
+    -s EXPORTED_FUNCTIONS=['_malloc','_free','_expose_metadata'] ^
     -I src/ribbit/include ^
     -std=c++17 ^
     -O2
