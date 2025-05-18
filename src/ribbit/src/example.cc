@@ -23,6 +23,11 @@ Copyright 2019 Ahmet Inan <inan@aicodix.de>
 #define EXTERN
 #endif
 
+// SPACING determines the frequency resolution in Hz for audio processing.
+// A value of 50 means each frequency bin represents a 50Hz range.
+// This affects the number of bins used for FFT processing:
+// - 44.1kHz audio: 882 bins (44100/50)
+// - 48kHz audio: 960 bins (48000/50)
 static const int SPACING = 50;
 static const int BINS_44100 = 882; // 44100 / SPACING;
 static const int BINS_48000 = 960; // 48000 / SPACING;
@@ -133,52 +138,81 @@ int rainbow(float v)
     float a = 4.f * v;
     return rgba(r, g, b, a);
 }
-EXTERN EMSCRIPTEN_KEEPALIVE void myFunction()
-{
-    printf("my function called!\n");
-    return;
-}
 EXTERN EMSCRIPTEN_KEEPALIVE int main()
 {
     for (int i = 0; i < spectrogram.width; ++i)
         spectrogram.vline(i, rainbow((float)i / spectrogram.width));
-    printf("hello world\n");
     return 0;
 }
+
+// Short-Time Fourier Transform (STFT) implementation for real-time audio spectrum analysis
+// Template parameters:
+//   TYPE: Data type for calculations (typically float)
+//   BINS: Number of frequency bins (882 for 44.1kHz or 960 for 48kHz)
+//   OVERLAP: Number of overlapping windows for smooth transitions
 template <typename TYPE, int BINS, int OVERLAP>
 class STFT
 {
     typedef TYPE value_type;
     typedef DSP::Complex<value_type> complex_type;
+    // Hann window function to reduce spectral leakage
     DSP::Hann<value_type> window;
+    // Low-pass filter for smoothing
     DSP::LowPass2<value_type> filter;
+    // Window coefficients combining Hann window and filter
     DSP::Coeffs<BINS * OVERLAP, value_type, true> win;
+    // FFT transform from real to complex frequency domain
     DSP::RealToHalfComplexTransform<BINS, complex_type> fwd;
-    value_type inp[BINS], tmp[BINS * (OVERLAP - 1)];
+    // Input buffer for current window
+    value_type inp[BINS];
+    // Temporary buffer for overlapping windows
+    value_type tmp[BINS * (OVERLAP - 1)];
+    // Output buffer for complex frequency components
     complex_type out[BINS / 2 + 1];
 
 public:
+    // Constructor initializes filter and window coefficients
     STFT() : filter(1, BINS), win(&window, &filter) {}
+
+    // Main processing function that converts time-domain signal to frequency spectrum
+    // Parameters:
+    //   dB: Output array for decibel values
+    //   sig: Input audio signal
     void operator()(value_type *dB, const value_type *sig)
     {
+        // Step 1: Apply window function to current signal chunk
         for (int i = 0; i < BINS; ++i)
             inp[i] = win[i + BINS * (OVERLAP - 1)] * sig[i];
+
+        // Step 2: Process overlapping windows to ensure smooth transitions
         for (int j = 0; j < OVERLAP - 1; ++j)
             for (int i = 0; i < BINS; ++i)
                 inp[i] += win[BINS * j + i] * tmp[BINS * j + i];
+
+        // Step 3: Shift buffer and store new signal data
         for (int j = 0; j < OVERLAP - 2; ++j)
             for (int i = 0; i < BINS; ++i)
                 tmp[BINS * j + i] = tmp[BINS * (j + 1) + i];
         for (int i = 0; i < BINS; ++i)
             tmp[BINS * (OVERLAP - 2) + i] = sig[i];
+
+        // Step 4: Perform FFT transform
         fwd(out, inp);
+
+        // Step 5: Convert complex frequency components to decibels
         for (int i = 0; i < BINS / 2 + 1; ++i)
             dB[i] = DSP::decibel(norm(out[i]));
     }
 };
+
+// Number of overlapping windows for smooth transitions
 static const int OVERLAP = 3;
-STFT<float, BINS_44100, OVERLAP> stft_44100;
-STFT<float, BINS_48000, OVERLAP> stft_48000;
+
+// Create STFT instances for different sample rates
+STFT<float, BINS_44100, OVERLAP> stft_44100;  // For 44.1kHz audio
+STFT<float, BINS_48000, OVERLAP> stft_48000;  // For 48kHz audio
+
+// Buffer for averaging decibel values and tracking maximum
 float dB_avg[SPECTRUM_WIDTH], avg_max;
 
 // // Usage:
@@ -186,8 +220,15 @@ float dB_avg[SPECTRUM_WIDTH], avg_max;
 // // ... fill the array ...
 // std::string arrayStr = arrayToString(array, 160);
 
+// Main STFT processing function that handles audio visualization
+// This function:
+// 1. Processes the input audio through STFT
+// 2. Updates the scope (time-domain) visualization
+// 3. Updates the spectrum (frequency-domain) visualization
+// 4. Updates the spectrogram (time-frequency) visualization
 EXTERN EMSCRIPTEN_KEEPALIVE void stft()
 {
+    // Process input through STFT based on current sample rate
     if (cur_rate == 44100)
     {
         stft_44100(output, input);
@@ -197,20 +238,26 @@ EXTERN EMSCRIPTEN_KEEPALIVE void stft()
         stft_48000(output, input);
     }
 
+    // Handle phosphor effect (persistence) for scope and spectrum
     if (show_phosphor)
     {
+        // Apply phosphor effect to spectrum by reducing alpha of existing pixels
         for (int i = 0; i < spectrum.length; ++i)
             spectrum.pixels[i] = draw_color |
                                  (((((spectrum.pixels[i] >> 24) & 255) * 7) >> 3) << 24);
+        // Apply phosphor effect to scope by reducing alpha of existing pixels
         for (int i = 0; i < scope.length; ++i)
             scope.pixels[i] = draw_color |
                               (((((scope.pixels[i] >> 24) & 255) * 7) >> 3) << 24);
     }
     else
     {
+        // Clear scope and spectrum if phosphor effect is disabled
         spectrum.fill(draw_color);
         scope.fill(draw_color);
     }
+
+    // Draw time-domain waveform in scope
     for (int b = 0, i0, j0; b < scope.width; ++b)
     {
         float scale = (scope.height - 1) / 2.f;
@@ -222,17 +269,26 @@ EXTERN EMSCRIPTEN_KEEPALIVE void stft()
         i0 = i1;
         j0 = j1;
     }
+
+    // Update frequency spectrum visualization
+    // Smooth the decibel values using exponential averaging
     for (int i = 0; i < spectrum.width; ++i)
         dB_avg[i] = DSP::lerp(dB_avg[i], output[i], 0.05f);
+
+    // Find minimum decibel value (with -120dB floor)
     float tmp_min = dB_avg[0];
     for (int i = 1; i < spectrum.width; ++i)
         tmp_min = std::min(tmp_min, dB_avg[i]);
     float dB_min = std::max(tmp_min, -120.f);
+
+    // Find maximum decibel value with smoothing
     float tmp_max = output[0];
     for (int i = 1; i < spectrum.width; ++i)
         tmp_max = std::max(tmp_max, output[i]);
     avg_max = DSP::lerp(avg_max, tmp_max, avg_max < tmp_max ? 0.5f : 0.05f);
     float dB_max = avg_max;
+
+    // Draw frequency spectrum
     for (int b = 0, i0, j0; b < spectrum.width; ++b)
     {
         float dB = output[b];
@@ -245,9 +301,14 @@ EXTERN EMSCRIPTEN_KEEPALIVE void stft()
         i0 = i1;
         j0 = j1;
     }
+
+    // Update spectrogram visualization
+    // Shift existing spectrogram data up by one row
     for (int j = spectrogram.height - 1; j; --j)
         for (int i = 0; i < spectrogram.width; ++i)
             spectrogram.pixels[spectrogram.width * j + i] = spectrogram.pixels[spectrogram.width * (j - 1) + i];
+
+    // Draw new spectrogram row at the bottom
     for (int b = 0; b < spectrogram.width; ++b)
     {
         float dB = output[b];
@@ -358,7 +419,7 @@ EXTERN EMSCRIPTEN_KEEPALIVE void createDecoder()
     decoder = new Decoder();
     if (decoder)
     {
-        printf("Decoder created!\n");
+        printf("Decoder Created!\n");
         EM_ASM({ decoderCreated($0); }, (int)decoder);
     }
 }

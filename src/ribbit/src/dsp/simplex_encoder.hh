@@ -9,6 +9,17 @@ The encoder takes a message and returns an array of codewords.
 The codewords are represented as int8_t arrays, which means they can only hold values between -128 and 127.
 The encoder uses a simple sum and difference calculation to encode the message.
 
+Simplex Code Definition:
+A simplex code is a type of linear block code that has the following properties:
+1. It is a (2^K-1, K) code, meaning it encodes K bits into 2^K-1 bits
+2. The codewords are the rows of a Hadamard matrix, which ensures maximum distance between codewords
+3. The minimum Hamming distance between any two codewords is 2^(K-1)
+4. It provides excellent error detection and correction capabilities
+5. The code is systematic, meaning the original message bits appear in the codeword
+6. It is particularly effective for short messages and burst errors
+7. The encoding process is computationally efficient, using simple XOR operations
+8. The code is optimal for channels with high noise levels
+
 Purpose:
 - Encode a message into a simplex code
 - The simplex codes are a type of linear block code that are used in communication systems

@@ -125,6 +125,12 @@ class Encoder {
 		symbol(false); // Call the symbol function for the encoder with false output guard
 	}
 
+	// Preamble Generation (Encoder Side):
+	// - Generates a preamble sequence for synchronization and metadata transmission
+	// - Includes: version, timestamp, grid square, callsign, and name
+	// - Encoded using simplex code for error correction
+	// - Scrambled using Maximum Length Sequence (MLS) with polynomial 0b1000011
+	// - Guard interval for OFDM symbol protection
 	void preamble(int data) {
 		simplex(meta, data);  // Encode metadata using simplex code
 		CODE::MLS seq(0b1000011);  // Maximum Length Sequence for scrambling

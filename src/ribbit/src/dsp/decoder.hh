@@ -179,12 +179,75 @@ class Decoder
         }
     }
 
-    // Detect the preamble and extract metadata
+    // Detect the preamble and extract metadata from the received signal
+    // The preamble is a special sequence that marks the start of a data frame
+    // and contains metadata about the transmission. This function:
+    //
+    // Metadata Generation (Encoder Side):
+    // - Generated using SimplexEncoder in the Encoder class
+    // - Includes: version, timestamp, grid square, callsign, and name
+    // - Encoded using simplex code for error correction
+    // - Scrambled using Maximum Length Sequence (MLS) with polynomial 0b1000011
+    //
+    // Preamble Structure:
+    // - Schmidl-Cox sequence for frame synchronization
+    // - Encoded metadata
+    // - Guard interval for OFDM symbol protection
+    //
+    // 1. Frequency Correction:
+    //    - Uses a Numerically Controlled Oscillator (NCO) to correct carrier frequency offset
+    //    - Applies the correction to the received signal
+    //
+    // 2. Signal Processing:
+    //    - Takes a block of samples from the buffer
+    //    - Applies frequency correction
+    //    - Performs FFT to convert to frequency domain
+    //
+    // 3. Differential Demodulation:
+    //    - Compares adjacent frequency bins to extract phase differences
+    //    - Uses demod_or_erase to handle cases where previous symbol isn't detected
+    //
+    // 4. BPSK Demodulation:
+    //    - Converts the complex signal to soft bits
+    //    - Uses BPSK (Binary Phase Shift Keying) for robust detection
+    //    - Precision factor of 8 for quantization
+    //
+    // 5. Descrambling:
+    //    - Uses a Maximum Length Sequence (MLS) with polynomial 0b1000011
+    //    - Removes the scrambling applied during transmission
+    //
+    // 6. Metadata Decoding:
+    //    - Uses a simplex decoder to recover the metadata
+    //    - Returns 1 if successful, indicating valid metadata detected
+    //
+    // The metadata typically includes:
+    // - Frame length
+    // - Error correction parameters
+    // - Other control information needed for proper decoding
+    //
+    // This implementation uses a combination of differential encoding and BPSK
+    // modulation to make the preamble robust against:
+    // - Carrier frequency offset
+    // - Noise and interference
+    // - Timing errors
+    // - Phase errors
+    //
+    // The robustness is achieved through:
+    // - Differential encoding
+    // - BPSK modulation
+    // - Error correction coding (simplex code)
+    // - Scrambling with MLS
+    // - Guard intervals for OFDM protection
+    //
+    // The metadata provides essential information for proper decoding of the
+    // subsequent payload data, including timing, identification, and location information.
     int preamble()
     {
         // Initialize the NCO for frequency correction
         DSP::Phasor<cmplx> nco;
+        // Set the frequency of the NCO to the staged CFO
         nco.omega(-staged_cfo_rad);
+        // Apply the NCO to the input signal
         
         // Process the received signal
         for (int i = 0; i < symbol_length; ++i)
