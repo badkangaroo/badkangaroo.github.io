@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta id="extViewportMeta" name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <title>Ribbit - Development</title>
+    <title>Ribbit - Header Encoding - Development</title>
 </head>
 
 <body>
@@ -33,7 +33,7 @@
                 line. Each 2sec increment is a unit. 30 (2sec)×60min×24h×31.5 days
             </p>
             <table id="encoder-form">
-                <tr>
+                <tr id="table-version">
                     <td>
                         <p>
                             The version number is a nibble for 4 bits. Range: 0-15
@@ -49,7 +49,24 @@
                         <input type="text" id="version-bits" placeholder="0000">
                     </td>
                 </tr>
-                <tr>
+                <tr id="table-time">
+                    <td>
+                        <p>
+                            Year/month is a number starting Jan2025
+                            Time is a number starting on 1st of the month with a 14h offset to account for the date change time zone
+                            line. Each 2sec increment is a unit. 30 (2sec)x60minx24hx31.5 days
+                        </p>
+                    </td>
+                    <td>
+                        <label for="time">Time</label>
+                        <input type="text" id="time" placeholder="1234567890">
+                    </td>
+                    <td>
+                        <label for="time-bits">14 bits</label>
+                        <textarea type="text" id="time-bits" placeholder="00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000"></textarea>
+                    </td>
+                </tr>
+                <tr id="table-gridsquare">
                     <td>
                         <p>
                             The gridsquare is a 6 character string that follows the pattern
@@ -69,29 +86,12 @@
                         <textarea type="text" id="gridsquare-bits" placeholder="00000, 00000, 0000, 0000, 00000, 00000"></textarea>
                     </td>
                 </tr>
-                <tr>
-                    <td>
-                        <p>
-                            The name is a 32 character string using only letters. The so we only
-                            need 5 bits per character. But we need to encode all 32 characters to
-                            ensure the header is always the same length so the total is 160 bits.
-                        </p>
-                    </td>
-                    <td>
-                        <label for="name">Name</label>
-                        <input type="text" id="name" placeholder="John Doe">
-                    </td>
-                    <td>
-                        <label for="name-bits">160 bits</label>
-                        <textarea type="text" id="name-bits" placeholder="00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000"></textarea>
-                    </td>
-                </tr>
-                <tr>
+                <tr id="table-callsign">
                     <td>
                         <p>
                             The callsign is a 8 character string using only letters. The so we only
-                            need 5 bits per character. But we need to encode all 8 characters to
-                            ensure the header is always the same length so the total is 40 bits.
+                            need 6 bits per character as they could be letters or numbers. But we need to encode all 8 characters to
+                            ensure the header is always the same length so the total is 48 bits.
                         </p>
                     </td>
                     <td>
@@ -99,31 +99,47 @@
                         <input type="text" id="callsign" placeholder="W1AW">
                     </td>
                     <td>
-                        <label for="callsign-bits">40 bits</label>
-                        <textarea type="text" id="callsign-bits" placeholder="00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000"></textarea>
+                        <label for="callsign-bits">48 bits</label>
+                        <textarea type="text" id="callsign-bits" placeholder="000000, 000000, 000000, 000000, 000000, 000000, 000000, 000000"></textarea>
                     </td>
                 </tr>
-                <tr>
+                <tr id="table-name">
                     <td>
                         <p>
-                            Year/month is a number starting Jan2025
-                            Time is a number starting on 1st of the month with a 14h offset to account for the date change time zone
-                            line. Each 2sec increment is a unit. 30 (2sec)x60minx24hx31.5 days
+                            The name is a 32 character string using only letters. The so we only
+                            need 5 bits per character. But we need to encode all 32 characters to
+                            ensure the header is always the same length so the total is 160 bits.<br>
+                            However, by putting the name at the end of the header, we only need
+                            to count the first set of bits of known length, then we can just read the
+                            rest of the header till we get to a special character indicating the end
+                            of the name.
                         </p>
                     </td>
                     <td>
-                        <label for="time">Time</label>
-                        <input type="text" id="time" placeholder="1234567890">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" placeholder="John Doe">
                     </td>
                     <td>
-                        <label for="time-bits">14 bits</label>
-                        <textarea type="text" id="time-bits" placeholder="00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000"></textarea>
+                        <label for="name-bits">160 bits (32 nibbits)</label>
+                        <textarea type="text" id="name-bits" placeholder="00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000, 00000"></textarea>
                     </td>
                 </tr>
+                <style>
+                    textarea {
+                        width: 100%;
+                        height: 100%;
+                    }
+                </style>
             </table>
             <div id="encoder-output">
                 <h1>Output</h1>
                 <pre id="output">0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000</pre>
+                <style>
+                    #encoder-output pre {
+                        font-size: 18px;
+                        text-wrap: auto;
+                    }
+                </style>
             </div>
             <div id="decoded-output">
                 <h1>Decoded Output</h1>
