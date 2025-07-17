@@ -69,7 +69,7 @@ if ("serviceWorker" in navigator) {
 const buttonPressSoundEffect = new Audio();
 buttonPressSoundEffect.autoplay = true;
 buttonPressSoundEffect.src =
-    "data:audio/mpeg;base64,//OkxAAAAAAAAAAAAEluZm8AAAAPAAAAAwAABIAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq////////////////////////////////////////////AAAAOUxBTUUzLjEwMAF4AAAAAAAAAAAUYCQD+iIAAGAAAASA2xsiIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//OkxAA4rDKEAHsHkGgfYSMf8aCT8Tcl7rCcJwXBwY2dgIOJuLmccisbSVibiGEIOhkqxoeh6jQw0DQNAnBBBCAUgEAAVgHYEMB3AE4AHAFYGMXMTQI4A6AQAVAmBkMkR/Hw8iUSCQIgjn92zszXtEgAMA472MDAwPOWGCykzp2JYNAaCQeQmZmvfWGBgeUnW17mtr169/6LzsliGJZ/9KL17/0YWLHPowsWGB4scfv8zdevPzAwWLAAAAAAAA3OhwMDFuiInX0DgYGBgbn6In/1EL/0AxZxAAAQuv/XdAAAEJ//C3d3QviIiO7hwMW6KOUWE9g1Q/m9QrwkwmqE4XJBRNSWumKKphvBHhDkcpXEuwhIOUNSGpByhIRcR6Rb//OkxDA43DqMAnsNjESYQ4TYTYQoNUGqDVCbGirU6W0uKwT4TYyqWYS2i2hqQ1IuJOS3EGIUXJRCECQHlTTzK13DoShKiJQEgJCMffq17TkxWrTExPfZMRJEk962rvZOVq1atotW9lrNLjJaYnvHQlE5cur1rV/IKAgESJEkvP7a5EiRmdmcbXk0kSSeWOJEpk0iRnKqc9EiRKt8yRnHma///qvRJKqeZ/avMzNa5pFGc7VTmo5VTMtW///9iRIlVQSY2JMK6LMRkgBIyUFvL4iFOwP3Tkywocak+MSUPJCIZAE4hlQzNDYxOkqVCTniNSuZgYfRFoSRyFImDWJ5AK5grUny1qBtxUemRVKRfKaROsVuvMtHFmJokjTiyyj0//OkxF82PBm0pnsMvRaNSzXiSJI0CAwMo8xNSRpxwGYTQSInGmgR5BaJI044sxNSRE4ssw9BIiSNKKPMTUkacWXF4OCQYsyLUkROLKPdpo04sos0ouLzc/qWdrzamna43JZ4WicacKEgR6C0SRppR5BaJI0oo9BZEkJAjzzE1JETizIWCSoGTEFNRTMuMTAwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
+    "data:audio/mpeg;base64,//OkxAAAAAAAAAAAAEluZm8AAAAPAAAAAwAABIAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq////////////////////////////////////////////AAAAOUxBTUUzLjEwMAF4AAAAAAAAAAAUYCQD+iIAAGAAAASA2xsiIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//OkxAA4rDKEAHsHkGgfYSMf8aCT8Tcl7rCcJwXBwY2dgIOJuLmccisbSVibiGEIOhkqxoeh6jQw0DQNAnBBBCAUgEAAVgHYEMB3AE4AHAFYGMXMTQI4A6AQAVAmBkMkR/Hw8iUSCQIgjn92zszXtEgAMA472MDAwPOWGCykzp2JYNAaCQeQmZmvfWGBgeUnW17mtr169/6LzsliGJZ/9KL17/0YWLHPowsWGB4scfv8zdevPzAwWLAAAAAAAA3OhwMDFuiInX0DgYGBgbn6In/1EL/0AxZxAAAQuv/XdAAAEJ//C3d3QviIiO7hwMW6KOUWE9g1Q/m9QrwkwmqE4XJBRNSWumKKphvBHhDkcpXEuwhIOUNSGpByhIRcR6Rb//OkxDA43DqMAnsNjESYQ4TYTYQoNUGqDVCbGirU6W0uKwT4TYyqWYS2i2hqQ1IuJOS3EGIUXJRCECQHlTTzK13DoShKiJQEgJCMffq17TkxWrTExPfZMRJEk962rvZOVq1atotW9lrNLjJaYnvHQlE5cur1rV/IKAgESJEkvP7a5EiRmdmcbXk0kSSeWOJEpk0iRnKqc9EiRKt8yRnHma///qvRJKqeZ/avMzNa5pFGc7VTmo5VTMtW///9iRIlVQSY2JMK6LMRkgBIyUFvL4iFOwP3Tkywocak+MSUPJCIZAE4hlQzNDYxOkqVCTniNSuZgYfRFoSRyFImDWJ5AK5grUny1qBtxUemRVKRfKaROsVuvMtHFmJokjTiyyj0//OkxF82PBm0pnsMvRaNSzXiSJI0CAwMo8xNSRpxwGYTQSInGmgR5BaJI044sxNSRE4ssw9BIiSNKKPMTUkacWXF4OCQYsyLUkROLKPdpo04sos0ouLzc/qWdrzamna43JZ4WicacKEgR6C0SRppR5BaJI0oo9BZEkJAjzzE1JETizIWCSoGTEFNRTMuMTAwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
 
 // restore messages from localDB when DOM has loaded
 document.addEventListener("DOMContentLoaded", (e) => {
@@ -281,8 +281,15 @@ document.addEventListener("DOMContentLoaded", (e) => {
                         document.dispatchEvent(event);
                     }, 1600);
 
-                    for (let i = 0; i < MESSAGE_LENGTH; i++) {
+                    // Zero out the buffer first
+                    _message.fill(0);
+                    // Only copy up to the buffer size
+                    const copyLength = Math.min(encoding.length, MESSAGE_LENGTH);
+                    for (let i = 0; i < copyLength; i++) {
                         _message[i] = encoding[i];
+                    }
+                    if (encoding.length > MESSAGE_LENGTH) {
+                        console.warn("Message truncated: input is longer than MESSAGE_LENGTH");
                     }
                     wasmExports["initEncoder"]();
                     console.log(
@@ -389,7 +396,10 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 window.fetchDecoded = (result) => {
                     console.log("payload", _payload);
                     const decoder = new TextDecoder();
-                    const str = decoder.decode(_payload);
+                    // Trim trailing nulls from _payload before decoding
+                    let end = _payload.length;
+                    while (end > 0 && _payload[end - 1] === 0) end--;
+                    const str = decoder.decode(_payload.subarray(0, end));
                     console.log("decoded:", str);
                     const sender = str.split("&=")[0];
                     const message = str.split("&=")[1];
