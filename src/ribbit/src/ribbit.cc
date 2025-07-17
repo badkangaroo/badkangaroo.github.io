@@ -33,6 +33,10 @@ static Encoder *encoder; // Define the encoder pointer
 static Decoder *decoder; // Define the decoder pointer
 EXTERN EMSCRIPTEN_KEEPALIVE void createEncoder()
 {
+    if (encoder) {
+        delete encoder;
+        encoder = nullptr;
+    }
     encoder = new Encoder(); // Create a new encoder
     if (encoder)             // If the encoder is created
     {
@@ -40,13 +44,35 @@ EXTERN EMSCRIPTEN_KEEPALIVE void createEncoder()
         EM_ASM({ encoderCreated($0); }, (int)encoder); // Call the encoderCreated function
     }
 }
+EXTERN EMSCRIPTEN_KEEPALIVE void destroyEncoder()
+{
+    if (encoder) {
+        delete encoder;
+        encoder = nullptr;
+        printf("Encoder destroyed!\n");
+        EM_ASM({ if (typeof encoderDestroyed === 'function') encoderDestroyed(); });
+    }
+}
 EXTERN EMSCRIPTEN_KEEPALIVE void createDecoder()
 {
+    if (decoder) {
+        delete decoder;
+        decoder = nullptr;
+    }
     decoder = new Decoder(); // Create a new decoder
     if (decoder)             // If the decoder is created
     {
         printf("Decoder created!\n");
         EM_ASM({ decoderCreated($0); }, (int)decoder); // Call the decoderCreated function
+    }
+}
+EXTERN EMSCRIPTEN_KEEPALIVE void destroyDecoder()
+{
+    if (decoder) {
+        delete decoder;
+        decoder = nullptr;
+        printf("Decoder destroyed!\n");
+        EM_ASM({ if (typeof decoderDestroyed === 'function') decoderDestroyed(); });
     }
 }
 static const int FEED_LENGTH = 2048;                                  // Define the feed length for the audio input
@@ -201,9 +227,19 @@ EXTERN EMSCRIPTEN_KEEPALIVE void digestFeed()
 }
 EXTERN EMSCRIPTEN_KEEPALIVE void initEncoder()
 {
+    if (!encoder) {
+        printf("Encoder not created!\n");
+        EM_ASM({ if (typeof encoderCreatedError === 'function') encoderCreatedError(); });
+        return;
+    }
     encoder->init(message); // Initialize the encoder with the message
 }
 EXTERN EMSCRIPTEN_KEEPALIVE void readEncoder()
 {
+    if (!encoder) {
+        printf("Encoder not created!\n");
+        EM_ASM({ if (typeof encoderReadError === 'function') encoderReadError(); });
+        return;
+    }
     encoder->read(signal, SIGNAL_LENGTH); // Read the encoder with the signal and SIGNAL_LENGTH
 }
