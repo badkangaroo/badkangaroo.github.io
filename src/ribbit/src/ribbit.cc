@@ -11,7 +11,9 @@ Copyright 2019 Ahmet Inan <inan@aicodix.de>
 Additional modifications by:
 - Alex Okita [KO6BVA] <alex@okita.io>
 */
+#ifdef __EMSCRIPTEN__
 #include <emscripten.h>   // Include the emscripten library for web assembly
+#endif
 #include <stdio.h>        // Include the stdio library for input and output
 #include <algorithm>      // Include the algorithm library for sorting and searching
 #include "example.hh"     // Include the example header file
