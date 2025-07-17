@@ -69,14 +69,23 @@ if ("serviceWorker" in navigator) {
 const buttonPressSoundEffect = new Audio();
 buttonPressSoundEffect.autoplay = true;
 buttonPressSoundEffect.src =
-    "data:audio/mpeg;base64,//OkxAAAAAAAAAAAAEluZm8AAAAPAAAAAwAABIAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq////////////////////////////////////////////AAAAOUxBTUUzLjEwMAF4AAAAAAAAAAAUYCQD+iIAAGAAAASA2xsiIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//OkxAA4rDKEAHsHkGgfYSMf8aCT8Tcl7rCcJwXBwY2dgIOJuLmccisbSVibiGEIOhkqxoeh6jQw0DQNAnBBBCAUgEAAVgHYEMB3AE4AHAFYGMXMTQI4A6AQAVAmBkMkR/Hw8iUSCQIgjn92zszXtEgAMA472MDAwPOWGCykzp2JYNAaCQeQmZmvfWGBgeUnW17mtr169/6LzsliGJZ/9KL17/0YWLHPowsWGB4scfv8zdevPzAwWLAAAAAAAA3OhwMDFuiInX0DgYGBgbn6In/1EL/0AxZxAAAQuv/XdAAAEJ//C3d3QviIiO7hwMW6KOUWE9g1Q/m9QrwkwmqE4XJBRNSWumKKphvBHhDkcpXEuwhIOUNSGpByhIRcR6Rb//OkxDA43DqMAnsNjESYQ4TYTYQoNUGqDVCbGirU6W0uKwT4TYyqWYS2i2hqQ1IuJOS3EGIUXJRCECQHlTTzK13DoShKiJQEgJCMffq17TkxWrTExPfZMRJEk962rvZOVq1atotW9lrNLjJaYnvHQlE5cur1rV/IKAgESJEkvP7a5EiRmdmcbXk0kSSeWOJEpk0iRnKqc9EiRKt8yRnHma///qvRJKqeZ/avMzNa5pFGc7VTmo5VTMtW///9iRIlVQSY2JMK6LMRkgBIyUFvL4iFOwP3Tkywocak+MSUPJCIZAE4hlQzNDYxOkqVCTniNSuZgYfRFoSRyFImDWJ5AK5grUny1qBtxUemRVKRfKaROsVuvMtHFmJokjTiyyj0//OkxF82PBm0pnsMvRaNSzXiSJI0CAwMo8xNSRpxwGYTQSInGmgR5BaJI044sxNSRE4ssw9BIiSNKKPMTUkacWXF4OCQYsyLUkROLKPdpo04sos0ouLzc/qWdrzamna43JZ4WicacKEgR6C0SRppR5BaJI0oo9BZEkJAjzzE1JETizIWCSoGTEFNRTMuMTAwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
+    "data:audio/mpeg;base64,//OkxAAAAAAAAAAAAEluZm8AAAAPAAAAAwAABIAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq////////////////////////////////////////////AAAAOUxBTUUzLjEwMAF4AAAAAAAAAAAUYCQD+iIAAGAAAASA2xsiIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//OkxAA4rDKEAHsHkGgfYSMf8aCT8Tcl7rCcJwXBwY2dgIOJuLmccisbSVibiGEIOhkqxoeh6jQw0DQNAnBBBCAUgEAAVgHYEMB3AE4AHAFYGMXMTQI4A6AQAVAmBkMkR/Hw8iUSCQIgjn92zszXtEgAMA472MDAwPOWGCykzp2JYNAaCQeQmZmvfWGBgeUnW17mtr169/6LzsliGJZ/9KL17/0YWLHPowsWGB4scfv8zdevPzAwWLAAAAAAAA3OhwMDFuiInX0DgYGBgbn6In/1EL/0AxZxAAAQuv/XdAAAEJ//C3d3QviIiO7hwMW6KOUWE9g1Q/m9QrwkwmqE4XJBRNSWumKKphvBHhDkcpXEuwhIOUNSGpByhIRcR6Rb//OkxDA43DqMAnsNjESYQ4TYTYQoNUGqDVCbGirU6W0uKwT4TYyqWYS2i2hqQ1IuJOS3EGIUXJRCECQHlTTzK13DoShKiJQEgJCMffq17TkxWrTExPfZMRJEk962rvZOVq1atotW9lrNLjJaYnvHQlE5cur1rV/IKAgESJEkvP7a5EiRmdmcbXk0kSSeWOJEpk0iRnKqc9EiRKt8yRnHma///qvRJKqeZ/avMzNa5pFGc7VTmo5VTMtW///9iRIlVQSY2JMK6LMRkgBIyUFvL4iFOwP3Tkywocak+MSUPJCIZAE4hlQzNDYxOkqVCTniNSuZgYfRFoSRyFImDWJ5AK5grUny1qBtxUemRVKRfKaROsVuvMtHFmJokjTiyyj0//OkxF82PBm0pnsMvRaNSzXiSJI0CAwMo8xNSRpxwGYTQSInGmgR5BaJI044sxNSRE4ssw9BIiSNKKPMTUkacWXF4OCQYsyLUkROLKPdpo04sos0ouLzc/qWdrzamna43JZ4WicacKEgR6C0SRppR5BaJI0oo9BZEkJAjzzE1JETizIWCSoGTEFNRTMuMTAwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
 
 // restore messages from localDB when DOM has loaded
 document.addEventListener("DOMContentLoaded", (e) => {
     console.log("DOM Loaded.", e);
     const db = window.indexedDB;
     if (!db) {
-        console.error("IndexedDB is not available.");
+        const errorMsg = "IndexedDB is not available.";
+        console.error(errorMsg);
+        const event = new CustomEvent("receivemessage", {
+            detail: {
+                save: false,
+                type: "alert",
+                message: errorMsg,
+            },
+        });
+        document.dispatchEvent(event);
     } else {
         console.log("indexedDB Available!", db);
     }
@@ -124,6 +133,19 @@ document.addEventListener("DOMContentLoaded", (e) => {
             console.log("messages:", messages);
             // update messagecounter
             const messagecount = document.getElementById("messagecount");
+            if (!messagecount) {
+                const errorMsg = "Element #messagecount not found in DOM.";
+                console.error(errorMsg);
+                const event = new CustomEvent("receivemessage", {
+                    detail: {
+                        save: false,
+                        type: "alert",
+                        message: errorMsg,
+                    },
+                });
+                document.dispatchEvent(event);
+                return;
+            }
             messagecount.value = messages.length;
             messages.forEach((m) => {
                 const event = new CustomEvent("receivemessage", {
@@ -225,6 +247,19 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 var listen = true;
                 // text to convert
                 const messagebox = document.getElementById("textarea");
+                if (!messagebox) {
+                    const errorMsg = "Element #textarea not found in DOM.";
+                    console.error(errorMsg);
+                    const event = new CustomEvent("receivemessage", {
+                        detail: {
+                            save: false,
+                            type: "alert",
+                            message: errorMsg,
+                        },
+                    });
+                    document.dispatchEvent(event);
+                    return;
+                }
                 const resizeviewport = () => {
                     // For the rare legacy browsers that don't support it
                     if (!window.visualViewport) {
@@ -244,6 +279,19 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 };
                 // button to trigger encoding
                 const encodebutton = document.getElementById("encodebutton");
+                if (!encodebutton) {
+                    const errorMsg = "Element #encodebutton not found in DOM.";
+                    console.error(errorMsg);
+                    const event = new CustomEvent("receivemessage", {
+                        detail: {
+                            save: false,
+                            type: "alert",
+                            message: errorMsg,
+                        },
+                    });
+                    document.dispatchEvent(event);
+                    return;
+                }
                 const encodemessage = () => {
                     // don't send a blank message.
                     if (messagebox.value.length < 1) {
@@ -256,7 +304,16 @@ document.addEventListener("DOMContentLoaded", (e) => {
                     }
                     const db = window.localStorage;
                     if (!db) {
-                        console.error("Local Storage is not available.");
+                        const errorMsg = "Local Storage is not available.";
+                        console.error(errorMsg);
+                        const event = new CustomEvent("receivemessage", {
+                            detail: {
+                                save: false,
+                                type: "alert",
+                                message: errorMsg,
+                            },
+                        });
+                        document.dispatchEvent(event);
                         return;
                     }
                     const name = db.getItem("name");
@@ -291,6 +348,19 @@ document.addEventListener("DOMContentLoaded", (e) => {
                     if (encoding.length > MESSAGE_LENGTH) {
                         console.warn("Message truncated: input is longer than MESSAGE_LENGTH");
                     }
+                    if (!wasmExports || !wasmExports["initEncoder"]) {
+                        const errorMsg = "WASM exports missing required functions.";
+                        console.error(errorMsg);
+                        const event = new CustomEvent("receivemessage", {
+                            detail: {
+                                save: false,
+                                type: "alert",
+                                message: errorMsg,
+                            },
+                        });
+                        document.dispatchEvent(event);
+                        return;
+                    }
                     wasmExports["initEncoder"]();
                     console.log(
                         "encoding message:",
@@ -308,11 +378,37 @@ document.addEventListener("DOMContentLoaded", (e) => {
                     // enable audio output
                     // after playing the audio, encode the message.
                     encodebutton.onclick = encodemessage;
-                    tx_context =
-                        tx_context || new AudioContext({ sampleRate: 8000 });
+                    try {
+                        tx_context = tx_context || new AudioContext({ sampleRate: 8000 });
+                    } catch (err) {
+                        const errorMsg = "Failed to create AudioContext: " + err;
+                        console.error(errorMsg);
+                        const event = new CustomEvent("receivemessage", {
+                            detail: {
+                                save: false,
+                                type: "alert",
+                                message: errorMsg,
+                            },
+                        });
+                        document.dispatchEvent(event);
+                        return;
+                    }
                     buttonPressSoundEffect.play();
                 };
                 const savewav = document.getElementById("savewav");
+                if (!savewav) {
+                    const errorMsg = "Element #savewav not found in DOM.";
+                    console.error(errorMsg);
+                    const event = new CustomEvent("receivemessage", {
+                        detail: {
+                            save: false,
+                            type: "alert",
+                            message: errorMsg,
+                        },
+                    });
+                    document.dispatchEvent(event);
+                    return;
+                }
                 const saveToWav = () => {
                     savewavfile = true;
                     tx_context =
@@ -360,6 +456,18 @@ document.addEventListener("DOMContentLoaded", (e) => {
                             }
                             wasmExports["digestFeed"]();
                         };
+                    })
+                    .catch((err) => {
+                        const errorMsg = "getUserMedia failed: " + err;
+                        console.error(errorMsg);
+                        const event = new CustomEvent("receivemessage", {
+                            detail: {
+                                save: false,
+                                type: "alert",
+                                message: errorMsg,
+                            },
+                        });
+                        document.dispatchEvent(event);
                     });
                 window.initEncoded = () => {
                     wasmExports["readEncoder"]();
@@ -444,7 +552,16 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 // if any of these fields are missing, open the settings panel.
                 const db = window.localStorage;
                 if (!db) {
-                    console.error("Local Storage is not available.");
+                    const errorMsg = "Local Storage is not available.";
+                    console.error(errorMsg);
+                    const event = new CustomEvent("receivemessage", {
+                        detail: {
+                            save: false,
+                            type: "alert",
+                            message: errorMsg,
+                        },
+                    });
+                    document.dispatchEvent(event);
                     return;
                 }
                 const name = db.getItem("name");
@@ -482,6 +599,19 @@ document.addEventListener("receivemessage", (e) => {
 
     // create message element
     const chat = document.getElementById("chat");
+    if (!chat) {
+        const errorMsg = "Element #chat not found in DOM.";
+        console.error(errorMsg);
+        const event = new CustomEvent("receivemessage", {
+            detail: {
+                save: false,
+                type: "alert",
+                message: errorMsg,
+            },
+        });
+        document.dispatchEvent(event);
+        return;
+    }
     const messageElement = document.createElement("p");
     const newMessage = document.createElement("div");
     const senderElement = document.createElement("div");
@@ -564,10 +694,31 @@ document.addEventListener("receivemessage", (e) => {
     if (save) {
         const db = window.indexedDB;
         if (!db) {
-            console.error("IndexedDB is not available.");
+            const errorMsg = "IndexedDB is not available.";
+            console.error(errorMsg);
+            const event = new CustomEvent("receivemessage", {
+                detail: {
+                    save: false,
+                    type: "alert",
+                    message: errorMsg,
+                },
+            });
+            document.dispatchEvent(event);
             return;
         }
         const request = db.open("ribbit", 1);
+        request.onerror = (e) => {
+            const errorMsg = "IndexedDB open error: " + e;
+            console.error(errorMsg);
+            const event = new CustomEvent("receivemessage", {
+                detail: {
+                    save: false,
+                    type: "alert",
+                    message: errorMsg,
+                },
+            });
+            document.dispatchEvent(event);
+        };
         request.onsuccess = (e) => {
             const db = e.target.result;
             const transaction = db.transaction("messages", "readwrite");
@@ -584,6 +735,19 @@ document.addEventListener("receivemessage", (e) => {
                 store.getAll().onsuccess = (e) => {
                     const messagecount =
                         document.getElementById("messagecount");
+                    if (!messagecount) {
+                        const errorMsg = "Element #messagecount not found in DOM.";
+                        console.error(errorMsg);
+                        const event = new CustomEvent("receivemessage", {
+                            detail: {
+                                save: false,
+                                type: "alert",
+                                message: errorMsg,
+                            },
+                        });
+                        document.dispatchEvent(event);
+                        return;
+                    }
                     messagecount.value = e.target.result.length;
                 };
             };
