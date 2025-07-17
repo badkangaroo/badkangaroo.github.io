@@ -509,8 +509,45 @@ document.addEventListener("DOMContentLoaded", (e) => {
                     while (end > 0 && _payload[end - 1] === 0) end--;
                     const str = decoder.decode(_payload.subarray(0, end));
                     console.log("decoded:", str);
-                    const sender = str.split("&=")[0];
-                    const message = str.split("&=")[1];
+
+                    // Helper for error reporting
+                    function showDecodeError(msg) {
+                        console.error(msg);
+                        const event = new CustomEvent("receivemessage", {
+                            detail: {
+                                save: false,
+                                type: "alert",
+                                message: "Decoding error: " + msg,
+                            },
+                        });
+                        document.dispatchEvent(event);
+                    }
+
+                    // 1. Check for replacement character
+                    if (str.includes("")) {
+                        showDecodeError("Message contains invalid characters.");
+                        return;
+                    }
+                    // 2. Check for expected structure
+                    const parts = str.split("&=");
+                    if (parts.length !== 2) {
+                        showDecodeError("Malformed message: missing '&=' separator.");
+                        return;
+                    }
+                    const headerFields = parts[0].split("|");
+                    if (headerFields.length !== 4) {
+                        showDecodeError("Malformed header: expected 4 fields.");
+                        return;
+                    }
+                    // 3. Check for non-printable characters in the message
+                    const nonPrintable = /[^\x20-\x7E\r\n\t]/g;
+                    if (nonPrintable.test(parts[1])) {
+                        showDecodeError("Message contains non-printable characters.");
+                        return;
+                    }
+
+                    const sender = parts[0];
+                    const message = parts[1];
                     if (sender && message) {
                         const event = new CustomEvent("receivemessage", {
                             detail: {
