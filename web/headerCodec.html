@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta id="extViewportMeta" name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Ribbit - Header Encoder Decoder with Tests - Development</title>
+</head>
+
+<body>
+    <div id="headerCodec">
+        <h1>Header Codec</h1>
+        <p>
+            The data arrangement and bit wise formatting for a reduced and compact
+            arrangement of several different types to identify data sent through ribbit.
+            The proposed total length of the header is 32 bits.
+        </p>
+        <h2>Data types</h2>
+        <ul>
+            <li>Emergency - 1 bit (boolean)</li>
+            <li>Timestamp - 31 bits</li>
+            <ul>
+                <li>Year and Month - 10 bits (number)</li>
+                <li>Day - 5 bits (number)</li>
+                <li>Hour - 5 bits (number)</li>
+                <li>Minute - 6 bits (number)</li>
+                <li>Second - 5 bits (number)</li>
+            </ul>
+            <li>Callsign - 48 bits (alphanumbit array)</li>
+            <ul>
+                <li>[A-Z,1-9] - 6 bits (alphanumbit)</li>
+                <li>[A-Z,1-9] - 6 bits (alphanumbit)</li>
+                <li>[A-Z,1-9] - 6 bits (alphanumbit)</li>
+                <li>[A-Z,1-9] - 6 bits (alphanumbit)</li>
+                <li>[A-Z,1-9] - 6 bits (alphanumbit)</li>
+                <li>[A-Z,1-9] - 6 bits (alphanumbit)</li>
+                <li>[A-Z,1-9] - 6 bits (alphanumbit)</li>
+                <li>[A-Z,1-9] - 6 bits (alphanumbit)</li>
+            </ul>
+            <li>Gridsquare - 28 bits (alphanumbit/nibble/alphabit array)</li>
+            <ul>
+                <li>[A-Z ]Field - 5 bits (alphabit)</li>
+                <li>[A-Z ]Field - 5 bits (alphabit)</li>
+                <li>[0-9 ]Square - 4 bits (nibble)</li>
+                <li>[0-9 ]Square - 4 bits (nibble)</li>
+                <li>[A-Z ]Subsquare - 5 bits (alphabit)</li>
+                <li>[A-Z ]Subsquare - 5 bits (alphabit)</li>
+            </ul>
+        </ul>
+        <h2>Emergency - 1 bit (boolean)</h2>
+        <p>
+            The emergency flag is a boolean value true or false.
+            <br>
+            <input type="checkbox" id="emergency" name="emergency" onchange="emergencyChange()">
+            <label for="emergency">Emergency</label>
+            <br>
+        <h4>Encoded Result: <span id="emergency-bits">0b0</span></h4>
+        </p>
+        <h2>Timestamp - 31 bits</h2>
+        <p>
+            An unusual format is used to keep track of the time a message is sent.
+            The timing interval is set to every two seconds. The formatting
+            is to reduce the use of bits by using only 10 bits for the month
+            <br>
+            <input type="number" id="year" name="year" onchange="yearChange()" default="2026" placeholder="2026"
+                min="2026" max="2111">
+            <label for="year">Year</label>
+            <br>
+            <input type="number" id="month" name="month" onchange="monthChange()" default="0" placeholder="0" min="0"
+                max="11">
+            <label for="month">Month (0=Jan, 11=Dec)</label>
+            <br>
+        <h4>Year+Month Encoded (10 bits): <span id="year-bits">0b0000000000</span></h4>
+        <br>
+        <input type="number" id="day" name="day" onchange="dayChange()" default="0" placeholder="0" min="0" max="30">
+        <label for="day">Day (0-30)</label>
+        <br>
+        <h4>Day Encoded (5 bits): <span id="day-bits">0b00000</span></h4>
+        <br>
+        <input type="number" id="hour" name="hour" onchange="hourChange()" default="0" placeholder="0" min="0" max="23">
+        <label for="hour">Hour (0-23)</label>
+        <br>
+        <h4>Hour Encoded (5 bits): <span id="hour-bits">0b00000</span></h4>
+        <br>
+        <input type="number" id="minute" name="minute" onchange="minuteChange()" default="0" placeholder="0" min="0"
+            max="59">
+        <label for="minute">Minute (0-59)</label>
+        <br>
+        <h4>Minute Encoded (6 bits): <span id="minute-bits">0b000000</span></h4>
+        <br>
+        <input type="number" id="second" name="second" onchange="secondChange()" default="0" placeholder="0" min="0"
+            max="29">
+        <label for="second">Second (0-29, every 2 seconds)</label>
+        <br>
+        <h4>Second Encoded (5 bits): <span id="second-bits">0b00000</span></h4>
+        <br>
+        </p>
+        <h3>Timestamp Result (31 bits): <span id="time-bits">0b0000000000000000000000000000000</span></h3>
+
+        <h2>Callsign - 48 bits (alphanumbit array)</h2>
+        <p>
+            The callsign is an 8 character string encoded into 48 bits (6 bits per character).
+            <br><br>
+            <input type="text" id="callsign" name="callsign" onkeyup="callsignChange()" maxlength="8"
+                placeholder="KN6FZY" style="padding: 5px; font-size: 16px;">
+            <label for="callsign">Callsign (up to 8 chars)</label>
+            <br>
+        <h4>Callsign Encoded (48 bits): <span
+                id="callsign-bits">0b000000000000000000000000000000000000000000000000</span></h4>
+        </p>
+
+        <h2>Gridsquare - 28 bits (alphabit/nibble array)</h2>
+        <p>
+            The gridsquare is a 6 character location code (e.g., CM87uq) encoded into 28 bits.
+            <br><br>
+            <input type="text" id="gridsquare" name="gridsquare" onkeyup="gridsquareChange()" maxlength="6"
+                placeholder="CM87uq" style="padding: 5px; font-size: 16px;">
+            <label for="gridsquare">Gridsquare (6 chars: 2 letters, 2 numbers, 2 letters)</label>
+            <br>
+        <h4>Gridsquare Encoded (28 bits): <span id="gridsquare-bits">0b0000000000000000000000000000</span></h4>
+        </p>
+
+        <h2>Total Encoded Header - 108 bits</h2>
+        <p>
+            The total encoded header is 108 bits (1 + 31 + 48 + 28). It's a combination of the
+            emergency, timestamp, callsign, and gridsquare.
+        </p>
+        <h3><span id="total-encoded-header-bits">0b</span></h3>
+        <h2>Decoded Header - 108 bits</h2>
+        <p>
+            The decoded header is 108 bits. It's a combination of the
+            emergency, timestamp, callsign, and gridsquare.
+        </p>
+        <h3><span id="decoded-header-bits">0b</span></h3>
+        <h2>Delivered Header - 112 bits (14 bytes)</h2>
+        <p>
+            The header is actually returned by the decoder from the library
+            as a series of bytes. So the last 4 bits of the last byte are 0s
+            with the first 4 bits of the last byte being the last part of the
+            Mainhead Gridsquare. That would look something like:
+        <h4>Delivered byte array 14 8bit (1Byte) values:
+            <span id="decoded-header-bytes">[0b00000000, 0b00000000, 0b00000000,
+                0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
+                0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000]</span>
+        </h4>
+        <h3>Recomposed header from bytes: <span id="recomposed-header-bits">0b</span></h3>
+        <p>
+            The bytes are concatenated into a single 108 bit array which is
+            then split into the 4 parts of the header.
+        </p>
+        <h4>Recomposed header from bytes:</h4>
+        <h4>Emergency bit: <span id="decoded-header-emergency-bit">0b0</span></h4>
+        <h4>Timestamp bits: <span id="decoded-header-timestamp-bits">0b0000000000000000000000000000000</span></h4>
+        <h4>Callsign bits: <span
+                id="decoded-header-callsign-bits">0b000000000000000000000000000000000000000000000000</span></h4>
+        <h4>Gridsquare bits: <span id="decoded-header-gridsquare-bits">0b0000000000000000000000000000</span></h4>
+        <p>
+            These are then decoded into the human readable header.
+        </p>
+        <h4>Emergency: <span id="decoded-header-emergency-value">false</span></h4>
+        <h4>Timestamp: <span id="decoded-header-timestamp-value">2026-01-01 00:00:00</span></h4>
+        <h4>Callsign: <span id="decoded-header-callsign-value">KN6FZY</span></h4>
+        <h4>Gridsquare: <span id="decoded-header-gridsquare-value">CM87uq</span></h4>
+        </p>
+    </div>
+    <style>
+        body {
+            background-color: #106c2f;
+            color: #fff;
+            font-family: 'NotoSansDisplay-Regular', sans-serif;
+            padding: 20px;
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        p {
+            margin-bottom: 20px;
+        }
+
+        #headerCodec {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+
+    <script>
+        // ===== Lookup Tables =====
+
+        // alphanumbit lookup table (6 bits for letters and numbers)
+        const alphanumbit = {
+            "0": 0b000000, "1": 0b000001, "2": 0b000010, "3": 0b000011,
+            "4": 0b000100, "5": 0b000101, "6": 0b000110, "7": 0b000111,
+            "8": 0b001000, "9": 0b001001, "A": 0b001010, "B": 0b001011,
+            "C": 0b001100, "D": 0b001101, "E": 0b001110, "F": 0b001111,
+            "G": 0b010000, "H": 0b010001, "I": 0b010010, "J": 0b010011,
+            "K": 0b010100, "L": 0b010101, "M": 0b010110, "N": 0b010111,
+            "O": 0b011000, "P": 0b011001, "Q": 0b011010, "R": 0b011011,
+            "S": 0b011100, "T": 0b011101, "U": 0b011110, "V": 0b011111,
+            "W": 0b100000, "X": 0b100001, "Y": 0b100010, "Z": 0b100011,
+            "/": 0b100100, "?": 0b100101, "~": 0b100110, "!": 0b100111,
+            "@": 0b101000, "#": 0b101001, "$": 0b101011, "%": 0b101100,
+            "^": 0b101101, "&": 0b101110, "*": 0b101111, "(": 0b110000,
+            ")": 0b110001, "-": 0b110010, "=": 0b110011, "[": 0b110100,
+            "]": 0b110101, "\\": 0b110110, "|": 0b110111, "`": 0b111000,
+            "_": 0b111001, "+": 0b111010, ":": 0b111011, "\"": 0b111100,
+            ";": 0b111101, ",": 0b111110, ".": 0b111111, " ": 0b111111
+        };
+
+        // alphabit lookup table (5 bits for letters)
+        const alphabit = {
+            " ": 0b00000, "A": 0b00001, "B": 0b00010, "C": 0b00011,
+            "D": 0b00100, "E": 0b00101, "F": 0b00110, "G": 0b00111,
+            "H": 0b01000, "I": 0b01001, "J": 0b01010, "K": 0b01011,
+            "L": 0b01100, "M": 0b01101, "N": 0b01110, "O": 0b01111,
+            "P": 0b10000, "Q": 0b10001, "R": 0b10010, "S": 0b10011,
+            "T": 0b10100, "U": 0b10101, "V": 0b10110, "W": 0b10111,
+            "X": 0b11000, "Y": 0b11001, "Z": 0b11010, "@": 0b11011,
+            ".": 0b11100, ":": 0b11101, "/": 0b11110, "-": 0b11111
+        };
+
+        // nibble lookup table (4 bits for numbers)
+        const nibble = {
+            "0": 0b0000, "1": 0b0001, "2": 0b0010, "3": 0b0011,
+            "4": 0b0100, "5": 0b0101, "6": 0b0110, "7": 0b0111,
+            "8": 0b1000, "9": 0b1001, "A": 0b1010, "B": 0b1011,
+            "C": 0b1100, "D": 0b1101, "E": 0b1110, " ": 0b1111
+        };
+
+        // ===== Emergency Functions =====
+
+        const emergencyChange = () => {
+            const emergency = document.getElementById("emergency").checked;
+            const emergencyBit = emergency ? 1 : 0;
+            document.getElementById("emergency-bits").innerHTML = `0b${emergencyBit}`;
+            updateTotalEncodedHeader();
+        };
+
+        // ===== Timestamp Functions =====
+
+        // Year and Month are combined into a single 10-bit value
+        const updateYearMonth = () => {
+            const yearInput = document.getElementById("year").value;
+            const monthInput = document.getElementById("month").value;
+
+            if (!yearInput || !monthInput) return;
+
+            // Following HeaderReadme.md encoding pattern
+            const year = parseInt(yearInput) - 2026; // 0 for 2026
+            const month = parseInt(monthInput); // 0-11
+            const monthYear = year * 12 + month;
+            const monthYearBits = monthYear.toString(2).padStart(10, '0');
+
+            document.getElementById("year-bits").innerHTML = `0b${monthYearBits}`;
+            updateTimestamp();
+        };
+
+        const yearChange = () => {
+            updateYearMonth();
+        };
+
+        const monthChange = () => {
+            updateYearMonth();
+        };
+
+        const dayChange = () => {
+            const dayInput = document.getElementById("day").value;
+            if (!dayInput) return;
+
+            // Following HeaderReadme.md: day is 0-based (0-30)
+            const day = parseInt(dayInput);
+            const dayBits = day.toString(2).padStart(5, '0');
+            document.getElementById("day-bits").innerHTML = `0b${dayBits}`;
+            updateTimestamp();
+        };
+
+        const hourChange = () => {
+            const hourInput = document.getElementById("hour").value;
+            if (!hourInput) return;
+
+            // Following HeaderReadme.md: hour is 0-23
+            const hour = parseInt(hourInput);
+            const hourBits = hour.toString(2).padStart(5, '0');
+            document.getElementById("hour-bits").innerHTML = `0b${hourBits}`;
+            updateTimestamp();
+        };
+
+        const minuteChange = () => {
+            const minuteInput = document.getElementById("minute").value;
+            if (!minuteInput) return;
+
+            // Following HeaderReadme.md: minute is 0-59
+            const minute = parseInt(minuteInput);
+            const minuteBits = minute.toString(2).padStart(6, '0');
+            document.getElementById("minute-bits").innerHTML = `0b${minuteBits}`;
+            updateTimestamp();
+        };
+
+        const secondChange = () => {
+            const secondInput = document.getElementById("second").value;
+            if (!secondInput) return;
+
+            // Following HeaderReadme.md: second is divided by 2 (0-29)
+            const second = parseInt(secondInput);
+            const secondBits = second.toString(2).padStart(5, '0');
+            document.getElementById("second-bits").innerHTML = `0b${secondBits}`;
+            updateTimestamp();
+        };
+
+        const updateTimestamp = () => {
+            const yearBits = document.getElementById("year-bits").innerHTML.replace('0b', '');
+            const dayBits = document.getElementById("day-bits").innerHTML.replace('0b', '');
+            const hourBits = document.getElementById("hour-bits").innerHTML.replace('0b', '');
+            const minuteBits = document.getElementById("minute-bits").innerHTML.replace('0b', '');
+            const secondBits = document.getElementById("second-bits").innerHTML.replace('0b', '');
+
+            if (yearBits && dayBits && hourBits && minuteBits && secondBits) {
+                const timeBits = yearBits + dayBits + hourBits + minuteBits + secondBits;
+                document.getElementById("time-bits").innerHTML = `0b${timeBits}`;
+                updateTotalEncodedHeader();
+            }
+        };
+
+        // ===== Callsign Functions =====
+
+        const callsignChange = () => {
+            const callsignInput = document.getElementById("callsign").value;
+            const paddedCallsign = callsignInput.padEnd(8, ' ').toUpperCase();
+
+            let callsignBits = '';
+            for (let i = 0; i < 8; i++) {
+                const char = paddedCallsign[i];
+                const charValue = alphanumbit[char] || 0b111111;
+                const charBits = charValue.toString(2).padStart(6, '0');
+                callsignBits += charBits;
+            }
+
+            document.getElementById("callsign-bits").innerHTML = `0b${callsignBits}`;
+            updateTotalEncodedHeader();
+        };
+
+        // ===== Gridsquare Functions =====
+
+        const gridsquareChange = () => {
+            const gridsquareInput = document.getElementById("gridsquare").value;
+
+            if (gridsquareInput.length < 6) {
+                return; // Wait for full input
+            }
+
+            const upper = gridsquareInput.toUpperCase();
+
+            // Following HeaderReadme.md encoding pattern
+            // First letter (5 bits)
+            const letter1Bits = (alphabit[upper[0]] || 0).toString(2).padStart(5, '0');
+
+            // Second letter (5 bits)
+            const letter2Bits = (alphabit[upper[1]] || 0).toString(2).padStart(5, '0');
+
+            // First number (4 bits)
+            const number1Bits = (nibble[upper[2]] || 0).toString(2).padStart(4, '0');
+
+            // Second number (4 bits)
+            const number2Bits = (nibble[upper[3]] || 0).toString(2).padStart(4, '0');
+
+            // Third letter (5 bits)
+            const letter3Bits = (alphabit[upper[4]] || 0).toString(2).padStart(5, '0');
+
+            // Fourth letter (5 bits)
+            const letter4Bits = (alphabit[upper[5]] || 0).toString(2).padStart(5, '0');
+
+            const gridsquareBits = letter1Bits + letter2Bits + number1Bits +
+                number2Bits + letter3Bits + letter4Bits;
+
+            document.getElementById("gridsquare-bits").innerHTML = `0b${gridsquareBits}`;
+            updateTotalEncodedHeader();
+        };
+        const splitAndPad = (str, chunkSize = 8) => {
+            const chunks = [];
+            for (let i = 0; i < str.length; i += chunkSize) {
+                let chunk = str.slice(i, i + chunkSize);
+                if (chunk.length < chunkSize) {
+                    chunk = chunk.padEnd(chunkSize, '0');
+                }
+                chunks.push(chunk);
+            }
+            return chunks;
+        }
+
+        // ===== Decode Header Functions =====
+
+        // Create reverse lookup tables for decoding
+        const alphanumbitReverse = Object.fromEntries(
+            Object.entries(alphanumbit).map(([char, value]) => [value, char])
+        );
+        const alphabitReverse = Object.fromEntries(
+            Object.entries(alphabit).map(([char, value]) => [value, char])
+        );
+        const nibbleReverse = Object.fromEntries(
+            Object.entries(nibble).map(([char, value]) => [value, char])
+        );
+
+        const fragmentedBits = () => {
+            const bitstream = document.getElementById("recomposed-header-bits").innerHTML.replace('0b', '');
+            const emergencyFragment = bitstream.slice(0, 1);
+            const timestampFragment = bitstream.slice(1, 32);
+            const callsignFragment = bitstream.slice(32, 80);
+            const gridsquareFragment = bitstream.slice(80, 108);
+            
+            document.getElementById("decoded-header-emergency-bit").innerHTML = `0b${emergencyFragment}`;
+            document.getElementById("decoded-header-timestamp-bits").innerHTML = `0b${timestampFragment}`;
+            document.getElementById("decoded-header-callsign-bits").innerHTML = `0b${callsignFragment}`;
+            document.getElementById("decoded-header-gridsquare-bits").innerHTML = `0b${gridsquareFragment}`;
+        }
+        
+        const fragmentsToReadableText = () => {
+            const bitstream = document.getElementById("recomposed-header-bits").innerHTML.replace('0b', '');
+            const emergencyFragment = bitstream.slice(0, 1);
+            const timestampFragment = bitstream.slice(1, 32);
+            const callsignFragment = bitstream.slice(32, 80);
+            const gridsquareFragment = bitstream.slice(80, 108);
+            
+            // Decode Emergency (1 bit)
+            const emergencyValue = parseInt(emergencyFragment, 2) > 0;
+            document.getElementById("decoded-header-emergency-value").innerHTML = emergencyValue ? 'true' : 'false';
+            
+            // Decode Timestamp (31 bits: 10+5+5+6+5)
+            const yearMonthBits = timestampFragment.slice(0, 10);
+            const dayBits = timestampFragment.slice(10, 15);
+            const hourBits = timestampFragment.slice(15, 20);
+            const minuteBits = timestampFragment.slice(20, 26);
+            const secondBits = timestampFragment.slice(26, 31);
+            
+            const monthYear = parseInt(yearMonthBits, 2);
+            const year = Math.floor(monthYear / 12) + 2026;
+            const month = monthYear % 12;
+            const day = parseInt(dayBits, 2) + 1; // Add 1 because we encoded as 0-based
+            const hour = parseInt(hourBits, 2);
+            const minute = parseInt(minuteBits, 2);
+            const second = parseInt(secondBits, 2) * 2; // Multiply by 2 because we divided by 2
+            
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const timestampValue = `${year}-${monthNames[month]}-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+            document.getElementById("decoded-header-timestamp-value").innerHTML = timestampValue;
+            
+            // Decode Callsign (48 bits: 8 characters x 6 bits)
+            let callsignValue = '';
+            for (let i = 0; i < 48; i += 6) {
+                const charBits = callsignFragment.substring(i, i + 6);
+                const charValue = parseInt(charBits, 2);
+                callsignValue += alphanumbitReverse[charValue] || ' ';
+            }
+            document.getElementById("decoded-header-callsign-value").innerHTML = callsignValue.trim();
+            
+            // Decode Gridsquare (28 bits: 5+5+4+4+5+5)
+            const letter1Value = parseInt(gridsquareFragment.substring(0, 5), 2);
+            const letter2Value = parseInt(gridsquareFragment.substring(5, 10), 2);
+            const number1Value = parseInt(gridsquareFragment.substring(10, 14), 2);
+            const number2Value = parseInt(gridsquareFragment.substring(14, 18), 2);
+            const letter3Value = parseInt(gridsquareFragment.substring(18, 23), 2);
+            const letter4Value = parseInt(gridsquareFragment.substring(23, 28), 2);
+            
+            const gridsquareValue = 
+                (alphabitReverse[letter1Value] || '') + 
+                (alphabitReverse[letter2Value] || '') + 
+                (nibbleReverse[number1Value] || '') + 
+                (nibbleReverse[number2Value] || '') + 
+                (alphabitReverse[letter3Value] || '') + 
+                (alphabitReverse[letter4Value] || '');
+            document.getElementById("decoded-header-gridsquare-value").innerHTML = gridsquareValue;
+        }
+
+        const concatenateBits = () => {
+
+            let bytes = document.getElementById("decoded-header-bytes").innerHTML;
+            bytes = bytes.replace(/0b|, /g, '');
+            bytes = bytes.replace("]", "");
+            bytes = bytes.replace("[", "");
+            console.log(bytes);
+            document.getElementById("recomposed-header-bits").innerHTML = `0b${bytes}`;
+            fragmentedBits();
+            fragmentsToReadableText();
+        }
+        const splitBytes = () => {
+            // remove the 0b from the front of the string
+            const bits = document.getElementById("total-encoded-header-bits").innerHTML.replace('0b', '');
+            // split the bits into 8 bit chunks
+            let bytes = splitAndPad(bits, 8);
+            bytes = bytes.map(bin => "0b" + bin);
+            const decodedHeaderBytes = document.getElementById("decoded-header-bytes");
+            decodedHeaderBytes.innerHTML = `[${bytes.join(', ')}]`;
+            concatenateBits();
+        };
+
+        // ===== Total Encoded Header =====
+
+        const updateTotalEncodedHeader = () => {
+            const emergencyBits = document.getElementById("emergency-bits").innerHTML.replace('0b', '').replace(/\s.*/, '');
+            const timeBitsRaw = document.getElementById("time-bits").innerHTML.replace('0b', '').replace(/\s.*/, '');
+            const callsignBits = document.getElementById("callsign-bits").innerHTML.replace('0b', '');
+            const gridsquareBits = document.getElementById("gridsquare-bits").innerHTML.replace('0b', '');
+
+            const totalBits = emergencyBits + timeBitsRaw + callsignBits + gridsquareBits;
+            document.getElementById("total-encoded-header-bits").innerHTML = `0b${totalBits}`;
+            splitBytes();
+        };
+
+        // Initialize on page load
+        updateTotalEncodedHeader();
+
+
+
+    </script>
+</body>

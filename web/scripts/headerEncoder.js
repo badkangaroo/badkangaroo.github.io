@@ -1,5 +1,5 @@
 "use strict";
-import { nibble, nibbit, nibblit, verifyNibble, verifyNibbit, verifyNibblit } from "./headerBitTypes.js";
+import { nibble, alphabit, alphanumbit, verifyNibble, verifyNibbit, verifyNibblit } from "./headerBitTypes.js";
 // encoder class
 export class HeaderEncoder {
     constructor() {
@@ -107,9 +107,9 @@ export class HeaderEncoder {
                 const field = gridsquare.slice(0, 2);
                 const square = gridsquare.slice(2, 4);
                 const locator = gridsquare.slice(4, 6);
-                const fieldBits = field.split('').map(char => nibbit[char]).map(nibble => nibble.toString(2).padStart(5, "0")).join(", ");
+                const fieldBits = field.split('').map(char => alphabit[char]).map(nibble => nibble.toString(2).padStart(5, "0")).join(", ");
                 const squareBits = square.split('').map(char => nibble[char]).map(nibble => nibble.toString(2).padStart(4, "0")).join(", ");
-                const locatorBits = locator.toUpperCase().split('').map(char => nibbit[char]).map(nibble => nibble.toString(2).padStart(5, "0")).join(", ");
+                const locatorBits = locator.toUpperCase().split('').map(char => alphabit[char]).map(nibble => nibble.toString(2).padStart(5, "0")).join(", ");
                 this.gridsquareBitResult.value = fieldBits + ", " + squareBits + ", " + locatorBits;
             }
         }
@@ -124,7 +124,7 @@ export class HeaderEncoder {
                 this.callsign = callsign;
                 const uppserCase = callsign.toUpperCase();
                 const uppserCaseArray = uppserCase.split('');
-                const callsignNibbits = uppserCaseArray.map(char => nibblit[char]);
+                const callsignNibbits = uppserCaseArray.map(char => alphanumbit[char]);
                 const callsignBits = callsignNibbits.map(n => n.toString(2).padStart(6, "0")).join(", ");
                 const callsignBitsArray = callsignBits.split(", ");
                 for(let i = callsignBitsArray.length; i < 8; i++) {
@@ -150,7 +150,7 @@ export class HeaderEncoder {
             } else {
                 this.nameInput.style.backgroundColor = "white";
                 this.name = name;
-                const nameBits = name.toUpperCase().split('').map(char => nibbit[char]).map(nibble => nibble.toString(2).padStart(5, "0")).join(", ");
+                const nameBits = name.toUpperCase().split('').map(char => alphabit[char]).map(nibble => nibble.toString(2).padStart(5, "0")).join(", ");
                 // replace the values in the nameBitResult with the nameValues
                 // nameBits is a string of 5 bit values separated by commas
                 // we need to convert this to an array of 5 bit values
