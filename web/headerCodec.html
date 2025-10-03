@@ -2,192 +2,400 @@
 <html lang="en">
 
 <head>
-    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta id="extViewportMeta" name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <title>Ribbit - Header Encoder Decoder with Tests - Development</title>
 </head>
 
 <body>
     <div id="headerCodec">
-        <h1>Header Codec</h1>
-        <p>
-            The data arrangement and bit wise formatting for a reduced and compact
-            arrangement of several different types to identify data sent through ribbit.
-            The proposed total length of the header is 32 bits.
-        </p>
-        <h2>Data types</h2>
-        <ul>
-            <li>Emergency - 1 bit (boolean)</li>
-            <li>Timestamp - 31 bits</li>
-            <ul>
-                <li>Year and Month - 10 bits (number)</li>
-                <li>Day - 5 bits (number)</li>
-                <li>Hour - 5 bits (number)</li>
-                <li>Minute - 6 bits (number)</li>
-                <li>Second - 5 bits (number)</li>
-            </ul>
-            <li>Callsign - 48 bits (alphanumbit array)</li>
-            <ul>
-                <li>[A-Z,1-9] - 6 bits (alphanumbit)</li>
-                <li>[A-Z,1-9] - 6 bits (alphanumbit)</li>
-                <li>[A-Z,1-9] - 6 bits (alphanumbit)</li>
-                <li>[A-Z,1-9] - 6 bits (alphanumbit)</li>
-                <li>[A-Z,1-9] - 6 bits (alphanumbit)</li>
-                <li>[A-Z,1-9] - 6 bits (alphanumbit)</li>
-                <li>[A-Z,1-9] - 6 bits (alphanumbit)</li>
-                <li>[A-Z,1-9] - 6 bits (alphanumbit)</li>
-            </ul>
-            <li>Gridsquare - 28 bits (alphanumbit/nibble/alphabit array)</li>
-            <ul>
-                <li>[A-Z ]Field - 5 bits (alphabit)</li>
-                <li>[A-Z ]Field - 5 bits (alphabit)</li>
-                <li>[0-9 ]Square - 4 bits (nibble)</li>
-                <li>[0-9 ]Square - 4 bits (nibble)</li>
-                <li>[A-Z ]Subsquare - 5 bits (alphabit)</li>
-                <li>[A-Z ]Subsquare - 5 bits (alphabit)</li>
-            </ul>
-        </ul>
-        <h2>Emergency - 1 bit (boolean)</h2>
-        <p>
-            The emergency flag is a boolean value true or false.
-            <br>
-            <input type="checkbox" id="emergency" name="emergency" onchange="emergencyChange()">
-            <label for="emergency">Emergency</label>
-            <br>
-        <h4>Encoded Result: <span id="emergency-bits">0b0</span></h4>
-        </p>
-        <h2>Timestamp - 31 bits</h2>
-        <p>
-            An unusual format is used to keep track of the time a message is sent.
-            The timing interval is set to every two seconds. The formatting
-            is to reduce the use of bits by using only 10 bits for the month
-            <br>
-            <input type="number" id="year" name="year" onchange="yearChange()" default="2026" placeholder="2026"
-                min="2026" max="2111">
-            <label for="year">Year</label>
-            <br>
-            <input type="number" id="month" name="month" onchange="monthChange()" default="0" placeholder="0" min="0"
-                max="11">
-            <label for="month">Month (0=Jan, 11=Dec)</label>
-            <br>
-        <h4>Year+Month Encoded (10 bits): <span id="year-bits">0b0000000000</span></h4>
-        <br>
-        <input type="number" id="day" name="day" onchange="dayChange()" default="0" placeholder="0" min="0" max="30">
-        <label for="day">Day (0-30)</label>
-        <br>
-        <h4>Day Encoded (5 bits): <span id="day-bits">0b00000</span></h4>
-        <br>
-        <input type="number" id="hour" name="hour" onchange="hourChange()" default="0" placeholder="0" min="0" max="23">
-        <label for="hour">Hour (0-23)</label>
-        <br>
-        <h4>Hour Encoded (5 bits): <span id="hour-bits">0b00000</span></h4>
-        <br>
-        <input type="number" id="minute" name="minute" onchange="minuteChange()" default="0" placeholder="0" min="0"
-            max="59">
-        <label for="minute">Minute (0-59)</label>
-        <br>
-        <h4>Minute Encoded (6 bits): <span id="minute-bits">0b000000</span></h4>
-        <br>
-        <input type="number" id="second" name="second" onchange="secondChange()" default="0" placeholder="0" min="0"
-            max="29">
-        <label for="second">Second (0-29, every 2 seconds)</label>
-        <br>
-        <h4>Second Encoded (5 bits): <span id="second-bits">0b00000</span></h4>
-        <br>
-        </p>
-        <h3>Timestamp Result (31 bits): <span id="time-bits">0b0000000000000000000000000000000</span></h3>
+        <h1>🐸 Ribbit Header Codec</h1>
+        <div class="intro">
+            <p>Compact 108-bit message header encoding/decoding system for amateur radio data transmission.<br>
+            Watch data flow from human-readable → binary → bytes → binary → human-readable</p>
+        </div>
 
-        <h2>Callsign - 48 bits (alphanumbit array)</h2>
-        <p>
-            The callsign is an 8 character string encoded into 48 bits (6 bits per character).
-            <br><br>
-            <input type="text" id="callsign" name="callsign" onkeyup="callsignChange()" maxlength="8"
-                placeholder="KN6FZY" style="padding: 5px; font-size: 16px;">
-            <label for="callsign">Callsign (up to 8 chars)</label>
-            <br>
-        <h4>Callsign Encoded (48 bits): <span
-                id="callsign-bits">0b000000000000000000000000000000000000000000000000</span></h4>
-        </p>
+        <div class="data-type-list">
+            <strong>Header Structure (108 bits total):</strong>
+            <ul>
+                <li><span class="highlight-emergency">Emergency</span> - 1 bit (boolean flag)</li>
+                <li><span class="highlight-timestamp">Timestamp</span> - 31 bits [Year/Month(10) + Day(5) + Hour(5) + Minute(6) + Second(5)]</li>
+                <li><span class="highlight-callsign">Callsign</span> - 48 bits [8 chars × 6 bits alphanumbit]</li>
+                <li><span class="highlight-gridsquare">Gridsquare</span> - 28 bits [Letters(5+5) + Numbers(4+4) + Letters(5+5)]</li>
+            </ul>
+        </div>
 
-        <h2>Gridsquare - 28 bits (alphabit/nibble array)</h2>
-        <p>
-            The gridsquare is a 6 character location code (e.g., CM87uq) encoded into 28 bits.
-            <br><br>
-            <input type="text" id="gridsquare" name="gridsquare" onkeyup="gridsquareChange()" maxlength="6"
-                placeholder="CM87uq" style="padding: 5px; font-size: 16px;">
-            <label for="gridsquare">Gridsquare (6 chars: 2 letters, 2 numbers, 2 letters)</label>
-            <br>
-        <h4>Gridsquare Encoded (28 bits): <span id="gridsquare-bits">0b0000000000000000000000000000</span></h4>
-        </p>
+        <!-- ENCODING SECTION -->
+        <div class="section encoder-section">
+            <span class="flow-label">📤 Step 1: Encoding</span>
+            <h2>Encode Human-Readable Data → Binary</h2>
 
-        <h2>Total Encoded Header - 108 bits</h2>
-        <p>
-            The total encoded header is 108 bits (1 + 31 + 48 + 28). It's a combination of the
-            emergency, timestamp, callsign, and gridsquare.
-        </p>
-        <h3><span id="total-encoded-header-bits">0b</span></h3>
-        <h2>Decoded Header - 108 bits</h2>
-        <p>
-            The decoded header is 108 bits. It's a combination of the
-            emergency, timestamp, callsign, and gridsquare.
-        </p>
-        <h3><span id="decoded-header-bits">0b</span></h3>
-        <h2>Delivered Header - 112 bits (14 bytes)</h2>
-        <p>
-            The header is actually returned by the decoder from the library
-            as a series of bytes. So the last 4 bits of the last byte are 0s
-            with the first 4 bits of the last byte being the last part of the
-            Mainhead Gridsquare. That would look something like:
-        <h4>Delivered byte array 14 8bit (1Byte) values:
-            <span id="decoded-header-bytes">[0b00000000, 0b00000000, 0b00000000,
-                0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
-                0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000]</span>
-        </h4>
-        <h3>Recomposed header from bytes: <span id="recomposed-header-bits">0b</span></h3>
-        <p>
-            The bytes are concatenated into a single 108 bit array which is
-            then split into the 4 parts of the header.
-        </p>
-        <h4>Recomposed header from bytes:</h4>
-        <h4>Emergency bit: <span id="decoded-header-emergency-bit">0b0</span></h4>
-        <h4>Timestamp bits: <span id="decoded-header-timestamp-bits">0b0000000000000000000000000000000</span></h4>
-        <h4>Callsign bits: <span
-                id="decoded-header-callsign-bits">0b000000000000000000000000000000000000000000000000</span></h4>
-        <h4>Gridsquare bits: <span id="decoded-header-gridsquare-bits">0b0000000000000000000000000000</span></h4>
-        <p>
-            These are then decoded into the human readable header.
-        </p>
-        <h4>Emergency: <span id="decoded-header-emergency-value">false</span></h4>
-        <h4>Timestamp: <span id="decoded-header-timestamp-value">2026-01-01 00:00:00</span></h4>
-        <h4>Callsign: <span id="decoded-header-callsign-value">KN6FZY</span></h4>
-        <h4>Gridsquare: <span id="decoded-header-gridsquare-value">CM87uq</span></h4>
-        </p>
+            <div class="field-group">
+                <h3><span class="highlight-emergency">Emergency Flag</span></h3>
+                <div class="input-row">
+                    <input type="checkbox" id="emergency" name="emergency" onchange="emergencyChange()">
+                    <label for="emergency">Emergency Mode Active</label>
+                </div>
+                <div class="bit-output"><span class="highlight-emergency" id="emergency-bits">0</span></div>
+            </div>
+
+            <div class="field-group">
+                <h3><span class="highlight-timestamp">Timestamp (UTC)</span></h3>
+                <div class="input-row">
+                    <label for="year">Year (2026-2111)</label>
+                    <input type="number" id="year" name="year" onchange="yearChange()" placeholder="2026" min="2026" max="2111">
+                </div>
+                <div class="input-row">
+                    <label for="month">Month (0=Jan, 11=Dec)</label>
+                    <input type="number" id="month" name="month" onchange="monthChange()" placeholder="0" min="0" max="11">
+                </div>
+                <div class="bit-output">Year+Month (10 bits): <span id="year-bits">0000000000</span></div>
+                
+                <div class="input-row">
+                    <label for="day">Day (0-30)</label>
+                    <input type="number" id="day" name="day" onchange="dayChange()" placeholder="1" min="0" max="30">
+                </div>
+                <div class="bit-output">Day (5 bits): <span id="day-bits">00000</span></div>
+                
+                <div class="input-row">
+                    <label for="hour">Hour (0-23)</label>
+                    <input type="number" id="hour" name="hour" onchange="hourChange()" placeholder="0" min="0" max="23">
+                </div>
+                <div class="bit-output">Hour (5 bits): <span id="hour-bits">00000</span></div>
+                
+                <div class="input-row">
+                    <label for="minute">Minute (0-59)</label>
+                    <input type="number" id="minute" name="minute" onchange="minuteChange()" placeholder="0" min="0" max="59">
+                </div>
+                <div class="bit-output">Minute (6 bits): <span id="minute-bits">000000</span></div>
+                
+                <div class="input-row">
+                    <label for="second">Second (0-29, 2s intervals)</label>
+                    <input type="number" id="second" name="second" onchange="secondChange()" placeholder="0" min="0" max="29">
+                </div>
+                <div class="bit-output">Second (5 bits): <span id="second-bits">00000</span></div>
+                
+                <div class="bit-output" style="border: 2px solid #fbbf24;">
+                    <strong>Timestamp Combined (31 bits):</strong><br>
+                    <span class="highlight-timestamp" id="time-bits">0000000000000000000000000000000</span>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <h3><span class="highlight-callsign">Callsign</span></h3>
+                <div class="input-row">
+                    <label for="callsign">Ham Radio Callsign (up to 8 chars)</label>
+                    <input type="text" id="callsign" name="callsign" onkeyup="callsignChange()" maxlength="8" placeholder="KN6FZY">
+                </div>
+                <div class="bit-output">
+                    <strong>Callsign (48 bits):</strong><br>
+                    <span class="highlight-callsign" id="callsign-bits">000000000000000000000000000000000000000000000000</span>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <h3><span class="highlight-gridsquare">Gridsquare</span></h3>
+                <div class="input-row">
+                    <label for="gridsquare">Maidenhead Locator (6 chars: AA00aa)</label>
+                    <input type="text" id="gridsquare" name="gridsquare" onkeyup="gridsquareChange()" maxlength="6" placeholder="CM87uq">
+                </div>
+                <div class="bit-output">
+                    <strong>Gridsquare (28 bits):</strong><br>
+                    <span class="highlight-gridsquare" id="gridsquare-bits">0000000000000000000000000000</span>
+                </div>
+            </div>
+
+            <div style="background: rgba(74, 222, 128, 0.1); padding: 20px; border-radius: 8px; border: 2px solid #4ade80;">
+                <h3>✅ Complete Encoded Bitstream (108 bits)</h3>
+                <div class="bit-output" style="font-size: 12px; word-break: break-all;">
+                    <span class="highlight-emergency" id="total-emergency-display">0</span><span class="highlight-timestamp" id="total-timestamp-display">0000000000000000000000000000000</span><span class="highlight-callsign" id="total-callsign-display">000000000000000000000000000000000000000000000000</span><span class="highlight-gridsquare" id="total-gridsquare-display">0000000000000000000000000000</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRANSMISSION SECTION -->
+        <div class="transmission-arrow">⬇ TRANSMISSION ⬇</div>
+
+        <div class="section transmission-section">
+            <span class="flow-label">📡 Step 2: Byte Conversion</span>
+            <h2>Prepare for Transmission (14 Bytes)</h2>
+            <p style="color: #a0a0a0; font-size: 13px;">
+                The 108-bit header is padded to 112 bits (14 bytes) for transmission.
+                The last 4 bits are zeros.
+            </p>
+            <div class="byte-array">
+                <strong>Byte Array (14 × 8-bit values):</strong><br>
+                <span id="decoded-header-bytes" style="color: #fbbf24; font-size: 12px; word-break: break-all;">
+                    [0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 
+                    0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000]
+                </span>
+            </div>
+        </div>
+
+        <div class="transmission-arrow">⬇ RECEPTION ⬇</div>
+
+        <!-- DECODING SECTION -->
+        <div class="section decoder-section">
+            <span class="flow-label">📥 Step 3: Decoding</span>
+            <h2>Decode Binary → Human-Readable Data</h2>
+            
+            <div class="field-group">
+                <h3>Recompose Bitstream from Bytes</h3>
+                <div class="bit-output" style="font-size: 12px; word-break: break-all;">
+                    <span id="recomposed-header-bits" style="color: #22d3ee;"></span>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <h3>Extract Fragments</h3>
+                <div class="bit-output">
+                    <span class="highlight-emergency">Emergency (1 bit):</span> 
+                    <span id="decoded-header-emergency-bit">0</span>
+                </div>
+                <div class="bit-output">
+                    <span class="highlight-timestamp">Timestamp (31 bits):</span> 
+                    <span id="decoded-header-timestamp-bits">0000000000000000000000000000000</span>
+                </div>
+                <div class="bit-output">
+                    <span class="highlight-callsign">Callsign (48 bits):</span> 
+                    <span id="decoded-header-callsign-bits">000000000000000000000000000000000000000000000000</span>
+                </div>
+                <div class="bit-output">
+                    <span class="highlight-gridsquare">Gridsquare (28 bits):</span> 
+                    <span id="decoded-header-gridsquare-bits">0000000000000000000000000000</span>
+                </div>
+            </div>
+
+            <div class="decoded-values">
+                <h3>✅ Decoded Values</h3>
+                <h4><span class="highlight-emergency">Emergency:</span> <span class="decoded-value" id="decoded-header-emergency-value">false</span></h4>
+                <h4><span class="highlight-timestamp">Timestamp:</span> <span class="decoded-value" id="decoded-header-timestamp-value">2026-01-01 00:00:00</span></h4>
+                <h4><span class="highlight-callsign">Callsign:</span> <span class="decoded-value" id="decoded-header-callsign-value">--------</span></h4>
+                <h4><span class="highlight-gridsquare">Gridsquare:</span> <span class="decoded-value" id="decoded-header-gridsquare-value">------</span></h4>
+            </div>
+        </div>
     </div>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            background-color: #106c2f;
-            color: #fff;
-            font-family: 'NotoSansDisplay-Regular', sans-serif;
-            padding: 20px;
-            font-size: 16px;
-            line-height: 1.5;
+            background-color: #0a1f14;
+            color: #e0e0e0;
+            font-family: 'Courier New', 'Consolas', monospace;
+            padding: 0;
             margin: 0;
-        }
-
-        h1 {
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-
-        p {
-            margin-bottom: 20px;
+            font-size: 14px;
+            line-height: 1.6;
         }
 
         #headerCodec {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin: 0 0 10px 0;
+            color: #4ade80;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        h2 {
+            font-size: 18px;
+            margin: 20px 0 10px 0;
+            color: #4ade80;
+            border-bottom: 2px solid #22543d;
+            padding-bottom: 5px;
+        }
+
+        h3 {
+            font-size: 16px;
+            margin: 15px 0 10px 0;
+            color: #86efac;
+        }
+
+        h4 {
+            font-size: 14px;
+            margin: 10px 0 5px 0;
+            color: #bbf7d0;
+            font-weight: normal;
+        }
+
+        .intro {
+            text-align: center;
+            font-size: 13px;
+            color: #a0a0a0;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: rgba(34, 84, 61, 0.3);
+            border-radius: 8px;
+        }
+
+        .section {
+            background: rgba(16, 108, 47, 0.2);
+            border: 1px solid #22543d;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .encoder-section {
+            border-left: 4px solid #4ade80;
+        }
+
+        .transmission-section {
+            border-left: 4px solid #fbbf24;
+        }
+
+        .decoder-section {
+            border-left: 4px solid #60a5fa;
+        }
+
+        .field-group {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 1px solid rgba(74, 222, 128, 0.2);
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            gap: 10px;
+        }
+
+        label {
+            flex: 1;
+            color: #a0a0a0;
+            font-size: 13px;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #4ade80;
+            color: #4ade80;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #86efac;
+            box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #4ade80;
+        }
+
+        .bit-output {
+            background: #000;
+            color: #22d3ee;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 8px 0;
+            border: 1px solid #164e63;
+            word-break: break-all;
+            min-height: 24px;
+        }
+
+        .highlight-emergency {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .highlight-timestamp {
+            color: #fbbf24;
+        }
+
+        .highlight-callsign {
+            color: #4ade80;
+        }
+
+        .highlight-gridsquare {
+            color: #60a5fa;
+        }
+
+        .transmission-arrow {
+            text-align: center;
+            font-size: 32px;
+            color: #fbbf24;
+            margin: 20px 0;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .decoded-values {
+            background: rgba(96, 165, 250, 0.1);
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #60a5fa;
+        }
+
+        .decoded-value {
+            color: #60a5fa;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .flow-label {
+            display: inline-block;
+            background: #22543d;
+            color: #4ade80;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .byte-array {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #fbbf24;
+            overflow-x: auto;
+        }
+
+        .data-type-list {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .data-type-list ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+
+        .data-type-list li {
+            margin: 5px 0;
+            color: #a0a0a0;
         }
     </style>
 
@@ -239,7 +447,7 @@
         const emergencyChange = () => {
             const emergency = document.getElementById("emergency").checked;
             const emergencyBit = emergency ? 1 : 0;
-            document.getElementById("emergency-bits").innerHTML = `0b${emergencyBit}`;
+            document.getElementById("emergency-bits").innerHTML = `${emergencyBit}`;
             updateTotalEncodedHeader();
         };
 
@@ -258,7 +466,7 @@
             const monthYear = year * 12 + month;
             const monthYearBits = monthYear.toString(2).padStart(10, '0');
 
-            document.getElementById("year-bits").innerHTML = `0b${monthYearBits}`;
+            document.getElementById("year-bits").innerHTML = `${monthYearBits}`;
             updateTimestamp();
         };
 
@@ -277,7 +485,7 @@
             // Following HeaderReadme.md: day is 0-based (0-30)
             const day = parseInt(dayInput);
             const dayBits = day.toString(2).padStart(5, '0');
-            document.getElementById("day-bits").innerHTML = `0b${dayBits}`;
+            document.getElementById("day-bits").innerHTML = `${dayBits}`;
             updateTimestamp();
         };
 
@@ -288,7 +496,7 @@
             // Following HeaderReadme.md: hour is 0-23
             const hour = parseInt(hourInput);
             const hourBits = hour.toString(2).padStart(5, '0');
-            document.getElementById("hour-bits").innerHTML = `0b${hourBits}`;
+            document.getElementById("hour-bits").innerHTML = `${hourBits}`;
             updateTimestamp();
         };
 
@@ -299,7 +507,7 @@
             // Following HeaderReadme.md: minute is 0-59
             const minute = parseInt(minuteInput);
             const minuteBits = minute.toString(2).padStart(6, '0');
-            document.getElementById("minute-bits").innerHTML = `0b${minuteBits}`;
+            document.getElementById("minute-bits").innerHTML = `${minuteBits}`;
             updateTimestamp();
         };
 
@@ -310,20 +518,20 @@
             // Following HeaderReadme.md: second is divided by 2 (0-29)
             const second = parseInt(secondInput);
             const secondBits = second.toString(2).padStart(5, '0');
-            document.getElementById("second-bits").innerHTML = `0b${secondBits}`;
+            document.getElementById("second-bits").innerHTML = `${secondBits}`;
             updateTimestamp();
         };
 
         const updateTimestamp = () => {
-            const yearBits = document.getElementById("year-bits").innerHTML.replace('0b', '');
-            const dayBits = document.getElementById("day-bits").innerHTML.replace('0b', '');
-            const hourBits = document.getElementById("hour-bits").innerHTML.replace('0b', '');
-            const minuteBits = document.getElementById("minute-bits").innerHTML.replace('0b', '');
-            const secondBits = document.getElementById("second-bits").innerHTML.replace('0b', '');
+            const yearBits = document.getElementById("year-bits").innerHTML;
+            const dayBits = document.getElementById("day-bits").innerHTML;
+            const hourBits = document.getElementById("hour-bits").innerHTML;
+            const minuteBits = document.getElementById("minute-bits").innerHTML;
+            const secondBits = document.getElementById("second-bits").innerHTML;
 
             if (yearBits && dayBits && hourBits && minuteBits && secondBits) {
                 const timeBits = yearBits + dayBits + hourBits + minuteBits + secondBits;
-                document.getElementById("time-bits").innerHTML = `0b${timeBits}`;
+                document.getElementById("time-bits").innerHTML = `${timeBits}`;
                 updateTotalEncodedHeader();
             }
         };
@@ -342,7 +550,7 @@
                 callsignBits += charBits;
             }
 
-            document.getElementById("callsign-bits").innerHTML = `0b${callsignBits}`;
+            document.getElementById("callsign-bits").innerHTML = `${callsignBits}`;
             updateTotalEncodedHeader();
         };
 
@@ -379,7 +587,7 @@
             const gridsquareBits = letter1Bits + letter2Bits + number1Bits +
                 number2Bits + letter3Bits + letter4Bits;
 
-            document.getElementById("gridsquare-bits").innerHTML = `0b${gridsquareBits}`;
+            document.getElementById("gridsquare-bits").innerHTML = `${gridsquareBits}`;
             updateTotalEncodedHeader();
         };
         const splitAndPad = (str, chunkSize = 8) => {
@@ -408,20 +616,20 @@
         );
 
         const fragmentedBits = () => {
-            const bitstream = document.getElementById("recomposed-header-bits").innerHTML.replace('0b', '');
+            const bitstream = document.getElementById("recomposed-header-bits").innerHTML;
             const emergencyFragment = bitstream.slice(0, 1);
             const timestampFragment = bitstream.slice(1, 32);
             const callsignFragment = bitstream.slice(32, 80);
             const gridsquareFragment = bitstream.slice(80, 108);
             
-            document.getElementById("decoded-header-emergency-bit").innerHTML = `0b${emergencyFragment}`;
-            document.getElementById("decoded-header-timestamp-bits").innerHTML = `0b${timestampFragment}`;
-            document.getElementById("decoded-header-callsign-bits").innerHTML = `0b${callsignFragment}`;
-            document.getElementById("decoded-header-gridsquare-bits").innerHTML = `0b${gridsquareFragment}`;
+            document.getElementById("decoded-header-emergency-bit").innerHTML = `${emergencyFragment}`;
+            document.getElementById("decoded-header-timestamp-bits").innerHTML = `${timestampFragment}`;
+            document.getElementById("decoded-header-callsign-bits").innerHTML = `${callsignFragment}`;
+            document.getElementById("decoded-header-gridsquare-bits").innerHTML = `${gridsquareFragment}`;
         }
         
         const fragmentsToReadableText = () => {
-            const bitstream = document.getElementById("recomposed-header-bits").innerHTML.replace('0b', '');
+            const bitstream = document.getElementById("recomposed-header-bits").innerHTML;
             const emergencyFragment = bitstream.slice(0, 1);
             const timestampFragment = bitstream.slice(1, 32);
             const callsignFragment = bitstream.slice(32, 80);
@@ -478,19 +686,23 @@
         }
 
         const concatenateBits = () => {
-
             let bytes = document.getElementById("decoded-header-bytes").innerHTML;
             bytes = bytes.replace(/0b|, /g, '');
             bytes = bytes.replace("]", "");
             bytes = bytes.replace("[", "");
             console.log(bytes);
-            document.getElementById("recomposed-header-bits").innerHTML = `0b${bytes}`;
+            document.getElementById("recomposed-header-bits").innerHTML = `${bytes}`;
             fragmentedBits();
             fragmentsToReadableText();
         }
         const splitBytes = () => {
-            // remove the 0b from the front of the string
-            const bits = document.getElementById("total-encoded-header-bits").innerHTML.replace('0b', '');
+            // Get the total bits from individual display elements
+            const emergencyBits = document.getElementById("total-emergency-display").innerHTML;
+            const timestampBits = document.getElementById("total-timestamp-display").innerHTML;
+            const callsignBits = document.getElementById("total-callsign-display").innerHTML;
+            const gridsquareBits = document.getElementById("total-gridsquare-display").innerHTML;
+            const bits = emergencyBits + timestampBits + callsignBits + gridsquareBits;
+            
             // split the bits into 8 bit chunks
             let bytes = splitAndPad(bits, 8);
             bytes = bytes.map(bin => "0b" + bin);
@@ -502,13 +714,18 @@
         // ===== Total Encoded Header =====
 
         const updateTotalEncodedHeader = () => {
-            const emergencyBits = document.getElementById("emergency-bits").innerHTML.replace('0b', '').replace(/\s.*/, '');
-            const timeBitsRaw = document.getElementById("time-bits").innerHTML.replace('0b', '').replace(/\s.*/, '');
-            const callsignBits = document.getElementById("callsign-bits").innerHTML.replace('0b', '');
-            const gridsquareBits = document.getElementById("gridsquare-bits").innerHTML.replace('0b', '');
+            const emergencyBits = document.getElementById("emergency-bits").innerHTML.replace(/\s.*/, '');
+            const timeBitsRaw = document.getElementById("time-bits").innerHTML.replace(/\s.*/, '');
+            const callsignBits = document.getElementById("callsign-bits").innerHTML;
+            const gridsquareBits = document.getElementById("gridsquare-bits").innerHTML;
+
+            // Update individual display elements in the complete bitstream section
+            document.getElementById("total-emergency-display").innerHTML = emergencyBits;
+            document.getElementById("total-timestamp-display").innerHTML = timeBitsRaw;
+            document.getElementById("total-callsign-display").innerHTML = callsignBits;
+            document.getElementById("total-gridsquare-display").innerHTML = gridsquareBits;
 
             const totalBits = emergencyBits + timeBitsRaw + callsignBits + gridsquareBits;
-            document.getElementById("total-encoded-header-bits").innerHTML = `0b${totalBits}`;
             splitBytes();
         };
 
