@@ -2,7 +2,7 @@
 import { nibble, alphabit, alphanumbit, verifyNibble, verifyNibbit, verifyNibblit } from "./headerBitTypes.js";
 
 /**
- * HeaderCodec - Complete encoding/decoding API for Ribbit messages
+ * MessageCodec - Complete encoding/decoding API for Ribbit messages
  * 
  * Message Structure (130+ bits):
  * - Callsign (48 bits) - Header component
@@ -17,9 +17,9 @@ import { nibble, alphabit, alphanumbit, verifyNibble, verifyNibbit, verifyNibbli
  * - Name (variable, 6 bits per char) - Content
  * - Message (variable, 8 bits per byte UTF-8) - Content
  */
-export class HeaderCodec {
+export class MessageCodec {
     constructor() {
-        console.log("HeaderCodec initialized");
+        console.log("MessageCodec initialized");
         
         // Create reverse lookup tables for decoding
         this.alphanumbitReverse = Object.fromEntries(
@@ -589,3 +589,4 @@ export class HeaderCodec {
         return messageTypeNames[type] || 'Unknown';
     }
 }
+

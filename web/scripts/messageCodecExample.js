@@ -1,14 +1,14 @@
 /**
- * HeaderCodec API Usage Examples
+ * MessageCodec API Usage Examples
  * 
- * This file demonstrates how to use the HeaderCodec API for encoding
- * and decoding Ribbit message headers.
+ * This file demonstrates how to use the MessageCodec API for encoding
+ * and decoding Ribbit messages.
  */
 
-import { HeaderCodec } from './headerCodec.js';
+import { MessageCodec } from './messageCodec.js';
 
 // Initialize the codec
-const codec = new HeaderCodec();
+const codec = new MessageCodec();
 
 // ==================== EXAMPLE 1: Individual Field Encoding ====================
 

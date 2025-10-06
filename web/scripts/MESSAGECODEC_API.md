@@ -1,13 +1,13 @@
-# HeaderCodec API Documentation
+# MessageCodec API Documentation
 
 Complete API for encoding and decoding Ribbit messages.
 
 ## Installation
 
 ```javascript
-import { HeaderCodec } from './headerCodec.js';
+import { MessageCodec } from './messageCodec.js';
 
-const codec = new HeaderCodec();
+const codec = new MessageCodec();
 ```
 
 ## Message Structure
@@ -490,9 +490,9 @@ const name = codec.GetMessageTypeName(1); // "Chat"
 ## Complete Usage Example
 
 ```javascript
-import { HeaderCodec } from './headerCodec.js';
+import { MessageCodec } from './messageCodec.js';
 
-const codec = new HeaderCodec();
+const codec = new MessageCodec();
 
 // Encode a complete message
 const data = {
