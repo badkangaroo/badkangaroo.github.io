@@ -1,16 +1,80 @@
 # Header Data Format
 
-Compact bit-wise encoding format for Ribbit message headers. Total header size is **108 bits** (14 bytes when padded).
+Revisions to the data structure of the header are as follows.
 
-## Data Structure
+## Data Structure Revision
 
-| Field | Bits | Description |
-|-------|------|-------------|
-| Emergency | 1 | Emergency flag (boolean) |
-| Timestamp | 31 | Year/Month (10) + Day (5) + Hour (5) + Minute (6) + Second (5) |
-| Callsign | 48 | 8 characters × 6 bits (alphanumbit encoding) |
-| Gridsquare | 28 | 2 letters (5+5) + 2 numbers (4+4) + 2 letters (5+5) |
-| **Total** | **108** | **Encoded into 14 bytes (112 bits with padding)** |
+
+
+| **section**    | **sub-section** | **type**   | **bits** | **input**  | **output**     |
+| -------------- | --------------- | ---------- | -------- | ---------- | -------------- |
+|                | callsign 1      | alphanum   | 6        | a-z/0-9    | a-z/0-9        |
+|                | callsign 2      | alphanum   | 6        | a-z/0-9    | a-z/0-9        |
+|                | callsign 3      | alphanum   | 6        | a-z/0-9    | a-z/0-9        |
+|                | callsign 4      | alphanum   | 6        | a-z/0-9    | a-z/0-9        |
+|                | callsign 5      | alphanum   | 6        | a-z/0-9    | a-z/0-9        |
+|                | callsign 6      | alphanum   | 6        | a-z/0-9    | a-z/0-9        |
+|                | callsign 7      | alphanum   | 6        | a-z/0-9    | a-z/0-9        |
+|                | callsign 8      | alphanum   | 6        | a-z/0-9    | a-z/0-9        |
+| ==callsign==   |                 | **total:** | 48       |            |                |
+|                | months*         | number     | 10       | 0-1023     | 2026-2111      |
+|                | day             | number     | 5        | 0-31       | 1-32           |
+|                | hour            | number     | 5        | 0-23       | 1-24           |
+|                | minute          | number     | 6        | 0-58       | 0-58           |
+|                | second          | number     | 5        | 0-29       | 0-58           |
+| ==timestamp==  |                 | **total:** | 31       |            |                |
+|                | field x         | letter     | 5        | a-z        | A-Z            |
+|                | field y         | letter     | 5        | a-z        | A-Z            |
+|                | square x        | number     | 4        | 0-9        | 0-9            |
+|                | square y        | number     | 4        | 0-9        | 0-9            |
+|                | subsquare x     | letter     | 5        | a-z        | a-z            |
+|                | subsquare y     | letter     | 5        | a-z        | a-z            |
+| ==gridsquare== |                 | **total:** | 28       |            |                |
+|                | NTP             | boolean    | 1        | true/false | isNTP          |
+|                | GPS             | boolean    | 1        | true/false | isGPS          |
+|                | Template        | template   | 4        | 0-15       | message type*  |
+|                | emergency       | boolean    | 1        | true/false | isEmergency    |
+| ==meta==       |                 | **total:** | 7        |            |                |
+|                | name length     | number     | 8        | 0-255      | name length*   |
+|                | name            | alphanum   | array    | array      |                |
+| ==name==       |                 |            | 8-192    |            |                |
+| ==message==    |                 |            |          |            |                |
+|                | message length  | number     | 8        | 0-255      | message lenth* |
+|                | message         | utf-8      | 1920*    | string     | string         |
+|                | ACK*            | alphanum   | 1920*    | string     | string         |
+
+**months**: also sets the year by counting number of months from 2026.
+
+**message type:** 4-bit field supporting up to 16 message types (0-15). Currently defined types:
+0. emergency
+1. chat
+2. contest
+3. other
+4-15. (reserved for future use)
+
+**name length:** sets the number of characters to read as a part of the name field immediately following the length value. Name is simply a string converted into an array of _alphanum_ bits. The name length is limited to 32 characters using the 6 bit alpha numeric type.
+
+**message length**: sets the number of characters to display in the message component, unused space can be used for forwarding or repeating emergency information. This comes out to 1920 bits, or 240 bytes, since this is UTF-8, some characters can multiple bytes long.
+
+**ACK** the acknowledgement section contains callsign + timestamp to indicate which messages have been received.
+# Ordering
+
+| Input           | fragment       | bit size | bit layout  |
+| --------------- | -------------- | -------- | --- |
+| AB1CDE          | Callsign       | 48       | 0b000000 ... 0b000000 0b000000 |
+| 2025/10/5 21:11 | Timestamp      | 31       | 0b0000000000 ... 0b00000 0b00000 0b00000 |
+| CM97af          | Grid Square    | 28       | 0b00000 ... 0b00000 0b00000 |
+| checkbox        | Emergency      | 1        | 0b0 |
+| checkbox        | NTP            | 1        | 0b0 |
+| checkbox        | GPS            | 1        | 0b0 |
+| 10              | Name length    | 8        | 0b00000000 |
+| 11              | Message length | 8        | 0b00000000 |
+| 0-15            | Message Type   | 4        | 0b0000     |
+| "alex okita"    | Name           | 0-192    | [0b000000, ... 0b000000] |
+| "hello world"   | Message        | 0-1920   | [0b00000000, ... 0b0000000] |
+| ACK             | array          | 0-1920   | [callsign + timestamp, ... callsign + timestamp] |
+
+The revision above should be reflected in the following information
 
 ## Emergency - 1 bit
 
