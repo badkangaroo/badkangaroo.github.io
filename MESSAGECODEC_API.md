@@ -25,8 +25,8 @@ The Ribbit message follows this structure (128+ bits):
 | Name Length | 8 | nibbles | [FirstName 4 bits][LastName 4 bits] (0-15 each) |
 | Message Length | 8 | number | Length of message in bytes (0-240) |
 | Message Type | 2 | number | Message type (0-3) |
-| FirstName | variable | alphanumbit | First name (6 bits per char, 0-15 chars) |
-| LastName | variable | alphanumbit | Last name (6 bits per char, 0-15 chars) |
+| FirstName | variable | alphabit | First name (5 bits per char, 0-15 chars) |
+| LastName | variable | alphabit | Last name (5 bits per char, 0-15 chars) |
 | Message | variable | UTF-8 | Message content (8 bits per byte) |
 
 ## Individual Field Encoding
@@ -174,7 +174,7 @@ const bits = codec.GetMessageTypeBits(1); // Chat
 ---
 
 ### GetNameBitStream(name)
-Encodes name to alphanumbit bitstream (use for both first and last names).
+Encodes name to alphabit bitstream (use for both first and last names).
 
 ```javascript
 const firstNameBits = codec.GetNameBitStream("Alex");
@@ -182,9 +182,9 @@ const lastNameBits = codec.GetNameBitStream("Okita");
 ```
 
 **Parameters:**
-- `name` (string): 0-15 characters
+- `name` (string): 0-15 letters only
 
-**Returns:** String (variable length, 6 bits per char)
+**Returns:** String (variable length, 5 bits per char)
 
 **Throws:** Error if > 15 chars
 
@@ -348,7 +348,7 @@ const type = codec.BitStreamToMessageType("01"); // 1 (Chat)
 ---
 
 ### BitStreamToName(bits)
-Decodes name from alphanumbit bitstream with proper capitalization.
+Decodes name from alphabit bitstream with proper capitalization.
 
 ```javascript
 const firstName = codec.BitStreamToName(firstNameBits); // "Alex"
@@ -356,11 +356,11 @@ const lastName = codec.BitStreamToName(lastNameBits);   // "Okita"
 ```
 
 **Parameters:**
-- `bits` (string): Variable-length bitstream (multiple of 6)
+- `bits` (string): Variable-length bitstream (multiple of 5)
 
 **Returns:** String (first character uppercase, rest lowercase)
 
-**Throws:** Error if not multiple of 6 bits
+**Throws:** Error if not multiple of 5 bits
 
 ---
 
@@ -564,8 +564,8 @@ try {
 
 - Callsign: 8 characters max
 - Gridsquare: Must be valid Maidenhead format (AA00aa)
-- First Name: 15 characters max (alphanumeric)
-- Last Name: 15 characters max (alphanumeric)
+- First Name: 15 letters max (A-Z, using 5-bit alphabit encoding)
+- Last Name: 15 letters max (A-Z, using 5-bit alphabit encoding)
 - Message: 240 bytes max (UTF-8)
 - Timestamp: 2026-2111, 2-second resolution
 - Names are displayed with first character uppercase, rest lowercase

@@ -14,8 +14,8 @@ import { nibble, alphabit, alphanumbit, verifyNibble, verifyNibbit, verifyNibbli
  * - Name Length (8 bits) - Metadata [FirstNameLength 4 bits][LastNameLength 4 bits]
  * - Message Length (8 bits) - Metadata
  * - Message Type (2 bits) - Metadata
- * - FirstName (variable, 6 bits per char, 0-15 chars) - Content
- * - LastName (variable, 6 bits per char, 0-15 chars) - Content
+ * - FirstName (variable, 5 bits per char, 0-15 chars) - Content
+ * - LastName (variable, 5 bits per char, 0-15 chars) - Content
  * - Message (variable, 8 bits per byte UTF-8) - Content
  */
 export class MessageCodec {
@@ -191,8 +191,8 @@ export class MessageCodec {
     }
 
     /**
-     * Encode name to bitstream (variable length, 6 bits per char)
-     * @param {string} name - Name string (up to 15 chars)
+     * Encode name to bitstream (variable length, 5 bits per char)
+     * @param {string} name - Name string (up to 15 chars, letters only)
      * @returns {string} Variable-length bitstream
      */
     GetNameBitStream(name) {
@@ -209,8 +209,8 @@ export class MessageCodec {
         
         for (let i = 0; i < nameUpper.length; i++) {
             const char = nameUpper[i];
-            const charValue = alphanumbit[char] || 0b111111;
-            nameBits += charValue.toString(2).padStart(6, '0');
+            const charValue = alphabit[char] || 0b11111;
+            nameBits += charValue.toString(2).padStart(5, '0');
         }
         
         return nameBits;
@@ -385,19 +385,19 @@ export class MessageCodec {
 
     /**
      * Decode name bitstream to string with proper capitalization
-     * @param {string} bits - Variable-length bitstream (multiple of 6)
+     * @param {string} bits - Variable-length bitstream (multiple of 5)
      * @returns {string} Decoded name (First character uppercase, rest lowercase)
      */
     BitStreamToName(bits) {
-        if (bits.length % 6 !== 0) {
-            throw new Error("Name bitstream length must be a multiple of 6");
+        if (bits.length % 5 !== 0) {
+            throw new Error("Name bitstream length must be a multiple of 5");
         }
         
         let name = '';
-        for (let i = 0; i < bits.length; i += 6) {
-            const charBits = bits.substring(i, i + 6);
+        for (let i = 0; i < bits.length; i += 5) {
+            const charBits = bits.substring(i, i + 5);
             const charValue = parseInt(charBits, 2);
-            name += this.alphanumbitReverse[charValue] || ' ';
+            name += this.alphabitReverse[charValue] || ' ';
         }
         
         name = name.trim();
@@ -540,11 +540,11 @@ export class MessageCodec {
         const messageLength = this.BitStreamToMessageLength(messageLengthBits);
         
         // Extract variable-length fields
-        const firstNameBitLength = firstNameLength * 6;
+        const firstNameBitLength = firstNameLength * 5;
         const firstNameBits = bitstream.slice(offset, offset + firstNameBitLength);
         offset += firstNameBitLength;
         
-        const lastNameBitLength = lastNameLength * 6;
+        const lastNameBitLength = lastNameLength * 5;
         const lastNameBits = bitstream.slice(offset, offset + lastNameBitLength);
         offset += lastNameBitLength;
         

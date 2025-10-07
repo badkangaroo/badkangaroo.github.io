@@ -51,7 +51,7 @@ Revisions to the data structure of the header are as follows.
 2. contest
 3. other
 
-**name length:** 8-bit field split into two 4-bit nibbles. First nibble (bits 0-3) sets the first name length (0-15 characters), second nibble (bits 4-7) sets the last name length (0-15 characters). Both names use 6-bit alphanumeric encoding and are displayed with first character uppercase, rest lowercase.
+**name length:** 8-bit field split into two 4-bit nibbles. First nibble (bits 0-3) sets the first name length (0-15 characters), second nibble (bits 4-7) sets the last name length (0-15 characters). Both names use 5-bit alphabit encoding (letters only) and are displayed with first character uppercase, rest lowercase.
 
 **message length**: sets the number of characters to display in the message component, unused space can be used for forwarding or repeating emergency information. This comes out to 1920 bits, or 240 bytes, since this is UTF-8, some characters can multiple bytes long.
 
@@ -69,8 +69,8 @@ Revisions to the data structure of the header are as follows.
 | 4 + 4           | Name length    | 8        | 0b0000 0b0000 |
 | 11              | Message length | 8        | 0b00000000 |
 | 0-3             | Message Type   | 2        | 0b00       |
-| "alex"          | First Name     | 0-90     | [0b000000, ... 0b000000] |
-| "okita"         | Last Name      | 0-90     | [0b000000, ... 0b000000] |
+| "alex"          | First Name     | 0-75     | [0b00000, ... 0b00000] |
+| "okita"         | Last Name      | 0-75     | [0b00000, ... 0b00000] |
 | "hello world"   | Message        | 0-1920   | [0b00000000, ... 0b0000000] |
 | ACK             | array          | 0-1920   | [callsign + timestamp, ... callsign + timestamp] |
 
