@@ -35,11 +35,15 @@ const ntpBit = codec.GetNTPBit(true);
 const gpsBit = codec.GetGPSBit(true);
 console.log("Flags:", { emergency: emergencyBit, ntp: ntpBit, gps: gpsBit });
 
-// Encode name and message
-const name = "Alex Okita";
-const nameBits = codec.GetNameBitStream(name);
-console.log("Name bits:", nameBits);
-console.log("Length:", nameBits.length, "bits");
+// Encode first name and last name
+const firstName = "Alex";
+const lastName = "Okita";
+const firstNameBits = codec.GetNameBitStream(firstName);
+const lastNameBits = codec.GetNameBitStream(lastName);
+console.log("First name bits:", firstNameBits);
+console.log("Length:", firstNameBits.length, "bits");
+console.log("Last name bits:", lastNameBits);
+console.log("Length:", lastNameBits.length, "bits");
 
 const message = "Hello world!";
 const messageBits = codec.GetMessageBitStream(message);
@@ -67,9 +71,12 @@ console.log("Decoded emergency:", codec.BitStreamToEmergency(emergencyBit));
 console.log("Decoded NTP:", codec.BitStreamToNTP(ntpBit));
 console.log("Decoded GPS:", codec.BitStreamToGPS(gpsBit));
 
-// Decode name and message
-const decodedName = codec.BitStreamToName(nameBits);
-console.log("Decoded name:", decodedName);
+// Decode first name and last name
+const decodedFirstName = codec.BitStreamToName(firstNameBits);
+console.log("Decoded first name:", decodedFirstName);
+
+const decodedLastName = codec.BitStreamToName(lastNameBits);
+console.log("Decoded last name:", decodedLastName);
 
 const decodedMessage = codec.BitStreamToMessage(messageBits);
 console.log("Decoded message:", decodedMessage);
@@ -86,7 +93,8 @@ const messageData = {
     ntp: true,
     gps: true,
     messageType: 1, // Chat
-    name: "ARRL",
+    firstName: "Hiram",
+    lastName: "Maxim",
     message: "Testing Ribbit digital mode. 73!"
 };
 
@@ -116,7 +124,8 @@ console.log("Emergency:", decodedHeader.emergency);
 console.log("NTP:", decodedHeader.ntp);
 console.log("GPS:", decodedHeader.gps);
 console.log("Message Type:", decodedHeader.messageType, "-", codec.GetMessageTypeName(decodedHeader.messageType));
-console.log("Name:", decodedHeader.name);
+console.log("First Name:", decodedHeader.firstName);
+console.log("Last Name:", decodedHeader.lastName);
 console.log("Message:", decodedHeader.message);
 
 // ==================== EXAMPLE 5: Round-trip Test ====================
@@ -130,7 +139,8 @@ const testData = {
     ntp: false,
     gps: true,
     messageType: 0, // Emergency
-    name: "Emergency Contact",
+    firstName: "Emergency",
+    lastName: "Contact",
     message: "Need assistance at location. Low battery."
 };
 
@@ -159,7 +169,8 @@ const matches =
     testData.ntp === decoded.ntp &&
     testData.gps === decoded.gps &&
     testData.messageType === decoded.messageType &&
-    testData.name === decoded.name &&
+    testData.firstName.charAt(0).toUpperCase() + testData.firstName.substring(1).toLowerCase() === decoded.firstName &&
+    testData.lastName.charAt(0).toUpperCase() + testData.lastName.substring(1).toLowerCase() === decoded.lastName &&
     testData.message === decoded.message;
 
 console.log("Round-trip successful:", matches ? "✅ PASS" : "❌ FAIL");
@@ -192,8 +203,9 @@ const maximalData = {
     emergency: true,
     ntp: true,
     gps: true,
-    messageType: 2, // Contest
-    name: "ABCDEFGHIJKLMNOPQRSTUVWXYZ012345", // 32 chars max
+    messageType: 3, // Other (max value)
+    firstName: "ABCDEFGHIJKLMNO", // 15 chars max
+    lastName: "PQRSTUVWXYZ0123", // 15 chars max
     message: "A".repeat(240) // 240 bytes max
 };
 

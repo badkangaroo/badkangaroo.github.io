@@ -32,9 +32,9 @@ Revisions to the data structure of the header are as follows.
 | ==gridsquare== |                 | **total:** | 28       |            |                |
 |                | NTP             | boolean    | 1        | true/false | isNTP          |
 |                | GPS             | boolean    | 1        | true/false | isGPS          |
-|                | Template        | template   | 4        | 0-15       | message type*  |
+|                | Template        | template   | 2        | 0-3        | message type*  |
 |                | emergency       | boolean    | 1        | true/false | isEmergency    |
-| ==meta==       |                 | **total:** | 7        |            |                |
+| ==meta==       |                 | **total:** | 5        |            |                |
 |                | name length     | number     | 8        | 0-255      | name length*   |
 |                | name            | alphanum   | array    | array      |                |
 | ==name==       |                 |            | 8-192    |            |                |
@@ -45,14 +45,13 @@ Revisions to the data structure of the header are as follows.
 
 **months**: also sets the year by counting number of months from 2026.
 
-**message type:** 4-bit field supporting up to 16 message types (0-15). Currently defined types:
+**message type:** 2-bit field supporting up to 4 message types (0-3). Defined types:
 0. emergency
 1. chat
 2. contest
 3. other
-4-15. (reserved for future use)
 
-**name length:** sets the number of characters to read as a part of the name field immediately following the length value. Name is simply a string converted into an array of _alphanum_ bits. The name length is limited to 32 characters using the 6 bit alpha numeric type.
+**name length:** 8-bit field split into two 4-bit nibbles. First nibble (bits 0-3) sets the first name length (0-15 characters), second nibble (bits 4-7) sets the last name length (0-15 characters). Both names use 6-bit alphanumeric encoding and are displayed with first character uppercase, rest lowercase.
 
 **message length**: sets the number of characters to display in the message component, unused space can be used for forwarding or repeating emergency information. This comes out to 1920 bits, or 240 bytes, since this is UTF-8, some characters can multiple bytes long.
 
@@ -67,10 +66,11 @@ Revisions to the data structure of the header are as follows.
 | checkbox        | Emergency      | 1        | 0b0 |
 | checkbox        | NTP            | 1        | 0b0 |
 | checkbox        | GPS            | 1        | 0b0 |
-| 10              | Name length    | 8        | 0b00000000 |
+| 4 + 4           | Name length    | 8        | 0b0000 0b0000 |
 | 11              | Message length | 8        | 0b00000000 |
-| 0-15            | Message Type   | 4        | 0b0000     |
-| "alex okita"    | Name           | 0-192    | [0b000000, ... 0b000000] |
+| 0-3             | Message Type   | 2        | 0b00       |
+| "alex"          | First Name     | 0-90     | [0b000000, ... 0b000000] |
+| "okita"         | Last Name      | 0-90     | [0b000000, ... 0b000000] |
 | "hello world"   | Message        | 0-1920   | [0b00000000, ... 0b0000000] |
 | ACK             | array          | 0-1920   | [callsign + timestamp, ... callsign + timestamp] |
 

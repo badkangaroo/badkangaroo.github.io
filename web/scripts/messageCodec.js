@@ -4,17 +4,18 @@ import { nibble, alphabit, alphanumbit, verifyNibble, verifyNibbit, verifyNibbli
 /**
  * MessageCodec - Complete encoding/decoding API for Ribbit messages
  * 
- * Message Structure (130+ bits):
+ * Message Structure (128+ bits):
  * - Callsign (48 bits) - Header component
  * - Timestamp (31 bits) - Header component
  * - Gridsquare (28 bits) - Header component
  * - Emergency (1 bit) - Metadata flag
  * - NTP (1 bit) - Metadata flag
  * - GPS (1 bit) - Metadata flag
- * - Name Length (8 bits) - Metadata
+ * - Name Length (8 bits) - Metadata [FirstNameLength 4 bits][LastNameLength 4 bits]
  * - Message Length (8 bits) - Metadata
- * - Message Type (4 bits) - Metadata
- * - Name (variable, 6 bits per char) - Content
+ * - Message Type (2 bits) - Metadata
+ * - FirstName (variable, 6 bits per char, 0-15 chars) - Content
+ * - LastName (variable, 6 bits per char, 0-15 chars) - Content
  * - Message (variable, 8 bits per byte UTF-8) - Content
  */
 export class MessageCodec {
@@ -148,15 +149,21 @@ export class MessageCodec {
     }
 
     /**
-     * Get name length bits (8 bits)
-     * @param {number} length - Name length (0-32)
-     * @returns {string} 8-bit value
+     * Get name length bits (8 bits) - split into firstName and lastName lengths
+     * @param {number} firstNameLength - First name length (0-15)
+     * @param {number} lastNameLength - Last name length (0-15)
+     * @returns {string} 8-bit value [FirstNameLength 4 bits][LastNameLength 4 bits]
      */
-    GetNameLengthBits(length) {
-        if (typeof length !== 'number' || length < 0 || length > 32) {
-            throw new Error("Name length must be between 0 and 32");
+    GetNameLengthBits(firstNameLength, lastNameLength) {
+        if (typeof firstNameLength !== 'number' || firstNameLength < 0 || firstNameLength > 15) {
+            throw new Error("First name length must be between 0 and 15");
         }
-        return length.toString(2).padStart(8, '0');
+        if (typeof lastNameLength !== 'number' || lastNameLength < 0 || lastNameLength > 15) {
+            throw new Error("Last name length must be between 0 and 15");
+        }
+        const firstNameBits = firstNameLength.toString(2).padStart(4, '0');
+        const lastNameBits = lastNameLength.toString(2).padStart(4, '0');
+        return firstNameBits + lastNameBits;
     }
 
     /**
@@ -172,20 +179,20 @@ export class MessageCodec {
     }
 
     /**
-     * Get message type bits (4 bits)
-     * @param {number} type - Message type (0-15)
-     * @returns {string} 4-bit value
+     * Get message type bits (2 bits)
+     * @param {number} type - Message type (0-3)
+     * @returns {string} 2-bit value
      */
     GetMessageTypeBits(type) {
-        if (typeof type !== 'number' || type < 0 || type > 15) {
-            throw new Error("Message type must be between 0 and 15");
+        if (typeof type !== 'number' || type < 0 || type > 3) {
+            throw new Error("Message type must be between 0 and 3");
         }
-        return type.toString(2).padStart(4, '0');
+        return type.toString(2).padStart(2, '0');
     }
 
     /**
      * Encode name to bitstream (variable length, 6 bits per char)
-     * @param {string} name - Name string (up to 32 chars)
+     * @param {string} name - Name string (up to 15 chars)
      * @returns {string} Variable-length bitstream
      */
     GetNameBitStream(name) {
@@ -193,8 +200,8 @@ export class MessageCodec {
             throw new Error("Name must be a string");
         }
         
-        if (name.length > 32) {
-            throw new Error("Name must be 32 characters or less");
+        if (name.length > 15) {
+            throw new Error("Name must be 15 characters or less");
         }
         
         const nameUpper = name.toUpperCase();
@@ -339,15 +346,17 @@ export class MessageCodec {
     }
 
     /**
-     * Decode name length bits to number
-     * @param {string} bits - 8-bit value
-     * @returns {number}
+     * Decode name length bits to object with firstName and lastName lengths
+     * @param {string} bits - 8-bit value [FirstNameLength 4 bits][LastNameLength 4 bits]
+     * @returns {Object} {firstNameLength: number, lastNameLength: number}
      */
     BitStreamToNameLength(bits) {
         if (bits.length !== 8) {
             throw new Error("Name length bitstream must be 8 bits");
         }
-        return parseInt(bits, 2);
+        const firstNameLength = parseInt(bits.substring(0, 4), 2);
+        const lastNameLength = parseInt(bits.substring(4, 8), 2);
+        return { firstNameLength, lastNameLength };
     }
 
     /**
@@ -364,20 +373,20 @@ export class MessageCodec {
 
     /**
      * Decode message type bits to number
-     * @param {string} bits - 4-bit value
+     * @param {string} bits - 2-bit value
      * @returns {number}
      */
     BitStreamToMessageType(bits) {
-        if (bits.length !== 4) {
-            throw new Error("Message type bitstream must be 4 bits");
+        if (bits.length !== 2) {
+            throw new Error("Message type bitstream must be 2 bits");
         }
         return parseInt(bits, 2);
     }
 
     /**
-     * Decode name bitstream to string
+     * Decode name bitstream to string with proper capitalization
      * @param {string} bits - Variable-length bitstream (multiple of 6)
-     * @returns {string} Decoded name
+     * @returns {string} Decoded name (First character uppercase, rest lowercase)
      */
     BitStreamToName(bits) {
         if (bits.length % 6 !== 0) {
@@ -391,7 +400,14 @@ export class MessageCodec {
             name += this.alphanumbitReverse[charValue] || ' ';
         }
         
-        return name.trim();
+        name = name.trim();
+        
+        // Capitalize: first character uppercase, rest lowercase
+        if (name.length > 0) {
+            name = name.charAt(0).toUpperCase() + name.substring(1).toLowerCase();
+        }
+        
+        return name;
     }
 
     /**
@@ -425,8 +441,9 @@ export class MessageCodec {
      * @param {boolean} data.emergency - Emergency flag (default: false)
      * @param {boolean} data.ntp - NTP flag (default: false)
      * @param {boolean} data.gps - GPS flag (default: false)
-     * @param {number} data.messageType - Message type 0-15 (default: 1)
-     * @param {string} data.name - Name (optional)
+     * @param {number} data.messageType - Message type 0-3 (default: 1)
+     * @param {string} data.firstName - First name (optional, 0-15 chars)
+     * @param {string} data.lastName - Last name (optional, 0-15 chars)
      * @param {string} data.message - Message (optional)
      * @returns {string} Complete bitstream
      */
@@ -447,31 +464,36 @@ export class MessageCodec {
         const ntp = data.ntp || false;
         const gps = data.gps || false;
         const messageType = data.messageType !== undefined ? data.messageType : 1;
-        const name = data.name || '';
+        const firstName = data.firstName || '';
+        const lastName = data.lastName || '';
         const message = data.message || '';
         
         // Calculate lengths
-        const nameLength = name.length;
+        const firstNameLength = firstName.length;
+        const lastNameLength = lastName.length;
         const encoder = new TextEncoder();
         const messageLength = encoder.encode(message).length;
         
         // Build bitstream in correct order
         let bitstream = '';
-        bitstream += this.GetCallsignBitStream(callsign);           // 48 bits
-        bitstream += this.GetTimestampBitStream(timestamp);         // 31 bits
-        bitstream += this.GetGridsquareBitStream(gridsquare);       // 28 bits
-        bitstream += this.GetEmergencyBit(emergency);               // 1 bit
-        bitstream += this.GetNTPBit(ntp);                           // 1 bit
-        bitstream += this.GetGPSBit(gps);                           // 1 bit
-        bitstream += this.GetNameLengthBits(nameLength);            // 8 bits
-        bitstream += this.GetMessageLengthBits(messageLength);      // 8 bits
-        bitstream += this.GetMessageTypeBits(messageType);          // 4 bits
+        bitstream += this.GetCallsignBitStream(callsign);                       // 48 bits
+        bitstream += this.GetTimestampBitStream(timestamp);                     // 31 bits
+        bitstream += this.GetGridsquareBitStream(gridsquare);                   // 28 bits
+        bitstream += this.GetEmergencyBit(emergency);                           // 1 bit
+        bitstream += this.GetNTPBit(ntp);                                       // 1 bit
+        bitstream += this.GetGPSBit(gps);                                       // 1 bit
+        bitstream += this.GetNameLengthBits(firstNameLength, lastNameLength);  // 8 bits
+        bitstream += this.GetMessageLengthBits(messageLength);                  // 8 bits
+        bitstream += this.GetMessageTypeBits(messageType);                      // 2 bits
         
-        if (name) {
-            bitstream += this.GetNameBitStream(name);               // Variable
+        if (firstName) {
+            bitstream += this.GetNameBitStream(firstName);                      // Variable
+        }
+        if (lastName) {
+            bitstream += this.GetNameBitStream(lastName);                       // Variable
         }
         if (message) {
-            bitstream += this.GetMessageBitStream(message);         // Variable
+            bitstream += this.GetMessageBitStream(message);                     // Variable
         }
         
         return bitstream;
@@ -510,17 +532,21 @@ export class MessageCodec {
         const messageLengthBits = bitstream.slice(offset, offset + 8);
         offset += 8;
         
-        const messageTypeBits = bitstream.slice(offset, offset + 4);
-        offset += 4;
+        const messageTypeBits = bitstream.slice(offset, offset + 2);
+        offset += 2;
         
         // Get lengths for variable fields
-        const nameLength = this.BitStreamToNameLength(nameLengthBits);
+        const { firstNameLength, lastNameLength } = this.BitStreamToNameLength(nameLengthBits);
         const messageLength = this.BitStreamToMessageLength(messageLengthBits);
         
         // Extract variable-length fields
-        const nameBitLength = nameLength * 6;
-        const nameBits = bitstream.slice(offset, offset + nameBitLength);
-        offset += nameBitLength;
+        const firstNameBitLength = firstNameLength * 6;
+        const firstNameBits = bitstream.slice(offset, offset + firstNameBitLength);
+        offset += firstNameBitLength;
+        
+        const lastNameBitLength = lastNameLength * 6;
+        const lastNameBits = bitstream.slice(offset, offset + lastNameBitLength);
+        offset += lastNameBitLength;
         
         const messageBitLength = messageLength * 8;
         const messageBits = bitstream.slice(offset, offset + messageBitLength);
@@ -534,10 +560,12 @@ export class MessageCodec {
             emergency: this.BitStreamToEmergency(emergencyBit),
             ntp: this.BitStreamToNTP(ntpBit),
             gps: this.BitStreamToGPS(gpsBit),
-            nameLength: nameLength,
+            firstNameLength: firstNameLength,
+            lastNameLength: lastNameLength,
             messageLength: messageLength,
             messageType: this.BitStreamToMessageType(messageTypeBits),
-            name: nameLength > 0 ? this.BitStreamToName(nameBits) : '',
+            firstName: firstNameLength > 0 ? this.BitStreamToName(firstNameBits) : '',
+            lastName: lastNameLength > 0 ? this.BitStreamToName(lastNameBits) : '',
             message: messageLength > 0 ? this.BitStreamToMessage(messageBits) : ''
         };
     }
@@ -576,15 +604,12 @@ export class MessageCodec {
 
     /**
      * Get message type name from type number
-     * @param {number} type - Message type (0-15)
+     * @param {number} type - Message type (0-3)
      * @returns {string} Message type name
      */
     GetMessageTypeName(type) {
         const messageTypeNames = [
-            'Emergency', 'Chat', 'Contest', 'Other',
-            'Reserved', 'Reserved', 'Reserved', 'Reserved',
-            'Reserved', 'Reserved', 'Reserved', 'Reserved',
-            'Reserved', 'Reserved', 'Reserved', 'Reserved'
+            'Emergency', 'Chat', 'Contest', 'Other'
         ];
         return messageTypeNames[type] || 'Unknown';
     }

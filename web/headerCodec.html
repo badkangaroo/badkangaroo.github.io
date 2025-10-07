@@ -16,7 +16,7 @@
         </div>
 
         <div class="data-type-list">
-            <strong>Header Structure (130+ bits):</strong>
+            <strong>Header Structure (128+ bits):</strong>
             <ul>
                 <li><span class="highlight-callsign">Callsign</span> - 48 bits [8 chars × 6 bits alphanumbit]</li>
                 <li><span class="highlight-timestamp">Timestamp</span> - 31 bits [Year/Month(10) + Day(5) + Hour(5) + Minute(6) + Second(5)]</li>
@@ -24,10 +24,11 @@
                 <li><span class="highlight-emergency">Emergency</span> - 1 bit (boolean flag)</li>
                 <li><span class="highlight-meta">NTP</span> - 1 bit (boolean flag)</li>
                 <li><span class="highlight-meta">GPS</span> - 1 bit (boolean flag)</li>
-                <li><span class="highlight-meta">Name Length</span> - 8 bits (0-255 bytes)</li>
-                <li><span class="highlight-meta">Message Length</span> - 8 bits (0-255 bytes)</li>
-                <li><span class="highlight-meta">Message Type</span> - 4 bits (0-15)</li>
-                <li><span class="highlight-name">Name</span> - Variable (0-192 bits, 6 bits per char)</li>
+                <li><span class="highlight-meta">Name Length</span> - 8 bits [FirstName 4 bits + LastName 4 bits]</li>
+                <li><span class="highlight-meta">Message Length</span> - 8 bits (0-240 bytes)</li>
+                <li><span class="highlight-meta">Message Type</span> - 2 bits (0-3)</li>
+                <li><span class="highlight-name">FirstName</span> - Variable (0-90 bits, 6 bits per char, max 15)</li>
+                <li><span class="highlight-name">LastName</span> - Variable (0-90 bits, 6 bits per char, max 15)</li>
                 <li><span class="highlight-message">Message</span> - Variable (0-1920 bits, UTF-8 encoded)</li>
                 <li><span class="highlight-ack">ACK</span> - Variable (acknowledgement array)</li>
             </ul>
@@ -128,10 +129,21 @@
             <div class="field-group">
                 <h3><span class="highlight-meta">Lengths and Type</span></h3>
                 <div class="input-row">
-                    <label for="name-length">Name Length (0-32 chars)</label>
-                    <input type="number" id="name-length" name="name-length" onchange="nameLengthChange()" placeholder="0" min="0" max="32" value="0">
+                    <label for="firstname-length">First Name Length (0-15 chars)</label>
+                    <input type="number" id="firstname-length" name="firstname-length" onchange="nameLengthChange()" placeholder="0" min="0" max="15" value="0" readonly>
                 </div>
-                <div class="bit-output">Name Length (8 bits): <span id="name-length-bits">00000000</span></div>
+                <div class="bit-output">First Name Length (4 bits): <span id="firstname-length-bits">0000</span></div>
+                
+                <div class="input-row">
+                    <label for="lastname-length">Last Name Length (0-15 chars)</label>
+                    <input type="number" id="lastname-length" name="lastname-length" onchange="nameLengthChange()" placeholder="0" min="0" max="15" value="0" readonly>
+                </div>
+                <div class="bit-output">Last Name Length (4 bits): <span id="lastname-length-bits">0000</span></div>
+                
+                <div class="bit-output" style="border: 2px solid #a78bfa;">
+                    <strong>Combined Name Length (8 bits):</strong><br>
+                    <span id="name-length-bits">00000000</span>
+                </div>
                 
                 <div class="input-row">
                     <label for="message-length">Message Length (0-240 bytes)</label>
@@ -140,38 +152,35 @@
                 <div class="bit-output">Message Length (8 bits): <span id="message-length-bits">00000000</span></div>
                 
                 <div class="input-row">
-                    <label for="message-type">Message Type (0-15)</label>
+                    <label for="message-type">Message Type (0-3)</label>
                     <select id="message-type" name="message-type" onchange="messageTypeChange()">
                         <option value="0">0 - Emergency</option>
                         <option value="1" selected>1 - Chat</option>
                         <option value="2">2 - Contest</option>
                         <option value="3">3 - Other</option>
-                        <option value="4">4 - Reserved</option>
-                        <option value="5">5 - Reserved</option>
-                        <option value="6">6 - Reserved</option>
-                        <option value="7">7 - Reserved</option>
-                        <option value="8">8 - Reserved</option>
-                        <option value="9">9 - Reserved</option>
-                        <option value="10">10 - Reserved</option>
-                        <option value="11">11 - Reserved</option>
-                        <option value="12">12 - Reserved</option>
-                        <option value="13">13 - Reserved</option>
-                        <option value="14">14 - Reserved</option>
-                        <option value="15">15 - Reserved</option>
                     </select>
                 </div>
-                <div class="bit-output">Message Type (4 bits): <span id="message-type-bits">0001</span></div>
+                <div class="bit-output">Message Type (2 bits): <span id="message-type-bits">01</span></div>
             </div>
 
             <div class="field-group">
                 <h3><span class="highlight-name">Name</span></h3>
                 <div class="input-row">
-                    <label for="name">Name (up to 32 alphanumeric chars)</label>
-                    <input type="text" id="name" name="name" onkeyup="nameChange()" maxlength="32" placeholder="Alex Okita">
+                    <label for="firstname">First Name (up to 15 alphanumeric chars)</label>
+                    <input type="text" id="firstname" name="firstname" onkeyup="firstNameChange()" maxlength="15" placeholder="Alex">
                 </div>
                 <div class="bit-output">
-                    <strong>Name (0-192 bits):</strong><br>
-                    <span class="highlight-name" id="name-bits"></span>
+                    <strong>First Name (0-90 bits):</strong><br>
+                    <span class="highlight-name" id="firstname-bits"></span>
+                </div>
+                
+                <div class="input-row">
+                    <label for="lastname">Last Name (up to 15 alphanumeric chars)</label>
+                    <input type="text" id="lastname" name="lastname" onkeyup="lastNameChange()" maxlength="15" placeholder="Okita">
+                </div>
+                <div class="bit-output">
+                    <strong>Last Name (0-90 bits):</strong><br>
+                    <span class="highlight-name" id="lastname-bits"></span>
                 </div>
             </div>
 
@@ -190,10 +199,10 @@
             <div style="background: rgba(74, 222, 128, 0.1); padding: 20px; border-radius: 8px; border: 2px solid #4ade80;">
                 <h3>✅ Complete Encoded Bitstream</h3>
                 <div class="bit-output" style="font-size: 11px; word-break: break-all;">
-                    <span class="highlight-callsign" id="total-callsign-display">000000000000000000000000000000000000000000000000</span><span class="highlight-timestamp" id="total-timestamp-display">0000000000000000000000000000000</span><span class="highlight-gridsquare" id="total-gridsquare-display">0000000000000000000000000000</span><span class="highlight-emergency" id="total-emergency-display">0</span><span class="highlight-meta" id="total-ntp-display">0</span><span class="highlight-meta" id="total-gps-display">0</span><span class="highlight-meta" id="total-name-length-display">00000000</span><span class="highlight-meta" id="total-message-length-display">00000000</span><span class="highlight-meta" id="total-message-type-display">0001</span><span class="highlight-name" id="total-name-display"></span><span class="highlight-message" id="total-message-display"></span>
+                    <span class="highlight-callsign" id="total-callsign-display">000000000000000000000000000000000000000000000000</span><span class="highlight-timestamp" id="total-timestamp-display">0000000000000000000000000000000</span><span class="highlight-gridsquare" id="total-gridsquare-display">0000000000000000000000000000</span><span class="highlight-emergency" id="total-emergency-display">0</span><span class="highlight-meta" id="total-ntp-display">0</span><span class="highlight-meta" id="total-gps-display">0</span><span class="highlight-meta" id="total-name-length-display">00000000</span><span class="highlight-meta" id="total-message-length-display">00000000</span><span class="highlight-meta" id="total-message-type-display">01</span><span class="highlight-name" id="total-firstname-display"></span><span class="highlight-name" id="total-lastname-display"></span><span class="highlight-message" id="total-message-display"></span>
                 </div>
                 <p style="color: #a0a0a0; font-size: 12px; margin-top: 10px;">
-                    Total bits: <span id="total-bit-count">130</span> bits
+                    Total bits: <span id="total-bit-count">128</span> bits
                 </p>
             </div>
         </div>
@@ -206,7 +215,7 @@
             <h2>Prepare for Transmission (Variable Length)</h2>
             <p style="color: #a0a0a0; font-size: 13px;">
                 The header bitstream is padded to the nearest byte boundary for transmission.
-                Minimum: 17 bytes (130 bits + 6 padding bits).
+                Minimum: 16 bytes (128 bits, no padding needed).
             </p>
             <div class="byte-array">
                 <strong>Byte Array:</strong><br>
@@ -214,7 +223,7 @@
                     [0b00000000]
                 </span>
                 <p style="color: #a0a0a0; font-size: 12px; margin-top: 10px;">
-                    Byte count: <span id="total-byte-count">17</span> bytes
+                    Byte count: <span id="total-byte-count">16</span> bytes
                 </p>
             </div>
         </div>
@@ -268,12 +277,16 @@
                     <span id="decoded-header-message-length-bits">00000000</span>
                 </div>
                 <div class="bit-output">
-                    <span class="highlight-meta">Message Type (4 bits):</span> 
-                    <span id="decoded-header-message-type-bits">0001</span>
+                    <span class="highlight-meta">Message Type (2 bits):</span> 
+                    <span id="decoded-header-message-type-bits">01</span>
                 </div>
                 <div class="bit-output">
-                    <span class="highlight-name">Name (variable):</span> 
-                    <span id="decoded-header-name-bits"></span>
+                    <span class="highlight-name">First Name (variable):</span> 
+                    <span id="decoded-header-firstname-bits"></span>
+                </div>
+                <div class="bit-output">
+                    <span class="highlight-name">Last Name (variable):</span> 
+                    <span id="decoded-header-lastname-bits"></span>
                 </div>
                 <div class="bit-output">
                     <span class="highlight-message">Message (variable):</span> 
@@ -289,10 +302,12 @@
                 <h4><span class="highlight-emergency">Emergency:</span> <span class="decoded-value" id="decoded-header-emergency-value">false</span></h4>
                 <h4><span class="highlight-meta">NTP:</span> <span class="decoded-value" id="decoded-header-ntp-value">false</span></h4>
                 <h4><span class="highlight-meta">GPS:</span> <span class="decoded-value" id="decoded-header-gps-value">false</span></h4>
-                <h4><span class="highlight-meta">Name Length:</span> <span class="decoded-value" id="decoded-header-name-length-value">0</span></h4>
+                <h4><span class="highlight-meta">First Name Length:</span> <span class="decoded-value" id="decoded-header-firstname-length-value">0</span></h4>
+                <h4><span class="highlight-meta">Last Name Length:</span> <span class="decoded-value" id="decoded-header-lastname-length-value">0</span></h4>
                 <h4><span class="highlight-meta">Message Length:</span> <span class="decoded-value" id="decoded-header-message-length-value">0</span></h4>
                 <h4><span class="highlight-meta">Message Type:</span> <span class="decoded-value" id="decoded-header-message-type-value">1 - Chat</span></h4>
-                <h4><span class="highlight-name">Name:</span> <span class="decoded-value" id="decoded-header-name-value"></span></h4>
+                <h4><span class="highlight-name">First Name:</span> <span class="decoded-value" id="decoded-header-firstname-value"></span></h4>
+                <h4><span class="highlight-name">Last Name:</span> <span class="decoded-value" id="decoded-header-lastname-value"></span></h4>
                 <h4><span class="highlight-message">Message:</span> <span class="decoded-value" id="decoded-header-message-value"></span></h4>
             </div>
         </div>
@@ -610,9 +625,16 @@
         // ===== Name Length Functions =====
 
         const nameLengthChange = () => {
-            const nameLength = parseInt(document.getElementById("name-length").value) || 0;
-            const nameLengthBits = nameLength.toString(2).padStart(8, '0');
-            document.getElementById("name-length-bits").innerHTML = `${nameLengthBits}`;
+            const firstNameLength = parseInt(document.getElementById("firstname-length").value) || 0;
+            const lastNameLength = parseInt(document.getElementById("lastname-length").value) || 0;
+            
+            const firstNameLengthBits = firstNameLength.toString(2).padStart(4, '0');
+            const lastNameLengthBits = lastNameLength.toString(2).padStart(4, '0');
+            const combinedBits = firstNameLengthBits + lastNameLengthBits;
+            
+            document.getElementById("firstname-length-bits").innerHTML = `${firstNameLengthBits}`;
+            document.getElementById("lastname-length-bits").innerHTML = `${lastNameLengthBits}`;
+            document.getElementById("name-length-bits").innerHTML = `${combinedBits}`;
             updateTotalEncodedHeader();
         };
 
@@ -629,15 +651,15 @@
 
         const messageTypeChange = () => {
             const messageType = parseInt(document.getElementById("message-type").value) || 1;
-            const messageTypeBits = messageType.toString(2).padStart(4, '0');
+            const messageTypeBits = messageType.toString(2).padStart(2, '0');
             document.getElementById("message-type-bits").innerHTML = `${messageTypeBits}`;
             updateTotalEncodedHeader();
         };
 
         // ===== Name Functions =====
 
-        const nameChange = () => {
-            const nameInput = document.getElementById("name").value;
+        const firstNameChange = () => {
+            const nameInput = document.getElementById("firstname").value;
             const nameUpper = nameInput.toUpperCase();
             
             let nameBits = '';
@@ -648,11 +670,31 @@
                 nameBits += charBits;
             }
             
-            document.getElementById("name-bits").innerHTML = `${nameBits}`;
+            document.getElementById("firstname-bits").innerHTML = `${nameBits}`;
             
-            // Auto-update name length
+            // Auto-update first name length
             const nameLength = nameUpper.length;
-            document.getElementById("name-length").value = nameLength;
+            document.getElementById("firstname-length").value = nameLength;
+            nameLengthChange();
+        };
+
+        const lastNameChange = () => {
+            const nameInput = document.getElementById("lastname").value;
+            const nameUpper = nameInput.toUpperCase();
+            
+            let nameBits = '';
+            for (let i = 0; i < nameUpper.length; i++) {
+                const char = nameUpper[i];
+                const charValue = alphanumbit[char] || 0b111111;
+                const charBits = charValue.toString(2).padStart(6, '0');
+                nameBits += charBits;
+            }
+            
+            document.getElementById("lastname-bits").innerHTML = `${nameBits}`;
+            
+            // Auto-update last name length
+            const nameLength = nameUpper.length;
+            document.getElementById("lastname-length").value = nameLength;
             nameLengthChange();
         };
 
@@ -872,14 +914,20 @@
             const messageLengthFragment = bitstream.slice(offset, offset + 8);
             offset += 8;
             
-            const messageTypeFragment = bitstream.slice(offset, offset + 4);
-            offset += 4;
+            const messageTypeFragment = bitstream.slice(offset, offset + 2);
+            offset += 2;
             
-            // Get the name length to determine how many bits to read
-            const nameLength = parseInt(nameLengthFragment, 2);
-            const nameBitLength = nameLength * 6;
-            const nameFragment = bitstream.slice(offset, offset + nameBitLength);
-            offset += nameBitLength;
+            // Get the name lengths to determine how many bits to read
+            const firstNameLength = parseInt(nameLengthFragment.substring(0, 4), 2);
+            const lastNameLength = parseInt(nameLengthFragment.substring(4, 8), 2);
+            
+            const firstNameBitLength = firstNameLength * 6;
+            const firstNameFragment = bitstream.slice(offset, offset + firstNameBitLength);
+            offset += firstNameBitLength;
+            
+            const lastNameBitLength = lastNameLength * 6;
+            const lastNameFragment = bitstream.slice(offset, offset + lastNameBitLength);
+            offset += lastNameBitLength;
             
             // Get the message length to determine how many bits to read
             const messageLength = parseInt(messageLengthFragment, 2);
@@ -895,7 +943,8 @@
             document.getElementById("decoded-header-name-length-bits").innerHTML = `${nameLengthFragment}`;
             document.getElementById("decoded-header-message-length-bits").innerHTML = `${messageLengthFragment}`;
             document.getElementById("decoded-header-message-type-bits").innerHTML = `${messageTypeFragment}`;
-            document.getElementById("decoded-header-name-bits").innerHTML = `${nameFragment}`;
+            document.getElementById("decoded-header-firstname-bits").innerHTML = `${firstNameFragment}`;
+            document.getElementById("decoded-header-lastname-bits").innerHTML = `${lastNameFragment}`;
             document.getElementById("decoded-header-message-bits").innerHTML = `${messageFragment}`;
         }
         
@@ -974,11 +1023,13 @@
             const gpsValue = parseInt(gpsFragment, 2) > 0;
             document.getElementById("decoded-header-gps-value").innerHTML = gpsValue ? 'true' : 'false';
             
-            // Name Length (8 bits)
+            // Name Length (8 bits) - split into first and last
             const nameLengthFragment = bitstream.slice(offset, offset + 8);
             offset += 8;
-            const nameLength = parseInt(nameLengthFragment, 2);
-            document.getElementById("decoded-header-name-length-value").innerHTML = nameLength;
+            const firstNameLength = parseInt(nameLengthFragment.substring(0, 4), 2);
+            const lastNameLength = parseInt(nameLengthFragment.substring(4, 8), 2);
+            document.getElementById("decoded-header-firstname-length-value").innerHTML = firstNameLength;
+            document.getElementById("decoded-header-lastname-length-value").innerHTML = lastNameLength;
             
             // Message Length (8 bits)
             const messageLengthFragment = bitstream.slice(offset, offset + 8);
@@ -986,24 +1037,46 @@
             const messageLength = parseInt(messageLengthFragment, 2);
             document.getElementById("decoded-header-message-length-value").innerHTML = messageLength;
             
-            // Message Type (4 bits)
-            const messageTypeFragment = bitstream.slice(offset, offset + 4);
-            offset += 4;
+            // Message Type (2 bits)
+            const messageTypeFragment = bitstream.slice(offset, offset + 2);
+            offset += 2;
             const messageType = parseInt(messageTypeFragment, 2);
-            const messageTypeNames = ['0 - Emergency', '1 - Chat', '2 - Contest', '3 - Other', '4 - Reserved', '5 - Reserved', '6 - Reserved', '7 - Reserved', '8 - Reserved', '9 - Reserved', '10 - Reserved', '11 - Reserved', '12 - Reserved', '13 - Reserved', '14 - Reserved', '15 - Reserved'];
+            const messageTypeNames = ['0 - Emergency', '1 - Chat', '2 - Contest', '3 - Other'];
             document.getElementById("decoded-header-message-type-value").innerHTML = messageTypeNames[messageType] || messageType;
             
-            // Name (variable length)
-            const nameBitLength = nameLength * 6;
-            const nameFragment = bitstream.slice(offset, offset + nameBitLength);
-            offset += nameBitLength;
-            let nameValue = '';
-            for (let i = 0; i < nameBitLength; i += 6) {
-                const charBits = nameFragment.substring(i, i + 6);
+            // First Name (variable length)
+            const firstNameBitLength = firstNameLength * 6;
+            const firstNameFragment = bitstream.slice(offset, offset + firstNameBitLength);
+            offset += firstNameBitLength;
+            let firstNameValue = '';
+            for (let i = 0; i < firstNameBitLength; i += 6) {
+                const charBits = firstNameFragment.substring(i, i + 6);
                 const charValue = parseInt(charBits, 2);
-                nameValue += alphanumbitReverse[charValue] || ' ';
+                firstNameValue += alphanumbitReverse[charValue] || ' ';
             }
-            document.getElementById("decoded-header-name-value").innerHTML = nameValue;
+            // Capitalize: first character uppercase, rest lowercase
+            firstNameValue = firstNameValue.trim();
+            if (firstNameValue.length > 0) {
+                firstNameValue = firstNameValue.charAt(0).toUpperCase() + firstNameValue.substring(1).toLowerCase();
+            }
+            document.getElementById("decoded-header-firstname-value").innerHTML = firstNameValue;
+            
+            // Last Name (variable length)
+            const lastNameBitLength = lastNameLength * 6;
+            const lastNameFragment = bitstream.slice(offset, offset + lastNameBitLength);
+            offset += lastNameBitLength;
+            let lastNameValue = '';
+            for (let i = 0; i < lastNameBitLength; i += 6) {
+                const charBits = lastNameFragment.substring(i, i + 6);
+                const charValue = parseInt(charBits, 2);
+                lastNameValue += alphanumbitReverse[charValue] || ' ';
+            }
+            // Capitalize: first character uppercase, rest lowercase
+            lastNameValue = lastNameValue.trim();
+            if (lastNameValue.length > 0) {
+                lastNameValue = lastNameValue.charAt(0).toUpperCase() + lastNameValue.substring(1).toLowerCase();
+            }
+            document.getElementById("decoded-header-lastname-value").innerHTML = lastNameValue;
             
             // Message (variable length)
             const messageBitLength = messageLength * 8;
@@ -1042,11 +1115,12 @@
             const nameLengthBits = document.getElementById("total-name-length-display").innerHTML;
             const messageLengthBits = document.getElementById("total-message-length-display").innerHTML;
             const messageTypeBits = document.getElementById("total-message-type-display").innerHTML;
-            const nameBits = document.getElementById("total-name-display").innerHTML;
+            const firstNameBits = document.getElementById("total-firstname-display").innerHTML;
+            const lastNameBits = document.getElementById("total-lastname-display").innerHTML;
             const messageBits = document.getElementById("total-message-display").innerHTML;
             
             const bits = callsignBits + timestampBits + gridsquareBits + emergencyBits + ntpBits + gpsBits + 
-                        nameLengthBits + messageLengthBits + messageTypeBits + nameBits + messageBits;
+                        nameLengthBits + messageLengthBits + messageTypeBits + firstNameBits + lastNameBits + messageBits;
             
             // split the bits into 8 bit chunks
             let bytes = splitAndPad(bits, 8);
@@ -1073,7 +1147,8 @@
             const nameLengthBits = document.getElementById("name-length-bits").innerHTML;
             const messageLengthBits = document.getElementById("message-length-bits").innerHTML;
             const messageTypeBits = document.getElementById("message-type-bits").innerHTML;
-            const nameBits = document.getElementById("name-bits").innerHTML;
+            const firstNameBits = document.getElementById("firstname-bits").innerHTML;
+            const lastNameBits = document.getElementById("lastname-bits").innerHTML;
             const messageBits = document.getElementById("message-bits").innerHTML;
 
             // Update individual display elements in the complete bitstream section
@@ -1086,11 +1161,12 @@
             document.getElementById("total-name-length-display").innerHTML = nameLengthBits;
             document.getElementById("total-message-length-display").innerHTML = messageLengthBits;
             document.getElementById("total-message-type-display").innerHTML = messageTypeBits;
-            document.getElementById("total-name-display").innerHTML = nameBits;
+            document.getElementById("total-firstname-display").innerHTML = firstNameBits;
+            document.getElementById("total-lastname-display").innerHTML = lastNameBits;
             document.getElementById("total-message-display").innerHTML = messageBits;
 
             const totalBits = callsignBits + timeBitsRaw + gridsquareBits + emergencyBits + ntpBits + gpsBits + 
-                            nameLengthBits + messageLengthBits + messageTypeBits + nameBits + messageBits;
+                            nameLengthBits + messageLengthBits + messageTypeBits + firstNameBits + lastNameBits + messageBits;
             
             // Update bit count
             document.getElementById("total-bit-count").innerHTML = totalBits.length;

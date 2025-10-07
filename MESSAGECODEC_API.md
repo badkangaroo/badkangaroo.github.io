@@ -12,7 +12,7 @@ const codec = new MessageCodec();
 
 ## Message Structure
 
-The Ribbit message follows this structure (130+ bits):
+The Ribbit message follows this structure (128+ bits):
 
 | Field | Bits | Type | Description |
 |-------|------|------|-------------|
@@ -22,10 +22,11 @@ The Ribbit message follows this structure (130+ bits):
 | Emergency | 1 | boolean | Emergency flag |
 | NTP | 1 | boolean | NTP time sync flag |
 | GPS | 1 | boolean | GPS location flag |
-| Name Length | 8 | number | Length of name field (0-32) |
+| Name Length | 8 | nibbles | [FirstName 4 bits][LastName 4 bits] (0-15 each) |
 | Message Length | 8 | number | Length of message in bytes (0-240) |
-| Message Type | 4 | number | Message type (0-15) |
-| Name | variable | alphanumbit | Sender name (6 bits per char) |
+| Message Type | 2 | number | Message type (0-3) |
+| FirstName | variable | alphanumbit | First name (6 bits per char, 0-15 chars) |
+| LastName | variable | alphanumbit | Last name (6 bits per char, 0-15 chars) |
 | Message | variable | UTF-8 | Message content (8 bits per byte) |
 
 ## Individual Field Encoding
@@ -119,17 +120,18 @@ const bit = codec.GetGPSBit(true);
 
 ---
 
-### GetNameLengthBits(length)
-Returns name length as 8-bit value.
+### GetNameLengthBits(firstNameLength, lastNameLength)
+Returns name length as 8-bit value split into two nibbles.
 
 ```javascript
-const bits = codec.GetNameLengthBits(10);
+const bits = codec.GetNameLengthBits(4, 5); // "Alex" + "Okita"
 ```
 
 **Parameters:**
-- `length` (number): 0-32
+- `firstNameLength` (number): 0-15
+- `lastNameLength` (number): 0-15
 
-**Returns:** String (8 bits)
+**Returns:** String (8 bits) [FirstName 4 bits][LastName 4 bits]
 
 **Throws:** Error if out of range
 
@@ -152,39 +154,39 @@ const bits = codec.GetMessageLengthBits(42);
 ---
 
 ### GetMessageTypeBits(type)
-Returns message type as 4-bit value.
+Returns message type as 2-bit value.
 
 ```javascript
 const bits = codec.GetMessageTypeBits(1); // Chat
 ```
 
 **Parameters:**
-- `type` (number): 0-15
+- `type` (number): 0-3
   - 0: Emergency
   - 1: Chat
   - 2: Contest
   - 3: Other
-  - 4-15: Reserved
 
-**Returns:** String (4 bits)
+**Returns:** String (2 bits)
 
 **Throws:** Error if out of range
 
 ---
 
 ### GetNameBitStream(name)
-Encodes name to alphanumbit bitstream.
+Encodes name to alphanumbit bitstream (use for both first and last names).
 
 ```javascript
-const bits = codec.GetNameBitStream("Alex Okita");
+const firstNameBits = codec.GetNameBitStream("Alex");
+const lastNameBits = codec.GetNameBitStream("Okita");
 ```
 
 **Parameters:**
-- `name` (string): 0-32 characters
+- `name` (string): 0-15 characters
 
 **Returns:** String (variable length, 6 bits per char)
 
-**Throws:** Error if > 32 chars
+**Throws:** Error if > 15 chars
 
 ---
 
@@ -298,16 +300,16 @@ const isGPS = codec.BitStreamToGPS("1"); // true
 ---
 
 ### BitStreamToNameLength(bits)
-Decodes name length.
+Decodes name length into first and last name lengths.
 
 ```javascript
-const length = codec.BitStreamToNameLength("00001010"); // 10
+const lengths = codec.BitStreamToNameLength("01000101"); // {firstNameLength: 4, lastNameLength: 5}
 ```
 
 **Parameters:**
 - `bits` (string): 8-bit value
 
-**Returns:** Number (0-255)
+**Returns:** Object {firstNameLength: number (0-15), lastNameLength: number (0-15)}
 
 **Throws:** Error if not 8 bits
 
@@ -333,29 +335,30 @@ const length = codec.BitStreamToMessageLength("00101100"); // 44
 Decodes message type.
 
 ```javascript
-const type = codec.BitStreamToMessageType("0001"); // 1 (Chat)
+const type = codec.BitStreamToMessageType("01"); // 1 (Chat)
 ```
 
 **Parameters:**
-- `bits` (string): 4-bit value
+- `bits` (string): 2-bit value
 
-**Returns:** Number (0-15)
+**Returns:** Number (0-3)
 
-**Throws:** Error if not 4 bits
+**Throws:** Error if not 2 bits
 
 ---
 
 ### BitStreamToName(bits)
-Decodes name from alphanumbit bitstream.
+Decodes name from alphanumbit bitstream with proper capitalization.
 
 ```javascript
-const name = codec.BitStreamToName(bits);
+const firstName = codec.BitStreamToName(firstNameBits); // "Alex"
+const lastName = codec.BitStreamToName(lastNameBits);   // "Okita"
 ```
 
 **Parameters:**
 - `bits` (string): Variable-length bitstream (multiple of 6)
 
-**Returns:** String (trimmed name)
+**Returns:** String (first character uppercase, rest lowercase)
 
 **Throws:** Error if not multiple of 6 bits
 
@@ -391,7 +394,8 @@ const bitstream = codec.EncodeMessage({
     ntp: true,                  // Optional, defaults to false
     gps: true,                  // Optional, defaults to false
     messageType: 1,             // Optional, defaults to 1 (Chat)
-    name: "ARRL",               // Optional
+    firstName: "Hiram",         // Optional, 0-15 chars
+    lastName: "Maxim",          // Optional, 0-15 chars
     message: "Hello!"           // Optional
 });
 ```
@@ -404,11 +408,12 @@ const bitstream = codec.EncodeMessage({
   - `emergency` (boolean, optional)
   - `ntp` (boolean, optional)
   - `gps` (boolean, optional)
-  - `messageType` (number 0-15, optional)
-  - `name` (string, optional)
+  - `messageType` (number 0-3, optional)
+  - `firstName` (string, optional, 0-15 chars)
+  - `lastName` (string, optional, 0-15 chars)
   - `message` (string, optional)
 
-**Returns:** String (complete bitstream, 130+ bits)
+**Returns:** String (complete bitstream, 128+ bits)
 
 **Throws:** Error if required fields missing or invalid
 
@@ -427,10 +432,12 @@ console.log(message);
 //   emergency: false,
 //   ntp: true,
 //   gps: true,
-//   nameLength: 4,
+//   firstNameLength: 5,
+//   lastNameLength: 5,
 //   messageLength: 6,
 //   messageType: 1,
-//   name: "ARRL",
+//   firstName: "Hiram",
+//   lastName: "Maxim",
 //   message: "Hello!"
 // }
 ```
@@ -481,7 +488,7 @@ const name = codec.GetMessageTypeName(1); // "Chat"
 ```
 
 **Parameters:**
-- `type` (number): 0-15
+- `type` (number): 0-3
 
 **Returns:** String (type name)
 
@@ -502,7 +509,8 @@ const data = {
     ntp: true,
     gps: true,
     messageType: 1,
-    name: "Alex",
+    firstName: "Alex",
+    lastName: "Okita",
     message: "Testing Ribbit!"
 };
 
@@ -551,13 +559,14 @@ try {
 | 1 | Chat | General chat/conversation |
 | 2 | Contest | Contest/competition |
 | 3 | Other | Other purposes |
-| 4-15 | Reserved | Reserved for future use |
 
 ## Limitations
 
 - Callsign: 8 characters max
 - Gridsquare: Must be valid Maidenhead format (AA00aa)
-- Name: 32 characters max (alphanumeric)
+- First Name: 15 characters max (alphanumeric)
+- Last Name: 15 characters max (alphanumeric)
 - Message: 240 bytes max (UTF-8)
 - Timestamp: 2026-2111, 2-second resolution
+- Names are displayed with first character uppercase, rest lowercase
 
