@@ -17,14 +17,27 @@ call emsdk\emsdk_env.bat
 REM Create web directory if it doesn't exist
 if not exist web mkdir web
 
-REM Compile directly to WebAssembly
-call emcc src/ribbit/src/ribbit.cc -o web/ribbit.js ^
+REM Compile directly to WebAssembly with optimized settings
+call emcc src/ribbit/src/ribbit.cc -o web/scripts/ribbit.js ^
     -s WASM=1 ^
     -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap'] ^
-    -s EXPORTED_FUNCTIONS=['_malloc','_free','_expose_metadata'] ^
+    -s EXPORTED_FUNCTIONS=['_malloc','_free','_createEncoder','_destroyEncoder','_createDecoder','_destroyDecoder','_feed_pointer','_feed_length','_message_pointer','_message_length','_signal_pointer','_signal_length','_payload_pointer','_payload_length','_feedDecoder','_digestFeed','_initEncoder','_readEncoder'] ^
     -I src/ribbit/include ^
     -std=c++17 ^
-    -O2
+    -O3 ^
+    -s ALLOW_MEMORY_GROWTH=1 ^
+    -s INITIAL_MEMORY=16MB ^
+    -s MAXIMUM_MEMORY=64MB ^
+    -s STACK_SIZE=1MB ^
+    -s MODULARIZE=1 ^
+    -s EXPORT_ES6=0 ^
+    -s ENVIRONMENT=web ^
+    -s FILESYSTEM=0 ^
+    -s ASSERTIONS=0 ^
+    -s MALLOC=emmalloc ^
+    -msimd128 ^
+    --closure 0 ^
+    -flto
 
 REM Check if build was successful
 if %ERRORLEVEL% EQU 0 (

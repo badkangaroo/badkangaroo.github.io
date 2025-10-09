@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ribbit WASM Tests</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .test-results {
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+        }
+        .test-result {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .pass {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .fail {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            flex: 1;
+            min-width: 200px;
+        }
+        .summary {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .summary h3 {
+            margin-top: 0;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .progress {
+            margin: 10px 0;
+        }
+        progress {
+            width: 100%;
+            height: 30px;
+        }
+        audio {
+            width: 100%;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐸 Ribbit WASM Encoder/Decoder Tests</h1>
+
+    <div class="test-section">
+        <h2>1. WASM Module Status</h2>
+        <div id="wasmStatus" class="test-results">Loading WASM module...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Manual Encode/Decode Test</h2>
+        <p>Encode a message, save as WAV, then decode it back to verify.</p>
+        
+        <div class="test-controls">
+            <input type="text" id="testMessage" placeholder="Enter test message (e.g., 'Test|KO6BVA|FN42kl|555-1234&=Hello World')">
+            <button id="btnEncode">Encode to Audio</button>
+            <button id="btnSaveWav" disabled>Save as WAV</button>
+            <button id="btnLoadWav">Load WAV File</button>
+            <button id="btnDecode" disabled>Decode</button>
+        </div>
+        
+        <div id="audioContainer"></div>
+        <div id="manualTestResults" class="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Automated Test Suite</h2>
+        <p>Run comprehensive tests of encoding and decoding.</p>
+        
+        <div class="test-controls">
+            <button id="btnRunAllTests">Run All Tests</button>
+            <button id="btnRunQuickTest">Quick Test (1 message)</button>
+            <button id="btnRunStressTest">Stress Test (10 messages)</button>
+        </div>
+        
+        <div class="progress" id="progressContainer" style="display:none;">
+            <progress id="testProgress" max="100" value="0"></progress>
+            <span id="progressText">0%</span>
+        </div>
+        
+        <div id="autoTestResults" class="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Summary</h2>
+        <div id="testSummary" class="summary">
+            <h3>No tests run yet</h3>
+            <p>Click "Run All Tests" to begin comprehensive testing.</p>
+        </div>
+    </div>
+
+    <script src="scripts/wav.js"></script>
+    <script src="scripts/ribbit.js"></script>
+    <script src="scripts/wasm_tests.js"></script>
+</body>
+</html>
+

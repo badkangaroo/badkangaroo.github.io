@@ -16,6 +16,11 @@ namespace DSP {
 template <typename TYPE>
 class Complex
 {
+public:
+	// Type alias for template metaprogramming
+	typedef TYPE value_type;
+
+private:
 	// Real and imaginary components of the complex number
 	TYPE re, im;
 
@@ -64,6 +69,54 @@ public:
 	{
 		TYPE d = z.re * z.re + z.im * z.im;
 		return Complex((re * z.re + im * z.im) / d, (im * z.re - re * z.im) / d);
+	}
+
+	// Compound assignment operators
+	Complex& operator+=(const Complex &z)
+	{
+		re += z.re;
+		im += z.im;
+		return *this;
+	}
+
+	Complex& operator-=(const Complex &z)
+	{
+		re -= z.re;
+		im -= z.im;
+		return *this;
+	}
+
+	Complex& operator*=(const Complex &z)
+	{
+		TYPE tmp_re = re * z.re - im * z.im;
+		TYPE tmp_im = re * z.im + im * z.re;
+		re = tmp_re;
+		im = tmp_im;
+		return *this;
+	}
+
+	Complex& operator/=(const Complex &z)
+	{
+		TYPE d = z.re * z.re + z.im * z.im;
+		TYPE tmp_re = (re * z.re + im * z.im) / d;
+		TYPE tmp_im = (im * z.re - re * z.im) / d;
+		re = tmp_re;
+		im = tmp_im;
+		return *this;
+	}
+
+	Complex& operator*=(TYPE scalar)
+	{
+		re *= scalar;
+		im *= scalar;
+		return *this;
+	}
+
+	Complex& operator/=(TYPE scalar)
+	{
+		re /= scalar;
+		im /= scalar;
+		return *this;
 	}
 
 	// Complex conjugate: (a + bi)* = a - bi
