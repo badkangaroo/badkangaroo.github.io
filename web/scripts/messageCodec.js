@@ -7,8 +7,9 @@ import { nibble, alphabit, alphanumbit, verifyNibble, verifyNibbit, verifyNibbli
  * Message Structure (128+ bits):
  * - Callsign (48 bits) - Header component
  * - Timestamp (31 bits) - Header component
- * - Gridsquare (28 bits) - Header component
- * - Emergency (1 bit) - Metadata flag
+ * - Emergency (1 bit) - Header component
+ * - **Message ID (80 bits total: Callsign + Timestamp + Emergency)**
+ * - Gridsquare (28 bits) - Location component
  * - NTP (1 bit) - Metadata flag
  * - GPS (1 bit) - Metadata flag
  * - Name Length (8 bits) - Metadata [FirstNameLength 4 bits][LastNameLength 4 bits]
@@ -241,6 +242,21 @@ export class MessageCodec {
         return messageBits;
     }
 
+    /**
+     * Get Message ID bitstream (80 bits: Callsign + Timestamp + Emergency)
+     * @param {string} callsign - Ham radio callsign (up to 8 chars)
+     * @param {Date} timestamp - Timestamp (optional, defaults to now)
+     * @param {boolean} emergency - Emergency flag
+     * @returns {string} 80-bit Message ID bitstream
+     */
+    GetMessageIDBitStream(callsign, timestamp = null, emergency = false) {
+        const callsignBits = this.GetCallsignBitStream(callsign);     // 48 bits
+        const timestampBits = this.GetTimestampBitStream(timestamp);  // 31 bits
+        const emergencyBit = this.GetEmergencyBit(emergency);         // 1 bit
+        
+        return callsignBits + timestampBits + emergencyBit;           // 80 bits total
+    }
+
     // ==================== DECODING FUNCTIONS ====================
 
     /**
@@ -430,6 +446,27 @@ export class MessageCodec {
         return decoder.decode(new Uint8Array(messageBytes));
     }
 
+    /**
+     * Decode Message ID bitstream to object
+     * @param {string} bits - 80-bit Message ID bitstream
+     * @returns {Object} {callsign: string, timestamp: Date, emergency: boolean}
+     */
+    BitStreamToMessageID(bits) {
+        if (bits.length !== 80) {
+            throw new Error("Message ID bitstream must be 80 bits");
+        }
+        
+        const callsignBits = bits.slice(0, 48);
+        const timestampBits = bits.slice(48, 79);
+        const emergencyBit = bits.slice(79, 80);
+        
+        return {
+            callsign: this.BitStreamToCallsign(callsignBits),
+            timestamp: this.BitStreamToTimestamp(timestampBits),
+            emergency: this.BitStreamToEmergency(emergencyBit)
+        };
+    }
+
     // ==================== COMPREHENSIVE FUNCTIONS ====================
 
     /**
@@ -478,8 +515,9 @@ export class MessageCodec {
         let bitstream = '';
         bitstream += this.GetCallsignBitStream(callsign);                       // 48 bits
         bitstream += this.GetTimestampBitStream(timestamp);                     // 31 bits
-        bitstream += this.GetGridsquareBitStream(gridsquare);                   // 28 bits
         bitstream += this.GetEmergencyBit(emergency);                           // 1 bit
+        // Message ID = Callsign + Timestamp + Emergency (80 bits total)
+        bitstream += this.GetGridsquareBitStream(gridsquare);                   // 28 bits
         bitstream += this.GetNTPBit(ntp);                                       // 1 bit
         bitstream += this.GetGPSBit(gps);                                       // 1 bit
         bitstream += this.GetNameLengthBits(firstNameLength, lastNameLength);  // 8 bits
@@ -514,11 +552,12 @@ export class MessageCodec {
         const timestampBits = bitstream.slice(offset, offset + 31);
         offset += 31;
         
-        const gridsquareBits = bitstream.slice(offset, offset + 28);
-        offset += 28;
-        
         const emergencyBit = bitstream.slice(offset, offset + 1);
         offset += 1;
+        // Message ID complete (80 bits: Callsign + Timestamp + Emergency)
+        
+        const gridsquareBits = bitstream.slice(offset, offset + 28);
+        offset += 28;
         
         const ntpBit = bitstream.slice(offset, offset + 1);
         offset += 1;

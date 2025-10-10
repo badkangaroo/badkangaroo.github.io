@@ -159,10 +159,48 @@ Then open your browser to: `http://localhost:8000/web/wasm_tests.html`
 
 See [web/TESTING.md](web/TESTING.md) for detailed testing documentation.
 
+## 🎨 Visual Message Codec
+
+**Try it now**: `http://localhost:8000/web/messageCodec.html` ⭐
+
+Interactive encoder/decoder that shows:
+- **Binary visualization** (1s and 0s, color-coded by field)
+- **Hex encoding/decoding** (copy/paste friendly)
+- **Mode comparison** (see efficiency gains)
+- **Round-trip verification** (encode → decode → verify)
+
+Perfect for learning how Ribbit packs data for radio transmission!
+
+**Quick Start**: [CODEC_QUICK_START.md](CODEC_QUICK_START.md) | **Details**: [CODEC_INTEGRATION_COMPLETE.md](CODEC_INTEGRATION_COMPLETE.md)
+
+## Message Formats
+
+Ribbit now supports **dual-mode messaging**:
+
+### Chat Mode (Type 1) 💬
+- Current UTF-8 format: `"Name|Callsign|Gridsquare|Phone&=Message"`
+- Simple, flexible, any UTF-8 characters
+- Best for casual conversations
+
+### Contest Mode (Type 2) 🏆
+- Bitwise-packed efficient format
+- **40-60% smaller** than chat mode
+- **Includes UTC timestamp** (31 bits, 2-sec resolution, auto-updated)
+- **Timestamp visualization** - See Year/Month, Day, Hour, Minute, Second bits
+- Room for ACK arrays (20+ ACKs possible)
+- Best for contests, structured communications
+- **ACK/QSO ready** - Callsign + timestamp for contact confirmation
+
+**Example Savings**: "Hello from Ribbit!" is **37% smaller** in Contest mode (52 → 33 bytes)
+
+**Full Details**: [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md)
+
 ## Coming Features
 
-- minor updates for some of the header encoding and decoding, this is locaed in the web directory as [headerEncoder](./web/headerEncoder.html) where the script [headerEncoder.js](./web/scripts/headerEncoder.js) makes use of special bit formats that use various short bit types, nibbles (4bit), nibbits (5bits), and nibblits (6bits) to encode common numbers and letters into shorter bit formats that are shorter than bytes to save on final bit array sizes.
-- this includes some unit tests so various edge cases can be discovered before the encoding/decoding can cause problems.
+- ACK array implementation for contest mode
+- Message acknowledgment tracking
+- Contest mode integration in main UI
+- Statistics dashboard
 
 ### Contact Logging
 

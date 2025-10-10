@@ -18,10 +18,10 @@ REM Create web directory if it doesn't exist
 if not exist web mkdir web
 
 REM Compile directly to WebAssembly with optimized settings
-call emcc src/ribbit/src/ribbit.cc -o web/scripts/ribbit.js ^
+call emcc src/ribbit/src/ribbit.cc src/ribbit/src/message_format.cc -o web/scripts/ribbit.js ^
     -s WASM=1 ^
-    -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap'] ^
-    -s EXPORTED_FUNCTIONS=['_malloc','_free','_createEncoder','_destroyEncoder','_createDecoder','_destroyDecoder','_feed_pointer','_feed_length','_message_pointer','_message_length','_signal_pointer','_signal_length','_payload_pointer','_payload_length','_feedDecoder','_digestFeed','_initEncoder','_readEncoder'] ^
+    -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','stringToUTF8','UTF8ToString','lengthBytesUTF8'] ^
+    -s EXPORTED_FUNCTIONS=['_malloc','_free','_createEncoder','_destroyEncoder','_createDecoder','_destroyDecoder','_feed_pointer','_feed_length','_message_pointer','_message_length','_signal_pointer','_signal_length','_payload_pointer','_payload_length','_feedDecoder','_digestFeed','_initEncoder','_readEncoder','_pack_contest_message','_unpack_contest_message'] ^
     -I src/ribbit/include ^
     -std=c++17 ^
     -O3 ^

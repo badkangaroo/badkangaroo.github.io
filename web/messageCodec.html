@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ribbit - Message Codec with WASM - Development</title>
+</head>
+
+<body>
+    <div id="messageCodec">
+        <h1>🐸 Ribbit Message Codec (WASM)</h1>
+        <div class="intro">
+            <p>Complete message encoding/decoding system for amateur radio data transmission.<br>
+            Watch data flow: <strong>Human-Readable → Binary → Bytes → Hex → Transmission → Hex → Binary → Human-Readable</strong></p>
+            <div id="wasmStatus" class="status loading">⏳ Loading WASM Module...</div>
+        </div>
+
+        <div class="mode-selector-section">
+            <h2>Select Message Mode</h2>
+            <div class="mode-buttons">
+                <label class="mode-button">
+                    <input type="radio" name="messageMode" value="1" checked>
+                    <span>💬 Chat Mode (UTF-8)</span>
+                    <small>Flexible, any UTF-8 characters</small>
+                </label>
+                <label class="mode-button">
+                    <input type="radio" name="messageMode" value="2">
+                    <span>🏆 Contest Mode (Bitpacked)</span>
+                    <small>Efficient, 40-60% smaller, timestamps</small>
+                </label>
+            </div>
+        </div>
+
+        <!-- ENCODING SECTION -->
+        <div class="section encoder-section">
+            <span class="flow-label">📤 Step 1: Encoding</span>
+            <h2>Encode Human-Readable Data → Binary</h2>
+
+            <!-- Common Fields -->
+            <div class="field-group">
+                <h3><span class="highlight-callsign">Callsign & Location</span></h3>
+                <div class="input-row">
+                    <label for="callsign">Ham Radio Callsign (up to 8 chars)</label>
+                    <input type="text" id="callsign" name="callsign" maxlength="8" placeholder="KN6FZY" value="KN6FZY">
+                </div>
+                <div class="input-row">
+                    <label for="gridsquare">Gridsquare (6 chars: AA00aa)</label>
+                    <input type="text" id="gridsquare" name="gridsquare" maxlength="6" placeholder="CM87uq" value="CM87uq">
+                </div>
+            </div>
+
+            <!-- Chat Mode Fields -->
+            <div id="chatFields" class="field-group mode-fields">
+                <h3><span class="highlight-name">Chat Mode Fields</span></h3>
+                <div class="input-row">
+                    <label for="chatName">Full Name</label>
+                    <input type="text" id="chatName" placeholder="Alex Okita" value="Alex Okita">
+                </div>
+                <div class="input-row">
+                    <label for="phone">Phone (optional)</label>
+                    <input type="text" id="phone" placeholder="+1234567890">
+                </div>
+            </div>
+
+            <!-- Contest Mode Fields -->
+            <div id="contestFields" class="field-group mode-fields" style="display:none;">
+                <h3><span class="highlight-name">Contest Mode Fields</span></h3>
+                <div class="input-row">
+                    <label for="firstName">First Name (up to 15 letters)</label>
+                    <input type="text" id="firstName" maxlength="15" placeholder="Alex" value="Alex">
+                </div>
+                <div class="input-row">
+                    <label for="lastName">Last Name (up to 15 letters)</label>
+                    <input type="text" id="lastName" maxlength="15" placeholder="Okita" value="Okita">
+                </div>
+                <div class="input-row">
+                    <input type="checkbox" id="emergency">
+                    <label for="emergency">Emergency Message (Part of Message ID)</label>
+                </div>
+                <div style="background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 4px; margin: 10px 0; border: 1px solid rgba(239, 68, 68, 0.3);">
+                    <small style="color: #ef4444;">Message ID (80 bits) = Callsign + Timestamp + Emergency</small>
+                </div>
+                <div class="input-row">
+                    <input type="checkbox" id="ntp">
+                    <label for="ntp">NTP Time Sync</label>
+                </div>
+                <div class="input-row">
+                    <input type="checkbox" id="gps" checked>
+                    <label for="gps">GPS Location Active</label>
+                </div>
+            </div>
+
+            <!-- Timestamp Fields (Contest Mode) -->
+            <div id="timestampFields" class="field-group mode-fields" style="display:none;">
+                <h3><span class="highlight-timestamp">Timestamp (UTC) - For ACK/QSO Confirmation</span></h3>
+                <div class="input-row">
+                    <label for="timestampDisplay">Current UTC Time</label>
+                    <input type="text" id="timestampDisplay" readonly style="background:#2a2a2a; color:#fbbf24;">
+                </div>
+                <div class="timestamp-breakdown">
+                    <div class="timestamp-detail">
+                        <label>Year/Month (10 bits)</label>
+                        <div class="bit-output" id="yearMonthBits">0000000000</div>
+                        <small>Months since Jan 2026</small>
+                    </div>
+                    <div class="timestamp-detail">
+                        <label>Day (5 bits)</label>
+                        <div class="bit-output" id="dayBits">00000</div>
+                        <small>0-30 (0-based)</small>
+                    </div>
+                    <div class="timestamp-detail">
+                        <label>Hour (5 bits)</label>
+                        <div class="bit-output" id="hourBits">00000</div>
+                        <small>0-23 UTC</small>
+                    </div>
+                    <div class="timestamp-detail">
+                        <label>Minute (6 bits)</label>
+                        <div class="bit-output" id="minuteBits">000000</div>
+                        <small>0-59</small>
+                    </div>
+                    <div class="timestamp-detail">
+                        <label>Second (5 bits)</label>
+                        <div class="bit-output" id="secondBits">00000</div>
+                        <small>2-sec resolution</small>
+                    </div>
+                    <div class="timestamp-detail combined">
+                        <label><strong>Combined Timestamp (31 bits)</strong></label>
+                        <div class="bit-output" id="timestampCombined" style="border: 2px solid #fbbf24;">0000000000000000000000000000000</div>
+                    </div>
+                </div>
+                <button id="btnRefreshTime" class="small-button">🔄 Refresh UTC Time</button>
+            </div>
+
+            <!-- Message Field -->
+            <div class="field-group">
+                <h3><span class="highlight-message">Message</span></h3>
+                <div class="input-row">
+                    <label for="message">Message Content</label>
+                    <textarea id="message" placeholder="Hello from Ribbit!" rows="3">Hello from Ribbit!</textarea>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin: 20px 0;">
+                <button id="btnEncode" class="big-button">🔒 Encode Message</button>
+                <button id="btnCompare" class="big-button secondary">📊 Compare Both Modes</button>
+            </div>
+
+            <div id="encodedOutput" style="display:none;">
+                <div style="background: rgba(74, 222, 128, 0.1); padding: 20px; border-radius: 8px; border: 2px solid #4ade80;">
+                    <h3>✅ Encoded Message</h3>
+                    
+                    <div class="output-section">
+                        <h4>Mode</h4>
+                        <div class="output-value" id="outputMode">-</div>
+                    </div>
+                    
+                    <div class="output-section">
+                        <h4>Size</h4>
+                        <div class="output-value" id="outputSize">-</div>
+                    </div>
+                    
+                    <div class="output-section" id="timestampBinarySection" style="display:none;">
+                        <h4><span class="highlight-timestamp">Timestamp Breakdown (31 bits)</span></h4>
+                        <div style="background: rgba(251, 191, 36, 0.1); padding: 10px; border-radius: 4px; border: 1px solid #fbbf24;">
+                            <div style="font-size: 11px; margin: 5px 0;">
+                                <strong>Year/Month (10):</strong> <span id="outputYearMonthBits" class="highlight-timestamp">-</span>
+                            </div>
+                            <div style="font-size: 11px; margin: 5px 0;">
+                                <strong>Day (5):</strong> <span id="outputDayBits" class="highlight-timestamp">-</span>
+                            </div>
+                            <div style="font-size: 11px; margin: 5px 0;">
+                                <strong>Hour (5):</strong> <span id="outputHourBits" class="highlight-timestamp">-</span>
+                            </div>
+                            <div style="font-size: 11px; margin: 5px 0;">
+                                <strong>Minute (6):</strong> <span id="outputMinuteBits" class="highlight-timestamp">-</span>
+                            </div>
+                            <div style="font-size: 11px; margin: 5px 0;">
+                                <strong>Second (5):</strong> <span id="outputSecondBits" class="highlight-timestamp">-</span>
+                            </div>
+                            <div style="font-size: 11px; margin: 5px 0; padding-top: 5px; border-top: 1px solid rgba(251, 191, 36, 0.3);">
+                                <strong>Combined (31 bits):</strong> <span id="outputTimestampCombined" class="highlight-timestamp" style="font-family: 'Courier New', monospace;">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="output-section">
+                        <h4>Binary Representation (bits)</h4>
+                        <div class="bit-output" id="outputBinary" style="font-size: 11px; word-break: break-all; max-height: 200px; overflow-y: auto;">
+                            -
+                        </div>
+                    </div>
+                    
+                    <div class="output-section">
+                        <h4>Hexadecimal (bytes)</h4>
+                        <div class="output-value hex-output" id="outputHex">-</div>
+                    </div>
+                    
+                    <div class="output-section">
+                        <h4>Byte Array</h4>
+                        <div class="byte-array" id="outputByteArray">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COMPARISON SECTION -->
+        <div id="comparisonSection" class="section comparison-section" style="display:none;">
+            <h2>📊 Mode Comparison</h2>
+            <table id="comparisonTable">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>💬 Chat Mode</th>
+                        <th>🏆 Contest Mode</th>
+                        <th>Difference</th>
+                    </tr>
+                </thead>
+                <tbody id="comparisonBody">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TRANSMISSION SECTION -->
+        <div class="transmission-arrow">⬇ TRANSMISSION ⬇</div>
+
+        <!-- DECODING SECTION -->
+        <div class="section decoder-section">
+            <span class="flow-label">📥 Step 2: Decoding</span>
+            <h2>Decode Binary → Human-Readable Data</h2>
+            
+            <div class="field-group">
+                <h3>Input Encoded Data</h3>
+                <div class="input-row">
+                    <label for="decodedHex">Hexadecimal Bytes (space-separated)</label>
+                    <textarea id="decodedHex" placeholder="01 02 03 04 0a 0b ..." rows="3"></textarea>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin: 20px 0;">
+                <button id="btnDecode" class="big-button">🔓 Decode Message</button>
+                <button id="btnClear" class="big-button secondary">🗑️ Clear</button>
+            </div>
+
+            <div id="decodedOutput" style="display:none;">
+                <div class="field-group">
+                    <h3>Reconstructed Bitstream</h3>
+                    <div class="bit-output" id="decodedBinary" style="font-size: 11px; word-break: break-all; max-height: 200px; overflow-y: auto;"></div>
+                </div>
+
+                <div class="decoded-values">
+                    <h3>✅ Decoded Values</h3>
+                    <div id="decodedContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0a1f14;
+            color: #e0e0e0;
+            font-family: 'Courier New', 'Consolas', monospace;
+            padding: 0;
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        #messageCodec {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin: 0 0 10px 0;
+            color: #4ade80;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        h2 {
+            font-size: 18px;
+            margin: 20px 0 10px 0;
+            color: #4ade80;
+            border-bottom: 2px solid #22543d;
+            padding-bottom: 5px;
+        }
+
+        h3 {
+            font-size: 16px;
+            margin: 15px 0 10px 0;
+            color: #86efac;
+        }
+
+        h4 {
+            font-size: 14px;
+            margin: 10px 0 5px 0;
+            color: #bbf7d0;
+            font-weight: normal;
+        }
+
+        .intro {
+            text-align: center;
+            font-size: 13px;
+            color: #a0a0a0;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: rgba(34, 84, 61, 0.3);
+            border-radius: 8px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .status.loading {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .status.success {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+        }
+
+        .status.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .mode-selector-section {
+            background: rgba(16, 108, 47, 0.2);
+            border: 1px solid #22543d;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .mode-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .mode-button {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(74, 222, 128, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .mode-button:hover {
+            border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .mode-button input[type="radio"] {
+            display: none;
+        }
+
+        .mode-button input[type="radio"]:checked + span {
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        .mode-button span {
+            display: block;
+            font-size: 16px;
+            color: #a0a0a0;
+        }
+
+        .mode-button small {
+            display: block;
+            font-size: 12px;
+            color: #707070;
+            margin-top: 5px;
+        }
+
+        .section {
+            background: rgba(16, 108, 47, 0.2);
+            border: 1px solid #22543d;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .encoder-section {
+            border-left: 4px solid #4ade80;
+        }
+
+        .decoder-section {
+            border-left: 4px solid #60a5fa;
+        }
+
+        .comparison-section {
+            border-left: 4px solid #fbbf24;
+        }
+
+        .field-group {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 1px solid rgba(74, 222, 128, 0.2);
+        }
+
+        .mode-fields {
+            border: 2px solid #fbbf24;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            gap: 10px;
+        }
+
+        label {
+            flex: 1;
+            color: #a0a0a0;
+            font-size: 13px;
+        }
+
+        input[type="text"],
+        textarea {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #4ade80;
+            color: #4ade80;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #86efac;
+            box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #4ade80;
+        }
+
+        .big-button {
+            padding: 15px 30px;
+            background: #4ade80;
+            color: #0a1f14;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 0 10px;
+        }
+
+        .big-button:hover {
+            background: #86efac;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(74, 222, 128, 0.4);
+        }
+
+        .big-button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .big-button.secondary {
+            background: #fbbf24;
+            color: #0a1f14;
+        }
+
+        .big-button.secondary:hover {
+            background: #fcd34d;
+        }
+
+        .bit-output {
+            background: #000;
+            color: #22d3ee;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 8px 0;
+            border: 1px solid #164e63;
+            word-break: break-all;
+            min-height: 24px;
+        }
+
+        .output-section {
+            margin: 15px 0;
+        }
+
+        .output-value {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #4ade80;
+            color: #4ade80;
+            font-family: 'Courier New', monospace;
+        }
+
+        .hex-output {
+            color: #fbbf24;
+            border-color: #fbbf24;
+            word-break: break-all;
+        }
+
+        .byte-array {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #60a5fa;
+            color: #60a5fa;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            word-break: break-all;
+        }
+
+        .highlight-emergency { color: #ef4444; font-weight: bold; }
+        .highlight-timestamp { color: #fbbf24; }
+        .highlight-callsign { color: #4ade80; }
+        .highlight-gridsquare { color: #60a5fa; }
+        .highlight-meta { color: #a78bfa; }
+        .highlight-name { color: #f472b6; }
+        .highlight-message { color: #fb923c; }
+
+        .transmission-arrow {
+            text-align: center;
+            font-size: 32px;
+            color: #fbbf24;
+            margin: 20px 0;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .decoded-values {
+            background: rgba(96, 165, 250, 0.1);
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #60a5fa;
+        }
+
+        .decoded-field {
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        .decoded-label {
+            color: #a0a0a0;
+            font-size: 12px;
+        }
+
+        .decoded-value {
+            color: #60a5fa;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(74, 222, 128, 0.2);
+        }
+
+        th {
+            background: rgba(74, 222, 128, 0.1);
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background: rgba(74, 222, 128, 0.05);
+        }
+
+        .savings-positive {
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        .savings-negative {
+            color: #ef4444;
+        }
+
+        .timestamp-breakdown {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .timestamp-detail {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .timestamp-detail.combined {
+            grid-column: 1 / -1;
+            border: 2px solid #fbbf24;
+        }
+
+        .timestamp-detail label {
+            display: block;
+            color: #fbbf24;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .timestamp-detail small {
+            display: block;
+            color: #707070;
+            font-size: 10px;
+            margin-top: 5px;
+        }
+
+        .small-button {
+            padding: 8px 16px;
+            background: #fbbf24;
+            color: #0a1f14;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 10px 0;
+        }
+
+        .small-button:hover {
+            background: #fcd34d;
+            transform: translateY(-1px);
+        }
+    </style>
+
+    <script src="scripts/ribbit.js"></script>
+    <script src="scripts/message_format.js"></script>
+    <script>
+        let messageFormatter = null;
+        let wasmReady = false;
+        let lastEncodedChat = null;
+        let lastEncodedContest = null;
+
+        // Load WASM module
+        async function initWASM() {
+            try {
+                const moduleInstance = await Module();
+                messageFormatter = new RibbitMessageFormat(moduleInstance);
+                wasmReady = true;
+                
+                document.getElementById('wasmStatus').className = 'status success';
+                document.getElementById('wasmStatus').textContent = '✓ WASM Module Loaded & Ready';
+                
+                // Enable buttons
+                document.getElementById('btnEncode').disabled = false;
+                document.getElementById('btnCompare').disabled = false;
+                document.getElementById('btnDecode').disabled = false;
+                
+                console.log('Message formatter ready');
+            } catch (error) {
+                document.getElementById('wasmStatus').className = 'status error';
+                document.getElementById('wasmStatus').textContent = '✗ Failed to load WASM: ' + error.message;
+                console.error('WASM load error:', error);
+            }
+        }
+
+        // Initialize on page load
+        initWASM();
+
+        // Mode switching
+        document.querySelectorAll('input[name="messageMode"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const mode = parseInt(e.target.value);
+                document.getElementById('chatFields').style.display = mode === 1 ? 'block' : 'none';
+                document.getElementById('contestFields').style.display = mode === 2 ? 'block' : 'none';
+                document.getElementById('timestampFields').style.display = mode === 2 ? 'block' : 'none';
+                
+                // Update timestamp when switching to contest mode
+                if (mode === 2) {
+                    updateTimestamp();
+                }
+            });
+        });
+
+        // Timestamp functionality
+        let currentTimestamp = {
+            yearMonth: 0,
+            day: 0,
+            hour: 0,
+            minute: 0,
+            second: 0
+        };
+
+        function updateTimestamp() {
+            const now = new Date();
+            
+            // Calculate year/month (10 bits) - months since Jan 2026
+            const year = now.getUTCFullYear() - 2026;
+            const month = now.getUTCMonth(); // 0-11
+            const yearMonth = year * 12 + month;
+            
+            // Clamp to 0 if before Jan 2026 (epoch start)
+            const clampedYearMonth = Math.max(0, yearMonth);
+            const yearMonthBits = clampedYearMonth.toString(2).padStart(10, '0');
+            
+            // Calculate day (5 bits) - 0-based (0-30)
+            const day = now.getUTCDate() - 1; // 0-30
+            const dayBits = day.toString(2).padStart(5, '0');
+            
+            // Calculate hour (5 bits) - 0-23
+            const hour = now.getUTCHours();
+            const hourBits = hour.toString(2).padStart(5, '0');
+            
+            // Calculate minute (6 bits) - 0-59
+            const minute = now.getUTCMinutes();
+            const minuteBits = minute.toString(2).padStart(6, '0');
+            
+            // Calculate second (5 bits) - 2-second resolution (0-29)
+            const second = Math.floor(now.getUTCSeconds() / 2);
+            const secondBits = second.toString(2).padStart(5, '0');
+            
+            // Update display
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            let displayTime = `${now.getUTCFullYear()}-${monthNames[month]}-${String(now.getUTCDate()).padStart(2, '0')} ` +
+                              `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(now.getUTCSeconds()).padStart(2, '0')} UTC`;
+            
+            // Add note if before epoch
+            if (yearMonth < 0) {
+                displayTime += ' ⚠️ Before Jan 2026 (encoded as 0)';
+            }
+            
+            document.getElementById('timestampDisplay').value = displayTime;
+            
+            // Update bit displays
+            document.getElementById('yearMonthBits').textContent = yearMonthBits;
+            document.getElementById('dayBits').textContent = dayBits;
+            document.getElementById('hourBits').textContent = hourBits;
+            document.getElementById('minuteBits').textContent = minuteBits;
+            document.getElementById('secondBits').textContent = secondBits;
+            
+            // Update combined timestamp
+            const combinedBits = yearMonthBits + dayBits + hourBits + minuteBits + secondBits;
+            document.getElementById('timestampCombined').textContent = combinedBits;
+            
+            // Store for encoding
+            currentTimestamp = {
+                yearMonth: clampedYearMonth,
+                day: day + 1, // Store as 1-based for encoding
+                hour: hour,
+                minute: minute,
+                second: second
+            };
+            
+            return Date.now(); // Return epoch timestamp for message formatter
+        }
+
+        // Refresh button
+        document.getElementById('btnRefreshTime').addEventListener('click', updateTimestamp);
+
+        // Auto-update timestamp every second when in contest mode
+        setInterval(() => {
+            const mode = parseInt(document.querySelector('input[name="messageMode"]:checked').value);
+            if (mode === 2) {
+                updateTimestamp();
+            }
+        }, 1000);
+
+        // Initialize timestamp on page load
+        updateTimestamp();
+
+        // Convert bytes to binary string
+        function bytesToBinary(bytes) {
+            return Array.from(bytes)
+                .map(b => b.toString(2).padStart(8, '0'))
+                .join(' ');
+        }
+
+        // Convert bytes to hex string
+        function bytesToHex(bytes) {
+            return Array.from(bytes)
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join(' ');
+        }
+
+        // Convert hex string to bytes
+        function hexToBytes(hexString) {
+            const hex = hexString.replace(/\s+/g, '');
+            const bytes = new Uint8Array(hex.length / 2);
+            for (let i = 0; i < hex.length; i += 2) {
+                bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+            }
+            return bytes;
+        }
+
+        // Gather form data
+        function gatherFormData() {
+            const mode = parseInt(document.querySelector('input[name="messageMode"]:checked').value);
+            
+            if (mode === 1) {
+                // Chat mode
+                return {
+                    mode: 1,
+                    name: document.getElementById('chatName').value,
+                    callsign: document.getElementById('callsign').value,
+                    gridsquare: document.getElementById('gridsquare').value,
+                    phone: document.getElementById('phone').value,
+                    message: document.getElementById('message').value
+                };
+            } else {
+                // Contest mode
+                return {
+                    mode: 2,
+                    callsign: document.getElementById('callsign').value,
+                    gridsquare: document.getElementById('gridsquare').value,
+                    firstName: document.getElementById('firstName').value,
+                    lastName: document.getElementById('lastName').value,
+                    message: document.getElementById('message').value,
+                    timestamp: Date.now(),
+                    emergency: document.getElementById('emergency').checked,
+                    ntp: document.getElementById('ntp').checked,
+                    gps: document.getElementById('gps').checked
+                };
+            }
+        }
+
+        // Encode button
+        document.getElementById('btnEncode').addEventListener('click', () => {
+            if (!wasmReady) {
+                alert('WASM module not loaded yet');
+                return;
+            }
+
+            try {
+                const data = gatherFormData();
+                const encoded = messageFormatter.encode(data.mode, data);
+                
+                // Store for comparison
+                if (data.mode === 1) {
+                    lastEncodedChat = encoded;
+                } else {
+                    lastEncodedContest = encoded;
+                }
+                
+                // Display results
+                document.getElementById('encodedOutput').style.display = 'block';
+                document.getElementById('outputMode').textContent = data.mode === 1 ? '💬 Chat Mode (UTF-8)' : '🏆 Contest Mode (Bitpacked)';
+                document.getElementById('outputSize').textContent = `${encoded.length} bytes (${encoded.length * 8} bits)`;
+                document.getElementById('outputBinary').textContent = bytesToBinary(encoded);
+                document.getElementById('outputHex').textContent = bytesToHex(encoded);
+                document.getElementById('outputByteArray').textContent = `[${Array.from(encoded).join(', ')}]`;
+                
+                // Show timestamp breakdown for Contest mode
+                if (data.mode === 2) {
+                    document.getElementById('timestampBinarySection').style.display = 'block';
+                    document.getElementById('outputYearMonthBits').textContent = document.getElementById('yearMonthBits').textContent;
+                    document.getElementById('outputDayBits').textContent = document.getElementById('dayBits').textContent;
+                    document.getElementById('outputHourBits').textContent = document.getElementById('hourBits').textContent;
+                    document.getElementById('outputMinuteBits').textContent = document.getElementById('minuteBits').textContent;
+                    document.getElementById('outputSecondBits').textContent = document.getElementById('secondBits').textContent;
+                    document.getElementById('outputTimestampCombined').textContent = document.getElementById('timestampCombined').textContent;
+                } else {
+                    document.getElementById('timestampBinarySection').style.display = 'none';
+                }
+                
+                // Auto-fill decode field
+                document.getElementById('decodedHex').value = bytesToHex(encoded);
+                
+                // Scroll to output
+                document.getElementById('encodedOutput').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+            } catch (error) {
+                alert('Encoding error: ' + error.message);
+                console.error('Encode error:', error);
+            }
+        });
+
+        // Compare button
+        document.getElementById('btnCompare').addEventListener('click', () => {
+            if (!wasmReady) {
+                alert('WASM module not loaded yet');
+                return;
+            }
+
+            try {
+                // Gather current data
+                const baseData = {
+                    callsign: document.getElementById('callsign').value,
+                    gridsquare: document.getElementById('gridsquare').value,
+                    message: document.getElementById('message').value
+                };
+
+                // Encode in both modes
+                const chatData = {
+                    mode: 1,
+                    ...baseData,
+                    name: document.getElementById('chatName').value || 'Alex Okita',
+                    phone: document.getElementById('phone').value || ''
+                };
+                const chatEncoded = messageFormatter.encode(1, chatData);
+
+                const contestData = {
+                    mode: 2,
+                    ...baseData,
+                    firstName: document.getElementById('firstName').value || 'Alex',
+                    lastName: document.getElementById('lastName').value || 'Okita',
+                    timestamp: Date.now(),
+                    emergency: document.getElementById('emergency').checked,
+                    ntp: document.getElementById('ntp').checked,
+                    gps: document.getElementById('gps').checked
+                };
+                const contestEncoded = messageFormatter.encode(2, contestData);
+
+                // Calculate comparison
+                const chatSize = chatEncoded.length;
+                const contestSize = contestEncoded.length;
+                const savings = chatSize - contestSize;
+                const savingsPercent = ((savings / chatSize) * 100).toFixed(1);
+
+                // Display comparison table
+                const tbody = document.getElementById('comparisonBody');
+                tbody.innerHTML = `
+                    <tr>
+                        <td>Size (bytes)</td>
+                        <td>${chatSize}</td>
+                        <td>${contestSize}</td>
+                        <td class="${savings > 0 ? 'savings-positive' : 'savings-negative'}">
+                            ${savings > 0 ? '↓' : '↑'} ${Math.abs(savings)} bytes
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Size (bits)</td>
+                        <td>${chatSize * 8}</td>
+                        <td>${contestSize * 8}</td>
+                        <td class="${savings > 0 ? 'savings-positive' : 'savings-negative'}">
+                            ${savings > 0 ? '↓' : '↑'} ${Math.abs(savings * 8)} bits
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Efficiency</td>
+                        <td>-</td>
+                        <td class="savings-positive">${savingsPercent}% smaller</td>
+                        <td class="savings-positive">
+                            ${savingsPercent}% savings
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Transmission Time<br><small>(@1.6s per transmission)</small></td>
+                        <td>${((chatSize / 30) * 1.6).toFixed(1)}s</td>
+                        <td>${((contestSize / 30) * 1.6).toFixed(1)}s</td>
+                        <td class="savings-positive">
+                            ${(((savings / 30) * 1.6)).toFixed(1)}s faster
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>ACK Capacity<br><small>(79 bits each)</small></td>
+                        <td>Limited</td>
+                        <td>${Math.floor((savings * 8) / 79)} ACKs</td>
+                        <td class="savings-positive">
+                            ${Math.floor((savings * 8) / 79)} ACKs possible
+                        </td>
+                    </tr>
+                `;
+
+                document.getElementById('comparisonSection').style.display = 'block';
+                document.getElementById('comparisonSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            } catch (error) {
+                alert('Comparison error: ' + error.message);
+                console.error('Compare error:', error);
+            }
+        });
+
+        // Decode button
+        document.getElementById('btnDecode').addEventListener('click', () => {
+            if (!wasmReady) {
+                alert('WASM module not loaded yet');
+                return;
+            }
+
+            try {
+                const hexInput = document.getElementById('decodedHex').value;
+                if (!hexInput.trim()) {
+                    alert('Please enter hex bytes to decode');
+                    return;
+                }
+
+                const bytes = hexToBytes(hexInput);
+                const decoded = messageFormatter.decode(bytes);
+
+                // Display binary
+                document.getElementById('decodedBinary').textContent = bytesToBinary(bytes);
+
+                // Display decoded values
+                const contentDiv = document.getElementById('decodedContent');
+                contentDiv.innerHTML = '';
+
+                if (decoded.type === 1) {
+                    // Chat mode
+                    contentDiv.innerHTML = `
+                        <div class="decoded-field">
+                            <div class="decoded-label">Mode</div>
+                            <div class="decoded-value">💬 Chat Mode</div>
+                        </div>
+                        <div class="decoded-field">
+                            <div class="decoded-label">Name</div>
+                            <div class="decoded-value">${decoded.name || 'N/A'}</div>
+                        </div>
+                        <div class="decoded-field">
+                            <div class="decoded-label">Callsign</div>
+                            <div class="decoded-value">${decoded.callsign || 'N/A'}</div>
+                        </div>
+                        <div class="decoded-field">
+                            <div class="decoded-label">Gridsquare</div>
+                            <div class="decoded-value">${decoded.gridsquare || 'N/A'}</div>
+                        </div>
+                        <div class="decoded-field">
+                            <div class="decoded-label">Phone</div>
+                            <div class="decoded-value">${decoded.phone || 'N/A'}</div>
+                        </div>
+                        <div class="decoded-field">
+                            <div class="decoded-label">Message</div>
+                            <div class="decoded-value">${decoded.message || 'N/A'}</div>
+                        </div>
+                    `;
+                } else if (decoded.type === 2) {
+                    // Contest mode
+                    let timestampDisplay = 'N/A';
+                    let timestampBitsDisplay = '';
+                    
+                    if (decoded.timestamp) {
+                        const ts = new Date(decoded.timestamp);
+                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        timestampDisplay = `${ts.getUTCFullYear()}-${monthNames[ts.getUTCMonth()]}-${String(ts.getUTCDate()).padStart(2, '0')} ` +
+                                         `${String(ts.getUTCHours()).padStart(2, '0')}:${String(ts.getUTCMinutes()).padStart(2, '0')}:${String(ts.getUTCSeconds()).padStart(2, '0')} UTC`;
+                        
+                        // Calculate timestamp bits for display
+                        const year = ts.getUTCFullYear() - 2026;
+                        const month = ts.getUTCMonth();
+                        const yearMonth = year * 12 + month;
+                        const day = ts.getUTCDate() - 1;
+                        const hour = ts.getUTCHours();
+                        const minute = ts.getUTCMinutes();
+                        const second = Math.floor(ts.getUTCSeconds() / 2);
+                        
+                        const yearMonthBits = yearMonth.toString(2).padStart(10, '0');
+                        const dayBits = day.toString(2).padStart(5, '0');
+                        const hourBits = hour.toString(2).padStart(5, '0');
+                        const minuteBits = minute.toString(2).padStart(6, '0');
+                        const secondBits = second.toString(2).padStart(5, '0');
+                        const combinedBits = yearMonthBits + dayBits + hourBits + minuteBits + secondBits;
+                        
+                        timestampBitsDisplay = `
+                            <div style="background: rgba(251, 191, 36, 0.1); padding: 8px; border-radius: 4px; margin-top: 5px; font-size: 11px;">
+                                <div><strong>Year/Month:</strong> ${yearMonthBits}</div>
+                                <div><strong>Day:</strong> ${dayBits}</div>
+                                <div><strong>Hour:</strong> ${hourBits}</div>
+                                <div><strong>Minute:</strong> ${minuteBits}</div>
+                                <div><strong>Second:</strong> ${secondBits}</div>
+                                <div style="margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(251, 191, 36, 0.3);">
+                                    <strong>Combined (31 bits):</strong><br><span style="font-family: 'Courier New', monospace; color: #fbbf24;">${combinedBits}</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    contentDiv.innerHTML = `
+                        <div class="decoded-field">
+                            <div class="decoded-label">Mode</div>
+                            <div class="decoded-value">🏆 Contest Mode</div>
+                        </div>
+                        <div class="decoded-field">
+                            <div class="decoded-label">Callsign</div>
+                            <div class="decoded-value">${decoded.callsign || 'N/A'}</div>
+                        </div>
+                        <div class="decoded-field">
+                            <div class="decoded-label">Timestamp (UTC)</div>
+                            <div class="decoded-value" style="color: #fbbf24;">${timestampDisplay}</div>
+                            ${timestampBitsDisplay}
+                        </div>
+                        <div class="decoded-field">
+                            <div class="decoded-label">Gridsquare</div>
+                            <div class="decoded-value">${decoded.gridsquare || 'N/A'}</div>
+                        </div>
+                        <div class="decoded-field">
+                            <div class="decoded-label">First Name</div>
+                            <div class="decoded-value">${decoded.firstName || 'N/A'}</div>
+                        </div>
+                        <div class="decoded-field">
+                            <div class="decoded-label">Last Name</div>
+                            <div class="decoded-value">${decoded.lastName || 'N/A'}</div>
+                        </div>
+                        <div class="decoded-field">
+                            <div class="decoded-label">Emergency</div>
+                            <div class="decoded-value">${decoded.emergency ? '🚨 YES' : 'No'}</div>
+                        </div>
+                        <div class="decoded-field">
+                            <div class="decoded-label">NTP Sync</div>
+                            <div class="decoded-value">${decoded.ntp ? '✓' : '✗'}</div>
+                        </div>
+                        <div class="decoded-field">
+                            <div class="decoded-label">GPS Active</div>
+                            <div class="decoded-value">${decoded.gps ? '✓' : '✗'}</div>
+                        </div>
+                        <div class="decoded-field">
+                            <div class="decoded-label">Message</div>
+                            <div class="decoded-value">${decoded.message || 'N/A'}</div>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('decodedOutput').style.display = 'block';
+                document.getElementById('decodedOutput').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            } catch (error) {
+                alert('Decoding error: ' + error.message);
+                console.error('Decode error:', error);
+            }
+        });
+
+        // Clear button
+        document.getElementById('btnClear').addEventListener('click', () => {
+            document.getElementById('decodedHex').value = '';
+            document.getElementById('decodedOutput').style.display = 'none';
+        });
+
+        // Disable buttons until WASM loads
+        document.getElementById('btnEncode').disabled = true;
+        document.getElementById('btnCompare').disabled = true;
+        document.getElementById('btnDecode').disabled = true;
+    </script>
+</body>
+</html>
+

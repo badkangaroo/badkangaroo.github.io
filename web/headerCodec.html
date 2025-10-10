@@ -94,6 +94,20 @@
             </div>
 
             <div class="field-group">
+                <h3><span class="highlight-emergency">Emergency Flag</span></h3>
+                <div class="input-row">
+                    <input type="checkbox" id="emergency" name="emergency" onchange="emergencyChange()">
+                    <label for="emergency">Emergency Mode Active</label>
+                </div>
+                <div class="bit-output"><span class="highlight-emergency">Emergency (1 bit):</span> <span id="emergency-bits">0</span></div>
+                
+                <div class="bit-output" style="border: 2px solid #ef4444; margin-top: 10px;">
+                    <strong>Message ID Complete (80 bits):</strong><br>
+                    <span style="color: #a0a0a0; font-size: 11px;">Callsign (48) + Timestamp (31) + Emergency (1) = Unique Message Identifier</span>
+                </div>
+            </div>
+
+            <div class="field-group">
                 <h3><span class="highlight-gridsquare">Gridsquare</span></h3>
                 <div class="input-row">
                     <label for="gridsquare">Maidenhead Locator (6 chars: AA00aa)</label>
@@ -107,11 +121,6 @@
 
             <div class="field-group">
                 <h3><span class="highlight-meta">Meta Flags</span></h3>
-                <div class="input-row">
-                    <input type="checkbox" id="emergency" name="emergency" onchange="emergencyChange()">
-                    <label for="emergency">Emergency Mode Active</label>
-                </div>
-                <div class="bit-output"><span class="highlight-emergency">Emergency (1 bit):</span> <span id="emergency-bits">0</span></div>
                 
                 <div class="input-row">
                     <input type="checkbox" id="ntp" name="ntp" onchange="ntpChange()">
@@ -199,10 +208,10 @@
             <div style="background: rgba(74, 222, 128, 0.1); padding: 20px; border-radius: 8px; border: 2px solid #4ade80;">
                 <h3>✅ Complete Encoded Bitstream</h3>
                 <div class="bit-output" style="font-size: 11px; word-break: break-all;">
-                    <span class="highlight-callsign" id="total-callsign-display">000000000000000000000000000000000000000000000000</span><span class="highlight-timestamp" id="total-timestamp-display">0000000000000000000000000000000</span><span class="highlight-gridsquare" id="total-gridsquare-display">0000000000000000000000000000</span><span class="highlight-emergency" id="total-emergency-display">0</span><span class="highlight-meta" id="total-ntp-display">0</span><span class="highlight-meta" id="total-gps-display">0</span><span class="highlight-meta" id="total-name-length-display">00000000</span><span class="highlight-meta" id="total-message-length-display">00000000</span><span class="highlight-meta" id="total-message-type-display">01</span><span class="highlight-name" id="total-firstname-display"></span><span class="highlight-name" id="total-lastname-display"></span><span class="highlight-message" id="total-message-display"></span>
+                    <span class="highlight-callsign" id="total-callsign-display">000000000000000000000000000000000000000000000000</span><span class="highlight-timestamp" id="total-timestamp-display">0000000000000000000000000000000</span><span class="highlight-emergency" id="total-emergency-display">0</span><span class="highlight-gridsquare" id="total-gridsquare-display">0000000000000000000000000000</span><span class="highlight-meta" id="total-ntp-display">0</span><span class="highlight-meta" id="total-gps-display">0</span><span class="highlight-meta" id="total-name-length-display">00000000</span><span class="highlight-meta" id="total-message-length-display">00000000</span><span class="highlight-meta" id="total-message-type-display">01</span><span class="highlight-name" id="total-firstname-display"></span><span class="highlight-name" id="total-lastname-display"></span><span class="highlight-message" id="total-message-display"></span>
                 </div>
                 <p style="color: #a0a0a0; font-size: 12px; margin-top: 10px;">
-                    Total bits: <span id="total-bit-count">128</span> bits
+                    Total bits: <span id="total-bit-count">128</span> bits | Message ID: 80 bits
                 </p>
             </div>
         </div>
@@ -253,12 +262,15 @@
                     <span id="decoded-header-timestamp-bits">0000000000000000000000000000000</span>
                 </div>
                 <div class="bit-output">
-                    <span class="highlight-gridsquare">Gridsquare (28 bits):</span> 
-                    <span id="decoded-header-gridsquare-bits">0000000000000000000000000000</span>
-                </div>
-                <div class="bit-output">
                     <span class="highlight-emergency">Emergency (1 bit):</span> 
                     <span id="decoded-header-emergency-bit">0</span>
+                </div>
+                <div class="bit-output" style="border: 2px solid #ef4444; margin: 8px 0;">
+                    <strong style="color: #ef4444;">Message ID Complete (80 bits)</strong>
+                </div>
+                <div class="bit-output">
+                    <span class="highlight-gridsquare">Gridsquare (28 bits):</span> 
+                    <span id="decoded-header-gridsquare-bits">0000000000000000000000000000</span>
                 </div>
                 <div class="bit-output">
                     <span class="highlight-meta">NTP (1 bit):</span> 
@@ -298,8 +310,9 @@
                 <h3>✅ Decoded Values</h3>
                 <h4><span class="highlight-callsign">Callsign:</span> <span class="decoded-value" id="decoded-header-callsign-value">--------</span></h4>
                 <h4><span class="highlight-timestamp">Timestamp:</span> <span class="decoded-value" id="decoded-header-timestamp-value">2026-01-01 00:00:00</span></h4>
-                <h4><span class="highlight-gridsquare">Gridsquare:</span> <span class="decoded-value" id="decoded-header-gridsquare-value">------</span></h4>
                 <h4><span class="highlight-emergency">Emergency:</span> <span class="decoded-value" id="decoded-header-emergency-value">false</span></h4>
+                <h4 style="color: #ef4444; margin: 5px 0;">Message ID (80 bits): Callsign + Timestamp + Emergency</h4>
+                <h4><span class="highlight-gridsquare">Gridsquare:</span> <span class="decoded-value" id="decoded-header-gridsquare-value">------</span></h4>
                 <h4><span class="highlight-meta">NTP:</span> <span class="decoded-value" id="decoded-header-ntp-value">false</span></h4>
                 <h4><span class="highlight-meta">GPS:</span> <span class="decoded-value" id="decoded-header-gps-value">false</span></h4>
                 <h4><span class="highlight-meta">First Name Length:</span> <span class="decoded-value" id="decoded-header-firstname-length-value">0</span></h4>
@@ -887,7 +900,7 @@
         const fragmentedBits = () => {
             const bitstream = document.getElementById("recomposed-header-bits").innerHTML;
             
-            // New order: Callsign, Timestamp, Gridsquare, Emergency, NTP, GPS, Name Length, Message Length, Message Type, Name, Message
+            // New order: Callsign, Timestamp, Emergency (Message ID = 80 bits), Gridsquare, NTP, GPS, Name Length, Message Length, Message Type, Name, Message
             let offset = 0;
             
             const callsignFragment = bitstream.slice(offset, offset + 48);
@@ -896,11 +909,12 @@
             const timestampFragment = bitstream.slice(offset, offset + 31);
             offset += 31;
             
-            const gridsquareFragment = bitstream.slice(offset, offset + 28);
-            offset += 28;
-            
             const emergencyFragment = bitstream.slice(offset, offset + 1);
             offset += 1;
+            // Message ID complete (80 bits)
+            
+            const gridsquareFragment = bitstream.slice(offset, offset + 28);
+            offset += 28;
             
             const ntpFragment = bitstream.slice(offset, offset + 1);
             offset += 1;
@@ -951,7 +965,7 @@
         const fragmentsToReadableText = () => {
             const bitstream = document.getElementById("recomposed-header-bits").innerHTML;
             
-            // New order: Callsign, Timestamp, Gridsquare, Emergency, NTP, GPS, Name Length, Message Length, Message Type, Name, Message
+            // New order: Callsign, Timestamp, Emergency (Message ID = 80 bits), Gridsquare, NTP, GPS, Name Length, Message Length, Message Type, Name, Message
             let offset = 0;
             
             // Callsign (48 bits)
@@ -986,6 +1000,13 @@
             const timestampValue = `${year}-${monthNames[month]}-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
             document.getElementById("decoded-header-timestamp-value").innerHTML = timestampValue;
             
+            // Emergency (1 bit)
+            const emergencyFragment = bitstream.slice(offset, offset + 1);
+            offset += 1;
+            const emergencyValue = parseInt(emergencyFragment, 2) > 0;
+            document.getElementById("decoded-header-emergency-value").innerHTML = emergencyValue ? 'true' : 'false';
+            // Message ID complete (80 bits)
+            
             // Gridsquare (28 bits)
             const gridsquareFragment = bitstream.slice(offset, offset + 28);
             offset += 28;
@@ -1004,12 +1025,6 @@
                 (alphabitReverse[letter3Value] || '') + 
                 (alphabitReverse[letter4Value] || '');
             document.getElementById("decoded-header-gridsquare-value").innerHTML = gridsquareValue;
-            
-            // Emergency (1 bit)
-            const emergencyFragment = bitstream.slice(offset, offset + 1);
-            offset += 1;
-            const emergencyValue = parseInt(emergencyFragment, 2) > 0;
-            document.getElementById("decoded-header-emergency-value").innerHTML = emergencyValue ? 'true' : 'false';
             
             // NTP (1 bit)
             const ntpFragment = bitstream.slice(offset, offset + 1);
@@ -1108,8 +1123,8 @@
             // Get the total bits from individual display elements in the new order
             const callsignBits = document.getElementById("total-callsign-display").innerHTML;
             const timestampBits = document.getElementById("total-timestamp-display").innerHTML;
-            const gridsquareBits = document.getElementById("total-gridsquare-display").innerHTML;
             const emergencyBits = document.getElementById("total-emergency-display").innerHTML;
+            const gridsquareBits = document.getElementById("total-gridsquare-display").innerHTML;
             const ntpBits = document.getElementById("total-ntp-display").innerHTML;
             const gpsBits = document.getElementById("total-gps-display").innerHTML;
             const nameLengthBits = document.getElementById("total-name-length-display").innerHTML;
@@ -1119,7 +1134,7 @@
             const lastNameBits = document.getElementById("total-lastname-display").innerHTML;
             const messageBits = document.getElementById("total-message-display").innerHTML;
             
-            const bits = callsignBits + timestampBits + gridsquareBits + emergencyBits + ntpBits + gpsBits + 
+            const bits = callsignBits + timestampBits + emergencyBits + gridsquareBits + ntpBits + gpsBits + 
                         nameLengthBits + messageLengthBits + messageTypeBits + firstNameBits + lastNameBits + messageBits;
             
             // split the bits into 8 bit chunks
@@ -1137,11 +1152,11 @@
         // ===== Total Encoded Header =====
 
         const updateTotalEncodedHeader = () => {
-            // New order: Callsign, Timestamp, Gridsquare, Emergency, NTP, GPS, Name Length, Message Length, Message Type, Name, Message
+            // New order: Callsign, Timestamp, Emergency (Message ID = 80 bits), Gridsquare, NTP, GPS, Name Length, Message Length, Message Type, Name, Message
             const callsignBits = document.getElementById("callsign-bits").innerHTML;
             const timeBitsRaw = document.getElementById("time-bits").innerHTML.replace(/\s.*/, '');
-            const gridsquareBits = document.getElementById("gridsquare-bits").innerHTML;
             const emergencyBits = document.getElementById("emergency-bits").innerHTML.replace(/\s.*/, '');
+            const gridsquareBits = document.getElementById("gridsquare-bits").innerHTML;
             const ntpBits = document.getElementById("ntp-bits").innerHTML.replace(/\s.*/, '');
             const gpsBits = document.getElementById("gps-bits").innerHTML.replace(/\s.*/, '');
             const nameLengthBits = document.getElementById("name-length-bits").innerHTML;
@@ -1154,8 +1169,8 @@
             // Update individual display elements in the complete bitstream section
             document.getElementById("total-callsign-display").innerHTML = callsignBits;
             document.getElementById("total-timestamp-display").innerHTML = timeBitsRaw;
-            document.getElementById("total-gridsquare-display").innerHTML = gridsquareBits;
             document.getElementById("total-emergency-display").innerHTML = emergencyBits;
+            document.getElementById("total-gridsquare-display").innerHTML = gridsquareBits;
             document.getElementById("total-ntp-display").innerHTML = ntpBits;
             document.getElementById("total-gps-display").innerHTML = gpsBits;
             document.getElementById("total-name-length-display").innerHTML = nameLengthBits;
@@ -1165,7 +1180,7 @@
             document.getElementById("total-lastname-display").innerHTML = lastNameBits;
             document.getElementById("total-message-display").innerHTML = messageBits;
 
-            const totalBits = callsignBits + timeBitsRaw + gridsquareBits + emergencyBits + ntpBits + gpsBits + 
+            const totalBits = callsignBits + timeBitsRaw + emergencyBits + gridsquareBits + ntpBits + gpsBits + 
                             nameLengthBits + messageLengthBits + messageTypeBits + firstNameBits + lastNameBits + messageBits;
             
             // Update bit count

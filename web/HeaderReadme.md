@@ -23,6 +23,8 @@ Revisions to the data structure of the header are as follows.
 |                | minute          | number     | 6        | 0-58       | 0-58           |
 |                | second          | number     | 5        | 0-29       | 0-58           |
 | ==timestamp==  |                 | **total:** | 31       |            |                |
+|                | emergency       | boolean    | 1        | true/false | isEmergency    |
+| ==message_id== |                 | **total:** | 80       |            | **Unique ID**  |
 |                | field x         | letter     | 5        | a-z        | A-Z            |
 |                | field y         | letter     | 5        | a-z        | A-Z            |
 |                | square x        | number     | 4        | 0-9        | 0-9            |
@@ -33,8 +35,7 @@ Revisions to the data structure of the header are as follows.
 |                | NTP             | boolean    | 1        | true/false | isNTP          |
 |                | GPS             | boolean    | 1        | true/false | isGPS          |
 |                | Template        | template   | 2        | 0-3        | message type*  |
-|                | emergency       | boolean    | 1        | true/false | isEmergency    |
-| ==meta==       |                 | **total:** | 5        |            |                |
+| ==meta==       |                 | **total:** | 4        |            |                |
 |                | name length     | number     | 8        | 0-255      | name length*   |
 |                | name            | alphanum   | array    | array      |                |
 | ==name==       |                 |            | 8-192    |            |                |
@@ -56,14 +57,18 @@ Revisions to the data structure of the header are as follows.
 **message length**: sets the number of characters to display in the message component, unused space can be used for forwarding or repeating emergency information. This comes out to 1920 bits, or 240 bytes, since this is UTF-8, some characters can multiple bytes long.
 
 **ACK** the acknowledgement section contains callsign + timestamp to indicate which messages have been received.
+
+**Message ID**: The first 80 bits (Callsign + Timestamp + Emergency) form a unique Message ID that identifies each transmission. This allows for efficient message tracking, acknowledgement, and deduplication.
+
 # Ordering
 
 | Input           | fragment       | bit size | bit layout  |
 | --------------- | -------------- | -------- | --- |
 | AB1CDE          | Callsign       | 48       | 0b000000 ... 0b000000 0b000000 |
 | 2025/10/5 21:11 | Timestamp      | 31       | 0b0000000000 ... 0b00000 0b00000 0b00000 |
-| CM97af          | Grid Square    | 28       | 0b00000 ... 0b00000 0b00000 |
 | checkbox        | Emergency      | 1        | 0b0 |
+| **Message ID**  | **80 bits**    | **80**   | **Callsign + Timestamp + Emergency** |
+| CM97af          | Grid Square    | 28       | 0b00000 ... 0b00000 0b00000 |
 | checkbox        | NTP            | 1        | 0b0 |
 | checkbox        | GPS            | 1        | 0b0 |
 | 4 + 4           | Name length    | 8        | 0b0000 0b0000 |

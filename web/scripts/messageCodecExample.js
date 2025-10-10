@@ -215,5 +215,68 @@ console.log("Maximal bitstream length:", maximalBitstream.length, "bits");
 const maximalBytes = codec.BitStreamToBytes(maximalBitstream);
 console.log("Maximal byte count:", maximalBytes.length, "bytes");
 
+// ==================== EXAMPLE 8: Message ID Functions ====================
+
+console.log("\n=== Example 8: Message ID Functions ===");
+
+const messageIDData = {
+    callsign: "W1AW",
+    timestamp: new Date("2026-04-15T14:30:00Z"),
+    emergency: true
+};
+
+// Create Message ID using wrapper function
+const messageIDBits = codec.GetMessageIDBitStream(
+    messageIDData.callsign,
+    messageIDData.timestamp,
+    messageIDData.emergency
+);
+
+console.log("Message ID bitstream:", messageIDBits);
+console.log("Message ID length:", messageIDBits.length, "bits (should be 80)");
+console.log("Breakdown:");
+console.log("  - Callsign: 48 bits");
+console.log("  - Timestamp: 31 bits");
+console.log("  - Emergency: 1 bit");
+
+// Decode Message ID
+const decodedMessageID = codec.BitStreamToMessageID(messageIDBits);
+console.log("Decoded Message ID:", decodedMessageID);
+
+// Verify
+const messageIDMatches = 
+    messageIDData.callsign === decodedMessageID.callsign &&
+    messageIDData.timestamp.getTime() === decodedMessageID.timestamp.getTime() &&
+    messageIDData.emergency === decodedMessageID.emergency;
+
+console.log("Message ID round-trip successful:", messageIDMatches ? "✅ PASS" : "❌ FAIL");
+
+// Extract Message ID from full message
+console.log("\n--- Extract Message ID from Full Message ---");
+
+const fullMessageData = {
+    callsign: "KN6FZY",
+    gridsquare: "CM87uq",
+    emergency: false,
+    ntp: true,
+    gps: true,
+    messageType: 1,
+    firstName: "Alex",
+    lastName: "Okita",
+    message: "Testing Message ID extraction"
+};
+
+const fullMessage = codec.EncodeMessage(fullMessageData);
+console.log("Full message:", fullMessage.length, "bits");
+
+// Extract just the Message ID (first 80 bits)
+const extractedMessageID = fullMessage.slice(0, 80);
+const extractedData = codec.BitStreamToMessageID(extractedMessageID);
+
+console.log("Extracted Message ID:");
+console.log("  Callsign:", extractedData.callsign);
+console.log("  Timestamp:", extractedData.timestamp.toISOString());
+console.log("  Emergency:", extractedData.emergency);
+
 console.log("\n=== All Examples Complete ===");
 

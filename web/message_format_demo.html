@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ribbit Message Format Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .panel h2 {
+            margin-top: 0;
+            color: #34495e;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px 5px 0 0;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        .mode-selector {
+            margin: 15px 0;
+        }
+        .mode-selector label {
+            display: inline;
+            margin-right: 20px;
+            font-weight: normal;
+        }
+        .results {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .comparison {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        .comparison table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .comparison th, .comparison td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .comparison th {
+            background: #34495e;
+            color: white;
+        }
+        .highlight {
+            background: #d4edda;
+            font-weight: bold;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐸 Ribbit Message Format Demo</h1>
+    <div id="wasmStatus" class="status info">Loading WASM module...</div>
+
+    <div class="container">
+        <!-- Encoder Panel -->
+        <div class="panel">
+            <h2>Encode Message</h2>
+            
+            <div class="mode-selector">
+                <label>
+                    <input type="radio" name="mode" value="1" checked> 
+                    Chat Mode (UTF-8)
+                </label>
+                <label>
+                    <input type="radio" name="mode" value="2"> 
+                    Contest Mode (Packed)
+                </label>
+            </div>
+            
+            <label>Callsign:</label>
+            <input type="text" id="callsign" value="KO6BVA" maxlength="8">
+            
+            <label>Gridsquare:</label>
+            <input type="text" id="gridsquare" value="CM87uq" maxlength="6">
+            
+            <!-- Chat mode fields -->
+            <div id="chatFields">
+                <label>Name:</label>
+                <input type="text" id="chatName" value="Alex Okita">
+                
+                <label>Phone:</label>
+                <input type="text" id="phone" value="555-1234">
+            </div>
+            
+            <!-- Contest mode fields -->
+            <div id="contestFields" style="display:none;">
+                <label>First Name:</label>
+                <input type="text" id="firstName" value="Alex" maxlength="15">
+                
+                <label>Last Name:</label>
+                <input type="text" id="lastName" value="Okita" maxlength="15">
+                
+                <label>
+                    <input type="checkbox" id="emergency"> Emergency (Part of Message ID)
+                </label>
+                <div style="background: #d4edda; padding: 8px; margin: 10px 0; border-radius: 4px; font-size: 12px;">
+                    <strong>Message ID (80 bits)</strong>: Callsign + Timestamp + Emergency
+                </div>
+                <label>
+                    <input type="checkbox" id="ntp"> NTP Time Sync
+                </label>
+                <label>
+                    <input type="checkbox" id="gps"> GPS Lock
+                </label>
+            </div>
+            
+            <label>Message:</label>
+            <textarea id="message">Hello from Ribbit!</textarea>
+            
+            <button id="btnEncode">Encode</button>
+            <button id="btnCompare">Compare Both Modes</button>
+            
+            <div id="encodeResults" class="results"></div>
+        </div>
+        
+        <!-- Decoder Panel -->
+        <div class="panel">
+            <h2>Decode Message</h2>
+            
+            <label>Encoded Bytes (hex):</label>
+            <textarea id="encodedHex" placeholder="Paste hex bytes or click 'Encode' to generate"></textarea>
+            
+            <button id="btnDecode">Decode</button>
+            <button id="btnClear">Clear</button>
+            
+            <div id="decodeResults" class="results"></div>
+        </div>
+    </div>
+    
+    <!-- Comparison Results -->
+    <div class="comparison" id="comparisonResults" style="display:none;">
+        <h2>Mode Comparison</h2>
+        <table id="comparisonTable"></table>
+    </div>
+
+    <script src="scripts/ribbit.js"></script>
+    <script src="scripts/message_format.js"></script>
+    <script>
+        let messageFormatter = null;
+        let wasmReady = false;
+        
+        // Load WASM module
+        async function initWASM() {
+            try {
+                const moduleInstance = await Module();
+                messageFormatter = new RibbitMessageFormat(moduleInstance);
+                wasmReady = true;
+                
+                document.getElementById('wasmStatus').className = 'status success';
+                document.getElementById('wasmStatus').textContent = '✓ WASM Module Loaded Successfully';
+                
+                console.log('Message formatter ready');
+            } catch (error) {
+                document.getElementById('wasmStatus').className = 'status error';
+                document.getElementById('wasmStatus').textContent = '✗ Failed to load WASM: ' + error.message;
+                console.error('WASM load error:', error);
+            }
+        }
+        
+        // Initialize on page load
+        initWASM();
+        
+        // Mode switching
+        document.querySelectorAll('input[name="mode"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const mode = parseInt(e.target.value);
+                document.getElementById('chatFields').style.display = mode === 1 ? 'block' : 'none';
+                document.getElementById('contestFields').style.display = mode === 2 ? 'block' : 'none';
+            });
+        });
+        
+        // Encode button
+        document.getElementById('btnEncode').addEventListener('click', () => {
+            if (!wasmReady) {
+                alert('WASM module not loaded yet');
+                return;
+            }
+            
+            const mode = parseInt(document.querySelector('input[name="mode"]:checked').value);
+            const resultsDiv = document.getElementById('encodeResults');
+            
+            try {
+                let data;
+                if (mode === 1) {
+                    // Chat mode
+                    data = {
+                        name: document.getElementById('chatName').value,
+                        callsign: document.getElementById('callsign').value,
+                        gridsquare: document.getElementById('gridsquare').value,
+                        phone: document.getElementById('phone').value,
+                        message: document.getElementById('message').value
+                    };
+                } else {
+                    // Contest mode
+                    data = {
+                        callsign: document.getElementById('callsign').value,
+                        gridsquare: document.getElementById('gridsquare').value,
+                        firstName: document.getElementById('firstName').value,
+                        lastName: document.getElementById('lastName').value,
+                        message: document.getElementById('message').value,
+                        timestamp: Date.now(),
+                        emergency: document.getElementById('emergency').checked,
+                        ntp: document.getElementById('ntp').checked,
+                        gps: document.getElementById('gps').checked
+                    };
+                }
+                
+                const encoded = messageFormatter.encode(mode, data);
+                const hexString = Array.from(encoded)
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join(' ');
+                
+                resultsDiv.textContent = 
+                    `Mode: ${mode === 1 ? 'Chat' : 'Contest'}\n` +
+                    `Size: ${encoded.length} bytes (${encoded.length * 8} bits)\n` +
+                    `Hex: ${hexString}\n` +
+                    `Base64: ${btoa(String.fromCharCode(...encoded))}`;
+                
+                // Auto-fill decode field
+                document.getElementById('encodedHex').value = hexString;
+                
+            } catch (error) {
+                resultsDiv.textContent = 'Error: ' + error.message;
+                console.error('Encode error:', error);
+            }
+        });
+        
+        // Decode button
+        document.getElementById('btnDecode').addEventListener('click', () => {
+            if (!wasmReady) {
+                alert('WASM module not loaded yet');
+                return;
+            }
+            
+            const hexInput = document.getElementById('encodedHex').value.trim();
+            const resultsDiv = document.getElementById('decodeResults');
+            
+            try {
+                // Parse hex string
+                const hexBytes = hexInput.split(/\s+/).filter(h => h.length > 0);
+                const bytes = new Uint8Array(hexBytes.map(h => parseInt(h, 16)));
+                
+                const decoded = messageFormatter.decode(bytes);
+                
+                resultsDiv.textContent = JSON.stringify(decoded, null, 2);
+                
+            } catch (error) {
+                resultsDiv.textContent = 'Error: ' + error.message;
+                console.error('Decode error:', error);
+            }
+        });
+        
+        // Compare button
+        document.getElementById('btnCompare').addEventListener('click', () => {
+            if (!wasmReady) {
+                alert('WASM module not loaded yet');
+                return;
+            }
+            
+            try {
+                const data = {
+                    name: document.getElementById('chatName').value,
+                    callsign: document.getElementById('callsign').value,
+                    gridsquare: document.getElementById('gridsquare').value,
+                    phone: document.getElementById('phone').value,
+                    firstName: document.getElementById('firstName').value,
+                    lastName: document.getElementById('lastName').value,
+                    message: document.getElementById('message').value,
+                    timestamp: Date.now(),
+                    emergency: false,
+                    ntp: false,
+                    gps: false
+                };
+                
+                const chatEncoded = messageFormatter.encodeChatMode(data);
+                const contestEncoded = messageFormatter.encodeContestMode(data);
+                
+                const savings = chatEncoded.length - contestEncoded.length;
+                const savingsPercent = ((savings / chatEncoded.length) * 100).toFixed(1);
+                const acksAvailable = Math.floor((savings * 8) / 79); // ACK = 79 bits
+                
+                const table = document.getElementById('comparisonTable');
+                table.innerHTML = `
+                    <tr>
+                        <th>Metric</th>
+                        <th>Chat Mode</th>
+                        <th>Contest Mode</th>
+                        <th>Difference</th>
+                    </tr>
+                    <tr>
+                        <td>Size (bytes)</td>
+                        <td>${chatEncoded.length}</td>
+                        <td class="highlight">${contestEncoded.length}</td>
+                        <td class="highlight">-${savings} bytes</td>
+                    </tr>
+                    <tr>
+                        <td>Size (bits)</td>
+                        <td>${chatEncoded.length * 8}</td>
+                        <td class="highlight">${contestEncoded.length * 8}</td>
+                        <td class="highlight">-${savings * 8} bits</td>
+                    </tr>
+                    <tr>
+                        <td>Efficiency</td>
+                        <td>~40%</td>
+                        <td class="highlight">~75%</td>
+                        <td class="highlight">+${savingsPercent}%</td>
+                    </tr>
+                    <tr>
+                        <td>Timestamp</td>
+                        <td>❌ No</td>
+                        <td class="highlight">✓ 2-sec resolution</td>
+                        <td>31 bits</td>
+                    </tr>
+                    <tr>
+                        <td>ACKs Possible</td>
+                        <td>0</td>
+                        <td class="highlight">${acksAvailable}+ ACKs</td>
+                        <td class="highlight">+${acksAvailable} ACKs</td>
+                    </tr>
+                `;
+                
+                document.getElementById('comparisonResults').style.display = 'block';
+                
+            } catch (error) {
+                alert('Comparison error: ' + error.message);
+                console.error('Comparison error:', error);
+            }
+        });
+        
+        // Clear button
+        document.getElementById('btnClear').addEventListener('click', () => {
+            document.getElementById('encodedHex').value = '';
+            document.getElementById('decodeResults').textContent = '';
+        });
+    </script>
+</body>
+</html>
+
