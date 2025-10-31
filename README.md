@@ -1,5 +1,14 @@
 # Ribbit Radio
 
+![Version](https://img.shields.io/badge/version-0.1.1-blue)
+![Status](https://img.shields.io/badge/status-development-orange)
+![C++](https://img.shields.io/badge/C++-17-00599C?logo=cplusplus)
+![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?logo=javascript)
+![WebAssembly](https://img.shields.io/badge/WebAssembly-WASM-654FF0?logo=webassembly)
+![Emscripten](https://img.shields.io/badge/Emscripten-4.0.8-8B9DC3?logo=emscripten)
+![Web Audio API](https://img.shields.io/badge/Web%20Audio%20API-supported-FF6B6B)
+![PWA](https://img.shields.io/badge/PWA-ready-4285F4?logo=pwa)
+
 A WebAssembly-based digital radio communication application supporting real-time messaging over audio signals. Ribbit uses advanced DSP (Digital Signal Processing) algorithms to encode/decode messages into audio waveforms suitable for transmission via radio, speakers, or any audio medium.
 
 ## Current Project Status
