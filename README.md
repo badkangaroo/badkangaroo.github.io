@@ -1,20 +1,83 @@
 # Ribbit Radio
 
-A WebAssembly-based radio communication application.
+A WebAssembly-based digital radio communication application supporting real-time messaging over audio signals. Ribbit uses advanced DSP (Digital Signal Processing) algorithms to encode/decode messages into audio waveforms suitable for transmission via radio, speakers, or any audio medium.
+
+## Current Project Status
+
+**Version**: 0.1.1 (Development)  
+**Status**: Production-ready core functionality with active development on advanced features
+
+### ✅ Completed Features
+
+- **WebAssembly Encoder/Decoder**: High-performance C++ signal processing compiled to WASM
+- **Dual-Mode Messaging**:
+  - **Chat Mode**: UTF-8 free-form messaging (`Name|Callsign|Gridsquare|Phone&=Message`)
+  - **Contest Mode**: Bitwise-packed structured format (40-60% smaller, includes timestamps)
+- **Real-time Audio Processing**: 8kHz sample rate, real-time encoding/decoding
+- **Web Audio API Integration**: Browser-based audio I/O
+- **IndexedDB Storage**: Persistent message history
+- **Service Worker**: Offline support with caching
+- **PWA Support**: Installable web app with manifest
+- **Visual Codec Tools**: Interactive message encoding/decoding visualization
+- **Comprehensive Test Suite**: Automated testing with WAV file support
+- **GPS Integration**: Automatic gridsquare calculation
+- **Theme Support**: Multiple color schemes
+- **Message Format Validation**: Input sanitization and error handling
+
+### 🚧 In Progress / Planned Features
+
+- ACK array implementation for contest mode
+- Contest mode UI integration in main application
+- Message acknowledgment tracking
+- Statistics dashboard
+- ADIF/Cabrillo logging export
+- QSO mode for automatic contact logging
 
 ## Project Structure
 
-```
+```text
 .
-├── web/           # Web assets served to clients
-│   ├── index.html
-│   ├── ribbit.webmanifest
-│   └── assets/    # Images and other static assets
-└── src/           # Source code
-    └── ribbit/    # C++ source code
-        ├── src/   # Implementation files
-        ├── include/ # Header files
-        └── build/  # Build directory
+├── build.bat              # Windows build script (auto-installs Emscripten)
+├── run_tests.bat          # Windows test server launcher
+├── run_tests.sh           # Linux/Mac test server launcher
+├── README.md              # This file
+├── Docs/                  # Comprehensive documentation
+│   ├── BITWISE_ENCODING_ANALYSIS.md
+│   ├── CODEC_INTEGRATION_COMPLETE.md
+│   ├── DUAL_MODE_MESSAGE_ARCHITECTURE.md
+│   ├── IMPLEMENTATION_COMPLETE.md
+│   └── ... (20+ documentation files)
+├── web/                   # Web assets served to clients
+│   ├── index.html         # Main application
+│   ├── messageCodec.html  # Visual message encoder/decoder
+│   ├── headerCodec.html   # Header field codec
+│   ├── wasm_tests.html    # Test suite interface
+│   ├── settings-page.html # Settings interface
+│   ├── ribbit.webmanifest # PWA manifest
+│   ├── sw.js              # Service worker (offline support)
+│   ├── scripts/           # JavaScript modules
+│   │   ├── ribbit.js      # Emscripten WASM wrapper
+│   │   ├── ribbit.wasm    # Compiled WebAssembly binary (~105KB)
+│   │   ├── index.js        # Main application logic
+│   │   ├── message_format.js # Message format handler
+│   │   ├── wasm_tests.js   # Test suite
+│   │   └── ...
+│   ├── styles/            # CSS stylesheets
+│   ├── assets/            # Icons and images
+│   └── scraps/            # Development/testing files
+└── src/                   # C++ source code
+    └── ribbit/
+        ├── src/
+        │   ├── ribbit.cc           # Main WASM bindings
+        │   ├── message_format.cc   # Message packing/unpacking
+        │   ├── decode.cc           # Decoder implementation
+        │   └── dsp/                # Digital Signal Processing library
+        │       ├── encoder.hh     # Signal encoder
+        │       ├── decoder.hh     # Signal decoder
+        │       ├── polar_*.hh     # Polar codes (error correction)
+        │       └── ... (60+ DSP headers)
+        └── include/
+            └── message_format.hh  # Message format definitions
 ```
 
 ## Building
@@ -85,10 +148,10 @@ If you prefer manual setup or are not using Windows, follow these steps:
 5. Manual compilation:
 
    ```bash
-   emcc src/ribbit/src/ribbit.cc -o web/scripts/ribbit.js ^
+   emcc src/ribbit/src/ribbit.cc src/ribbit/src/message_format.cc -o web/scripts/ribbit.js ^
        -s WASM=1 ^
-       -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap'] ^
-       -s EXPORTED_FUNCTIONS=['_malloc','_free','_createEncoder','_destroyEncoder','_createDecoder','_destroyDecoder','_feed_pointer','_feed_length','_message_pointer','_message_length','_signal_pointer','_signal_length','_payload_pointer','_payload_length','_feedDecoder','_digestFeed','_initEncoder','_readEncoder'] ^
+       -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','stringToUTF8','UTF8ToString','lengthBytesUTF8'] ^
+       -s EXPORTED_FUNCTIONS=['_malloc','_free','_createEncoder','_destroyEncoder','_createDecoder','_destroyDecoder','_feed_pointer','_feed_length','_message_pointer','_message_length','_signal_pointer','_signal_length','_payload_pointer','_payload_length','_feedDecoder','_digestFeed','_initEncoder','_readEncoder','_pack_contest_message','_unpack_contest_message'] ^
        -I src/ribbit/include ^
        -std=c++17 ^
        -O3 ^
@@ -106,6 +169,8 @@ If you prefer manual setup or are not using Windows, follow these steps:
        --closure 0 ^
        -flto
    ```
+
+   **Note**: The build includes both `ribbit.cc` and `message_format.cc` to support dual-mode messaging. The `EXPORTED_RUNTIME_METHODS` includes string conversion functions required for message format handling.
 
 ### Build Optimization Features
 
@@ -138,11 +203,13 @@ A comprehensive test suite is available to verify encoder/decoder functionality.
 ### Quick Start
 
 **Windows:**
+
 ```bash
 run_tests.bat
 ```
 
 **Linux/Mac:**
+
 ```bash
 ./run_tests.sh
 ```
@@ -164,6 +231,7 @@ See [web/TESTING.md](web/TESTING.md) for detailed testing documentation.
 **Try it now**: `http://localhost:8000/web/messageCodec.html` ⭐
 
 Interactive encoder/decoder that shows:
+
 - **Binary visualization** (1s and 0s, color-coded by field)
 - **Hex encoding/decoding** (copy/paste friendly)
 - **Mode comparison** (see efficiency gains)
@@ -178,11 +246,13 @@ Perfect for learning how Ribbit packs data for radio transmission!
 Ribbit now supports **dual-mode messaging**:
 
 ### Chat Mode (Type 1) 💬
+
 - Current UTF-8 format: `"Name|Callsign|Gridsquare|Phone&=Message"`
 - Simple, flexible, any UTF-8 characters
 - Best for casual conversations
 
 ### Contest Mode (Type 2) 🏆
+
 - Bitwise-packed efficient format
 - **40-60% smaller** than chat mode
 - **Includes UTC timestamp** (31 bits, 2-sec resolution, auto-updated)
@@ -195,16 +265,206 @@ Ribbit now supports **dual-mode messaging**:
 
 **Full Details**: [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md)
 
-## Coming Features
+## Known Issues & Bugs
 
-- ACK array implementation for contest mode
-- Message acknowledgment tracking
-- Contest mode integration in main UI
-- Statistics dashboard
+### 🐛 Confirmed Bugs
+
+1. **Overflow Buffer Bug** (`src/ribbit/src/ribbit.cc:196`)
+   - **Location**: `digestFeed()` function, line 196
+   - **Issue**: `overflow[i] = overflow[i];` is a no-op that doesn't copy data correctly
+   - **Impact**: May cause data loss or corruption when processing audio chunks
+   - **Status**: Needs investigation and fix
+   - **Severity**: Medium (may affect decoder reliability)
+
+2. **Memory Cleanup**
+   - **Location**: `web/scripts/message_format.js` - `RibbitMessageFormat` class
+   - **Issue**: `cleanup()` method exists but may not be called in all error paths
+   - **Impact**: Potential memory leaks with repeated encode/decode operations
+   - **Status**: Should add automatic cleanup on page unload
+   - **Severity**: Low (memory grows slowly)
+
+3. **Service Worker Cache Versioning**
+   - **Location**: `web/sw.js`
+   - **Issue**: Cache version `'ribbit-cache-v1'` is hardcoded and may not invalidate old caches
+   - **Impact**: Users may see stale versions after updates
+   - **Status**: Should implement cache versioning strategy
+   - **Severity**: Low (affects updates)
+
+4. **Error Handling in Message Decoding**
+   - **Location**: `web/scripts/index.js` - `fetchDecoded()` function
+   - **Issue**: Some malformed messages may not be handled gracefully
+   - **Impact**: Could cause UI errors or incomplete error messages
+   - **Status**: Most cases handled, but edge cases may exist
+   - **Severity**: Low (rare edge cases)
+
+### ⚠️ Potential Issues
+
+1. **Audio Buffer Size Mismatch**
+   - Web Audio API provides power-of-2 buffer sizes (e.g., 2048), decoder expects 160-sample chunks
+   - Current implementation handles this with overflow buffer, but may have edge cases
+   - **Recommendation**: Add unit tests for various buffer sizes
+
+2. **Concurrent Encode/Decode**
+   - No explicit locking mechanism if encoder and decoder run simultaneously
+   - **Recommendation**: Add state checks or queue system
+
+3. **Large Message Handling**
+   - Messages near 256-byte limit may not be validated early enough
+   - **Recommendation**: Add pre-encoding length validation
+
+## Optimization Opportunities
+
+### 🚀 Performance Optimizations
+
+1. **Web Workers for Audio Processing** (High Priority)
+   - Move audio processing to Web Worker to prevent UI blocking
+   - **Expected Impact**: Smoother UI, better real-time performance
+   - **Complexity**: Medium
+   - **Files to Modify**: `web/scripts/index.js`, create `web/scripts/audio-worker.js`
+
+2. **Lazy WASM Loading** (Medium Priority)
+   - Load WASM module only when needed, not on page load
+   - **Expected Impact**: Faster initial page load, reduced memory usage
+   - **Complexity**: Low
+   - **Files to Modify**: `web/scripts/index.js`
+
+3. **Message Queuing/Batching** (Medium Priority)
+   - Queue multiple messages for batch processing
+   - **Expected Impact**: Better throughput for rapid message sending
+   - **Complexity**: Medium
+   - **Files to Modify**: `web/scripts/index.js`, `web/scripts/messages.js`
+
+4. **Optimize Bit Manipulation** (Low Priority)
+   - Current bit manipulation in `message_format.cc` uses loops
+   - Could use SIMD operations or lookup tables for common operations
+   - **Expected Impact**: 10-20% faster encoding/decoding
+   - **Complexity**: High
+   - **Files to Modify**: `src/ribbit/src/message_format.cc`
+
+5. **Memory Pooling** (Low Priority)
+   - Reuse buffers instead of allocating/deallocating for each message
+   - **Expected Impact**: Reduced GC pressure, faster message processing
+   - **Complexity**: Medium
+   - **Files to Modify**: `web/scripts/message_format.js`, `src/ribbit/src/ribbit.cc`
+
+### 💾 Memory Optimizations
+
+1. **Reduce Static Buffer Sizes** (If possible)
+   - Current buffers: FEED_LENGTH=2048, SIGNAL_LENGTH=16384, PAYLOAD_LENGTH=256
+   - Evaluate if sizes can be reduced without affecting functionality
+   - **Expected Impact**: Lower memory footprint
+   - **Complexity**: Medium (requires performance testing)
+
+2. **Cleanup Unused WASM Memory**
+   - Explicitly free temporary buffers after use
+   - **Expected Impact**: Lower peak memory usage
+   - **Complexity**: Low
+   - **Files to Modify**: `web/scripts/message_format.js`
+
+### 📦 Bundle Size Optimizations
+
+1. **WASM Size Reduction**
+   - Current WASM: ~105KB
+   - Investigate removing unused DSP functions if not needed
+   - **Expected Impact**: Smaller download, faster loading
+   - **Complexity**: High (requires careful dependency analysis)
+
+2. **Code Splitting**
+   - Separate contest mode codec into separate module
+   - **Expected Impact**: Faster initial load if contest mode not needed
+   - **Complexity**: Medium
+
+### 🔧 Code Quality Improvements
+
+1. **TypeScript Migration** (Long-term)
+   - Add type safety to JavaScript codebase
+   - **Expected Impact**: Fewer runtime errors, better IDE support
+   - **Complexity**: High
+
+2. **Unit Test Coverage**
+   - Increase test coverage beyond integration tests
+   - Add tests for edge cases, error conditions
+   - **Expected Impact**: Higher code reliability
+   - **Complexity**: Medium
+
+3. **Error Recovery**
+   - Add automatic retry for failed decode operations
+   - **Expected Impact**: Better resilience to noisy signals
+   - **Complexity**: Medium
+
+## Next Steps & Roadmap
+
+### Immediate (Next Sprint)
+
+1. **Fix Overflow Buffer Bug**
+   - Investigate `digestFeed()` overflow handling
+   - Add unit tests for buffer boundary conditions
+   - Fix the no-op assignment on line 196
+
+2. **Contest Mode UI Integration**
+   - Add mode selector to main application
+   - Integrate contest mode encoding/decoding in `index.js`
+   - Add UI for contest mode message fields (timestamp, flags, etc.)
+
+3. **Memory Cleanup Enhancement**
+   - Ensure `cleanup()` is called on page unload
+   - Add error handling to ensure cleanup happens in all paths
+
+### Short-term (Next Month)
+
+1. **ACK Array Implementation**
+   - Design ACK array structure (room for 20+ ACKs)
+   - Implement packing/unpacking logic
+   - Add UI for ACK management
+
+2. **Statistics Dashboard**
+   - Message counts, success rates
+   - Encoding/decoding performance metrics
+   - Bandwidth usage statistics
+
+3. **Web Workers for Audio**
+   - Offload audio processing to Web Worker
+   - Improve UI responsiveness
+
+### Long-term (Next Quarter)
+
+1. **ADIF/Cabrillo Logging**
+   - Export contact logs in standard formats
+   - Import from existing log files
+   - Integration with popular logging software
+
+2. **QSO Mode**
+   - Automatic contact logging
+   - Duplicate detection
+   - Contest logging features
+
+3. **Performance Monitoring**
+   - Real-time performance metrics
+   - Bottleneck identification
+   - Performance profiling tools
 
 ### Contact Logging
 
-Saving and exporting contacts
+Saving and exporting contacts:
 
-- ADIF logging support
-- Cabrillo logging support
+- **ADIF logging support** - Standard Amateur Data Interchange Format
+- **Cabrillo logging support** - Contest logging format
+- **CSV export** - For spreadsheet compatibility
+- **Integration** - Direct export to popular logging software
+
+## Contributing
+
+When reporting bugs or implementing optimizations:
+
+1. **Bug Reports**: Include reproduction steps, expected vs actual behavior, browser/OS info
+2. **Optimizations**: Include performance benchmarks before/after, explain trade-offs
+3. **Code Changes**: Follow existing code style, add tests for new features
+4. **Documentation**: Update relevant docs when adding features
+
+## Resources & Documentation
+
+- **Quick Start**: [Docs/CODEC_QUICK_START.md](Docs/CODEC_QUICK_START.md)
+- **Architecture**: [Docs/DUAL_MODE_MESSAGE_ARCHITECTURE.md](Docs/DUAL_MODE_MESSAGE_ARCHITECTURE.md)
+- **Testing Guide**: [web/TESTING.md](web/TESTING.md)
+- **Troubleshooting**: [web/WASM_TROUBLESHOOTING.md](web/WASM_TROUBLESHOOTING.md)
+- **Message Format Spec**: [web/HeaderReadme.md](web/HeaderReadme.md)

@@ -93,12 +93,12 @@ Update the message format to move the Emergency bit immediately after the Timest
 
 ### To-dos
 
-- [ ] Update HeaderReadme.md: Reorder bit layout table and add Message ID section
-- [ ] Update headerCodec.html: Reorder UI fields and update JavaScript encoding/decoding functions
-- [ ] Update messageCodec.js: Reorder EncodeMessage/DecodeMessage and add Message ID wrapper functions
-- [ ] Update message_format.js: Reorder encodeContestMode/decodeContestMode for new bit order
-- [ ] Update messageCodecExample.js: Update examples and add Message ID demonstration
-- [ ] Update message_format.hh: Add pack_message_id and unpack_message_id declarations
-- [ ] Update message_format.cc: Reorder pack/unpack functions and implement Message ID functions
+- [x] Update HeaderReadme.md: Reorder bit layout table and add Message ID section
+- [x] Update headerCodec.html: Reorder UI fields and update JavaScript encoding/decoding functions
+- [x] Update messageCodec.js: Reorder EncodeMessage/DecodeMessage and add Message ID wrapper functions
+- [x] Update message_format.js: Reorder encodeContestMode/decodeContestMode for new bit order
+- [x] Update messageCodecExample.js: Update examples and add Message ID demonstration
+- [x] Update message_format.hh: Add pack_message_id and unpack_message_id declarations
+- [x] Update message_format.cc: Reorder pack/unpack functions and implement Message ID functions
 - [ ] Update messageCodec.html and message_format_demo.html: Reorder form fields to match new structure
 - [ ] Update wasm_tests.js to check messageIDs and emergency bits for functionality.
