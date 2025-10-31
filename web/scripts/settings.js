@@ -56,6 +56,7 @@ const saveSettings = () => {
     const microphone = document.getElementById("microphone").value;
     const speaker = document.getElementById("speaker").value;
     const savemessages = document.getElementById("savemessages").checked;
+    const useOptimizedDigest = document.getElementById("useOptimizedDigest").checked;
     console.log(
         name,
         callsign,
@@ -64,7 +65,8 @@ const saveSettings = () => {
         gridsquare,
         savemessages,
         microphone,
-        speaker
+        speaker,
+        useOptimizedDigest
     );
     const db = window.localStorage;
     if (!db) {
@@ -79,6 +81,7 @@ const saveSettings = () => {
     db.setItem("saveMessages", savemessages);
     db.setItem("microphone", microphone);
     db.setItem("speaker", speaker);
+    db.setItem("useOptimizedDigest", useOptimizedDigest);
     closeSettings();
 };
 document.addEventListener("openSettings", (e) => {
@@ -97,6 +100,7 @@ document.addEventListener("openSettings", (e) => {
     const microphone = db.getItem("microphone");
     const speaker = db.getItem("speaker");
     const gps = db.getItem("gps");
+    const useOptimizedDigest = db.getItem("useOptimizedDigest");
     const { latitude, longitude } = JSON.parse(gps ? gps : "{}");
 
     document.getElementById("name").value = name ? name : "";
@@ -107,6 +111,7 @@ document.addEventListener("openSettings", (e) => {
     document.getElementById("phone").value = phone ? phone : "";
     document.getElementById("microphone").value = microphone ? microphone : "";
     document.getElementById("speaker").value = speaker ? speaker : "";
+    document.getElementById("useOptimizedDigest").checked = useOptimizedDigest === "true";
 });
 document.addEventListener("closeSettings", (e) => {
     const settings = document.getElementById("settings");

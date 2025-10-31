@@ -454,7 +454,13 @@ document.addEventListener("DOMContentLoaded", (e) => {
                             for (let i = 0; i < length; i++) {
                                 _feed[i] = listen ? input[i] : 0;
                             }
-                            wasmExports["digestFeed"]();
+                            // Use optimized version if enabled in settings
+                            const useOptimized = window.localStorage.getItem("useOptimizedDigest") === "true";
+                            if (useOptimized) {
+                                wasmExports["digestFeedOptimized"]();
+                            } else {
+                                wasmExports["digestFeed"]();
+                            }
                         };
                     })
                     .catch((err) => {

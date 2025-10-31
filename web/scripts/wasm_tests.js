@@ -292,8 +292,13 @@ function decodeAudio(audioBuffer) {
                 _feed[i] = 0;
             }
             
-            // Process this chunk
-            wasmExports._digestFeed();
+            // Process this chunk - use optimized version if enabled
+            const useOptimized = window.localStorage.getItem("useOptimizedDigest") === "true";
+            if (useOptimized) {
+                wasmExports._digestFeedOptimized();
+            } else {
+                wasmExports._digestFeed();
+            }
             chunksProcessed++;
         }
         
