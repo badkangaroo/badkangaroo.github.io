@@ -543,6 +543,11 @@ export class MessageCodec {
      * @returns {Object} Decoded message data
      */
     DecodeMessage(bitstream) {
+        // Convert Uint8Array to bitstream string if needed
+        if (bitstream instanceof Uint8Array || Array.isArray(bitstream)) {
+            bitstream = this.BytesToBitStream(bitstream);
+        }
+        
         let offset = 0;
         
         // Extract fixed-length fields

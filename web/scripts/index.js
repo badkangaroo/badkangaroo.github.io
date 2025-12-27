@@ -114,55 +114,83 @@ document.addEventListener("DOMContentLoaded", (e) => {
     request.onsuccess = (e) => {
         console.log("success", e);
         const { result } = e.target;
-        const transaction = result.transaction("messages", "readonly");
-        const store = transaction.objectStore("messages");
-        console.log("store:", store);
-        console.log("store.indexNames", store.indexNames);
-        if (transaction.objectStoreNames.length < 1) {
-            console.log("No object stores found.");
-            const event = new CustomEvent("receivemessage", {
-                detail: {
-                    save: false,
-                    type: "alert",
-                    message: "No Messages Found.",
-                },
-            });
-            document.dispatchEvent(event);
+        
+        // Check if the "messages" object store exists
+        if (!result.objectStoreNames.contains("messages")) {
+            console.log("Messages object store not found. Database may need initialization.");
+            const messagecount = document.getElementById("messagecount");
+            if (messagecount) {
+                messagecount.value = "0";
+            }
             return;
         }
-        const request = store.getAll();
-        request.onsuccess = (e) => {
-            const messages = e.target.result;
-            console.log("messages:", messages);
-            // update messagecounter
-            const messagecount = document.getElementById("messagecount");
-            if (!messagecount) {
-                const errorMsg = "Element #messagecount not found in DOM.";
-                console.error(errorMsg);
+        
+        try {
+            const transaction = result.transaction("messages", "readonly");
+            const store = transaction.objectStore("messages");
+            console.log("store:", store);
+            console.log("store.indexNames", store.indexNames);
+            
+            if (transaction.objectStoreNames.length < 1) {
+                console.log("No object stores found.");
                 const event = new CustomEvent("receivemessage", {
                     detail: {
                         save: false,
                         type: "alert",
-                        message: errorMsg,
+                        message: "No Messages Found.",
                     },
                 });
                 document.dispatchEvent(event);
                 return;
             }
-            messagecount.value = messages.length;
-            messages.forEach((m) => {
-                const event = new CustomEvent("receivemessage", {
-                    detail: {
-                        save: false,
-                        type: "text",
-                        sender: m.sender,
-                        message: m.message,
-                        timestamp: m.timestamp,
-                    },
+            
+            const request = store.getAll();
+            request.onsuccess = (e) => {
+                const messages = e.target.result;
+                console.log("messages:", messages);
+                // update messagecounter
+                const messagecount = document.getElementById("messagecount");
+                if (!messagecount) {
+                    const errorMsg = "Element #messagecount not found in DOM.";
+                    console.error(errorMsg);
+                    const event = new CustomEvent("receivemessage", {
+                        detail: {
+                            save: false,
+                            type: "alert",
+                            message: errorMsg,
+                        },
+                    });
+                    document.dispatchEvent(event);
+                    return;
+                }
+                messagecount.value = messages.length;
+                messages.forEach((m) => {
+                    const event = new CustomEvent("receivemessage", {
+                        detail: {
+                            save: false,
+                            type: "text",
+                            sender: m.sender,
+                            message: m.message,
+                            timestamp: m.timestamp,
+                        },
+                    });
+                    document.dispatchEvent(event);
                 });
-                document.dispatchEvent(event);
-            });
-        };
+            };
+            request.onerror = (e) => {
+                console.error("Error getting messages from IndexedDB:", e);
+                const messagecount = document.getElementById("messagecount");
+                if (messagecount) {
+                    messagecount.value = "0";
+                }
+            };
+        } catch (error) {
+            console.error("Error accessing messages object store:", error);
+            const messagecount = document.getElementById("messagecount");
+            if (messagecount) {
+                messagecount.value = "0";
+            }
+        }
     };
     console.log("request:", request);
     // Initialize the Ribbit App with the new friendly WASM API
@@ -544,7 +572,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
             ribbitApp.destroy();
         }
     });
-}
+});
 // header format
 // The custom character tables are:
 // 4bit (0-9)

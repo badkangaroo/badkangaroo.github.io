@@ -202,19 +202,57 @@ const openSettings = () => {
     loadSettingsValues();
     
     // Get number of messages in indexedDB
-    const db = indexedDB.open("ribbit", 1);
-    if (db) {
-        db.onsuccess = (e) => {
-            const transaction = e.target.result.transaction("messages", "readonly");
-            const store = transaction.objectStore("messages");
-            const request = store.count();
-            request.onsuccess = (e) => {
+    if (window.indexedDB) {
+        const dbRequest = indexedDB.open("ribbit", 1);
+        dbRequest.onsuccess = (e) => {
+            const db = e.target.result;
+            // Check if the "messages" object store exists
+            if (db.objectStoreNames.contains("messages")) {
+                try {
+                    const transaction = db.transaction("messages", "readonly");
+                    const store = transaction.objectStore("messages");
+                    const request = store.count();
+                    request.onsuccess = (e) => {
+                        const messagecount = document.getElementById("messagecount");
+                        if (messagecount) {
+                            messagecount.value = e.target.result;
+                        }
+                    };
+                    request.onerror = (e) => {
+                        console.error("Error counting messages:", e);
+                        const messagecount = document.getElementById("messagecount");
+                        if (messagecount) {
+                            messagecount.value = "0";
+                        }
+                    };
+                } catch (error) {
+                    console.error("Error accessing messages object store:", error);
+                    const messagecount = document.getElementById("messagecount");
+                    if (messagecount) {
+                        messagecount.value = "0";
+                    }
+                }
+            } else {
+                // Object store doesn't exist yet, set count to 0
                 const messagecount = document.getElementById("messagecount");
                 if (messagecount) {
-                    messagecount.value = e.target.result;
+                    messagecount.value = "0";
                 }
-            };
+            }
         };
+        dbRequest.onerror = (e) => {
+            console.error("Error opening IndexedDB:", e);
+            const messagecount = document.getElementById("messagecount");
+            if (messagecount) {
+                messagecount.value = "0";
+            }
+        };
+    } else {
+        // IndexedDB not available
+        const messagecount = document.getElementById("messagecount");
+        if (messagecount) {
+            messagecount.value = "0";
+        }
     }
     
     settingsOpen = true;

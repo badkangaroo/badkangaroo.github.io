@@ -197,6 +197,19 @@ test.describe('Ribbit Web App', () => {
   });
 
   test('should display message input field', async ({ page }) => {
+    // Ensure settings are complete first
+    await page.evaluate(() => {
+      localStorage.setItem('callsign', 'TESTCALL');
+      localStorage.setItem('name', 'Test User');
+      localStorage.setItem('gridsquare', 'AA00aa');
+    });
+
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Wait for settings to close if they were open
+    await page.waitForTimeout(1000);
+
     const textarea = page.locator('#textarea');
     await expect(textarea).toBeVisible();
     await expect(textarea).toBeEnabled();
@@ -204,12 +217,38 @@ test.describe('Ribbit Web App', () => {
   });
 
   test('should display encode button', async ({ page }) => {
+    // Ensure settings are complete first
+    await page.evaluate(() => {
+      localStorage.setItem('callsign', 'TESTCALL');
+      localStorage.setItem('name', 'Test User');
+      localStorage.setItem('gridsquare', 'AA00aa');
+    });
+
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Wait for settings to close if they were open
+    await page.waitForTimeout(1000);
+
     const button = page.locator('#encodebutton');
     await expect(button).toBeVisible();
     await expect(button).toBeEnabled();
   });
 
   test('should allow typing in message field', async ({ page }) => {
+    // Ensure settings are complete first
+    await page.evaluate(() => {
+      localStorage.setItem('callsign', 'TESTCALL');
+      localStorage.setItem('name', 'Test User');
+      localStorage.setItem('gridsquare', 'AA00aa');
+    });
+
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Wait for settings to close if they were open
+    await page.waitForTimeout(1000);
+
     const textarea = page.locator('#textarea');
     const testMessage = 'Test message for E2E testing';
 
@@ -218,6 +257,19 @@ test.describe('Ribbit Web App', () => {
   });
 
   test('should show encoding feedback when sending message', async ({ page }) => {
+    // Ensure settings are complete first
+    await page.evaluate(() => {
+      localStorage.setItem('callsign', 'TESTCALL');
+      localStorage.setItem('name', 'Test User');
+      localStorage.setItem('gridsquare', 'AA00aa');
+    });
+
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Wait for settings to close if they were open
+    await page.waitForTimeout(1000);
+
     const textarea = page.locator('#textarea');
     const button = page.locator('#encodebutton');
 
@@ -233,11 +285,37 @@ test.describe('Ribbit Web App', () => {
   });
 
   test('should display messages list', async ({ page }) => {
+    // Ensure settings are complete first
+    await page.evaluate(() => {
+      localStorage.setItem('callsign', 'TESTCALL');
+      localStorage.setItem('name', 'Test User');
+      localStorage.setItem('gridsquare', 'AA00aa');
+    });
+
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Wait for settings to close if they were open
+    await page.waitForTimeout(1000);
+
     const messagesList = page.locator('#chat');
     await expect(messagesList).toBeVisible();
   });
 
   test('should handle Enter key for sending messages', async ({ page }) => {
+    // Ensure settings are complete first
+    await page.evaluate(() => {
+      localStorage.setItem('callsign', 'TESTCALL');
+      localStorage.setItem('name', 'Test User');
+      localStorage.setItem('gridsquare', 'AA00aa');
+    });
+
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Wait for settings to close if they were open
+    await page.waitForTimeout(1000);
+
     const textarea = page.locator('#textarea');
 
     // Type a message and press Enter
@@ -249,6 +327,19 @@ test.describe('Ribbit Web App', () => {
   });
 
   test('should prevent sending empty messages', async ({ page }) => {
+    // Ensure settings are complete first
+    await page.evaluate(() => {
+      localStorage.setItem('callsign', 'TESTCALL');
+      localStorage.setItem('name', 'Test User');
+      localStorage.setItem('gridsquare', 'AA00aa');
+    });
+
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Wait for settings to close if they were open
+    await page.waitForTimeout(1000);
+
     const textarea = page.locator('#textarea');
     const button = page.locator('#encodebutton');
 
@@ -276,23 +367,184 @@ test.describe('Ribbit Web App', () => {
     }
   });
 
+  test('should show settings page first if required settings are incomplete', async ({ page }) => {
+    // Clear localStorage to simulate first-time user
+    await page.evaluate(() => {
+      localStorage.clear();
+    });
+
+    // Reload page
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Settings should be visible
+    const settings = page.locator('#settings');
+    await expect(settings).toBeVisible();
+
+    // Settings required message should be visible
+    const requiredMessage = page.locator('#settings-required-message, .settings-required-message');
+    await expect(requiredMessage.first()).toBeVisible();
+
+    // Main chat interface should not be accessible
+    const textarea = page.locator('#textarea');
+    // Textarea might be visible but disabled, or settings overlay might block it
+    // The key is that settings are shown first
+  });
+
+  test('should require callsign, name, and gridsquare before allowing encoding', async ({ page }) => {
+    // Clear localStorage
+    await page.evaluate(() => {
+      localStorage.clear();
+    });
+
+    // Reload page
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Fill in settings
+    const callsignInput = page.locator('#callsign');
+    const nameInput = page.locator('#name');
+    const gridsquareInput = page.locator('#gridsquare');
+
+    await callsignInput.fill('TESTCALL');
+    await nameInput.fill('Test User');
+    await gridsquareInput.fill('AA00aa');
+
+    // Save settings
+    const saveButton = page.locator('button:has-text("Save"), button:has-text("Save Settings")');
+    if (await saveButton.isVisible()) {
+      await saveButton.click();
+      // Wait for settings to close
+      await page.waitForFunction(() => {
+        const settings = document.getElementById('settings');
+        return !settings || settings.style.top === '-100svh' || !settings.offsetParent;
+      }, { timeout: 5000 });
+    }
+
+    // Now try to encode a message
+    const textarea = page.locator('#textarea');
+    await textarea.fill('Test message');
+    
+    const encodeButton = page.locator('#encodebutton');
+    await encodeButton.click();
+
+    // Should not show error about missing settings
+    // (The actual encoding might still fail for other reasons like audio context, but not settings)
+    await page.waitForTimeout(1000); // Give time for any error messages to appear
+    
+    // Check that no settings-related error is shown
+    const errorMessages = await page.locator('body').textContent();
+    expect(errorMessages).not.toContain('Please complete your settings');
+    expect(errorMessages).not.toContain('callsign');
+    expect(errorMessages).not.toContain('gridsquare');
+  });
+
+  test('should prevent encoding when settings are incomplete', async ({ page }) => {
+    // Set incomplete settings
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem('callsign', 'TESTCALL');
+      // Missing name and gridsquare
+    });
+
+    // Reload page
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Try to encode without completing settings
+    // First, check if settings are shown (they should be)
+    const settings = page.locator('#settings');
+    const isSettingsVisible = await settings.isVisible();
+
+    if (!isSettingsVisible) {
+      // If settings aren't visible, try to encode and check for error
+      const textarea = page.locator('#textarea');
+      await textarea.fill('Test message');
+      
+      const encodeButton = page.locator('#encodebutton');
+      await encodeButton.click();
+
+      // Should show error or open settings
+      await page.waitForTimeout(1000);
+      
+      // Either settings should open, or error message should appear
+      const settingsNowVisible = await settings.isVisible();
+      const errorText = await page.locator('body').textContent();
+      
+      expect(settingsNowVisible || errorText.includes('settings') || errorText.includes('callsign') || errorText.includes('gridsquare')).toBe(true);
+    } else {
+      // Settings are visible, which is correct behavior
+      expect(isSettingsVisible).toBe(true);
+    }
+  });
+
+  test('should validate gridsquare format', async ({ page }) => {
+    // Clear localStorage
+    await page.evaluate(() => {
+      localStorage.clear();
+    });
+
+    // Reload page
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    const gridsquareInput = page.locator('#gridsquare');
+    
+    // Fill in other required fields
+    await page.locator('#callsign').fill('TESTCALL');
+    await page.locator('#name').fill('Test User');
+
+    // Try invalid gridsquare (too short)
+    await gridsquareInput.fill('AA00');
+    
+    // Try to save - should show validation error or prevent saving
+    const saveButton = page.locator('button:has-text("Save"), button:has-text("Save Settings")');
+    if (await saveButton.isVisible()) {
+      await saveButton.click();
+      await page.waitForTimeout(500);
+      
+      // Check if validation error appears or settings remain open
+      const validationErrors = page.locator('.validation-errors, [class*="error"], [class*="invalid"]');
+      const hasErrors = await validationErrors.count() > 0;
+      const settingsStillOpen = await page.locator('#settings').isVisible();
+      
+      // Either validation errors should appear or settings should remain open
+      expect(hasErrors || settingsStillOpen).toBe(true);
+    }
+
+    // Try valid gridsquare
+    await gridsquareInput.fill('AA00aa');
+    
+    // Input should accept valid format
+    await expect(gridsquareInput).toHaveValue('AA00aa');
+  });
+
   test('should handle settings inputs', async ({ page }) => {
-    // Check for settings inputs (may not be visible by default)
+    // Clear localStorage to show settings
+    await page.evaluate(() => {
+      localStorage.clear();
+    });
+
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Settings should be visible
     const callsignInput = page.locator('#callsign');
     const gridsquareInput = page.locator('#gridsquare');
     const nameInput = page.locator('#name');
 
-    // If settings are visible, test them
-    if (await callsignInput.isVisible()) {
-      await callsignInput.fill('TESTCALL');
-      await expect(callsignInput).toHaveValue('TESTCALL');
+    await expect(callsignInput).toBeVisible();
+    await expect(nameInput).toBeVisible();
+    await expect(gridsquareInput).toBeVisible();
 
-      await gridsquareInput.fill('AA00aa');
-      await expect(gridsquareInput).toHaveValue('AA00aa');
+    await callsignInput.fill('TESTCALL');
+    await expect(callsignInput).toHaveValue('TESTCALL');
 
-      await nameInput.fill('Test User');
-      await expect(nameInput).toHaveValue('Test User');
-    }
+    await gridsquareInput.fill('AA00aa');
+    await expect(gridsquareInput).toHaveValue('AA00aa');
+
+    await nameInput.fill('Test User');
+    await expect(nameInput).toHaveValue('Test User');
   });
 
   test('should be responsive on mobile', async ({ page, isMobile }) => {

@@ -9,7 +9,19 @@ let wasmInitialized = false;
 let wasmInitError = null;
 
 test.describe('Ribbit WASM API', () => {
+  // Helper function to ensure settings are complete
+  const ensureSettingsComplete = async (page) => {
+    await page.evaluate(() => {
+      localStorage.setItem('callsign', 'TESTCALL');
+      localStorage.setItem('name', 'Test User');
+      localStorage.setItem('gridsquare', 'AA00aa');
+    });
+  };
+
   test('should load WASM API test page', async ({ page }) => {
+    // Ensure settings are complete before testing
+    await ensureSettingsComplete(page);
+    
     await page.goto('/test_wasm_api.html');
 
     // Wait for the page to load
@@ -21,6 +33,9 @@ test.describe('Ribbit WASM API', () => {
   });
 
   test('should initialize WASM module in test page', async ({ page }) => {
+    // Ensure settings are complete before testing WASM
+    await ensureSettingsComplete(page);
+    
     try {
       await page.goto('/test_wasm_api.html');
 
@@ -73,6 +88,9 @@ test.describe('Ribbit WASM API', () => {
   });
 
   test('should encode messages', async ({ page }) => {
+    // Ensure settings are complete before testing encoding
+    await ensureSettingsComplete(page);
+    
     await page.goto('/test_wasm_api.html');
 
     // Wait for WASM to load
@@ -96,6 +114,9 @@ test.describe('Ribbit WASM API', () => {
   });
 
   test('should handle round-trip encoding/decoding', async ({ page }) => {
+    // Ensure settings are complete before testing encoding/decoding
+    await ensureSettingsComplete(page);
+    
     await page.goto('/test_wasm_api.html');
 
     // Wait for WASM to load
@@ -115,6 +136,9 @@ test.describe('Ribbit WASM API', () => {
   });
 
   test('should handle memory management', async ({ page }) => {
+    // Ensure settings are complete before testing WASM functions
+    await ensureSettingsComplete(page);
+    
     await page.goto('/test_wasm_api.html');
 
     // Wait for WASM to load
@@ -134,6 +158,9 @@ test.describe('Ribbit WASM API', () => {
   });
 
   test('should handle API errors gracefully', async ({ page }) => {
+    // Ensure settings are complete before testing WASM functions
+    await ensureSettingsComplete(page);
+    
     await page.goto('/test_wasm_api.html');
 
     // Try to run tests without loading WASM first
@@ -147,6 +174,9 @@ test.describe('Ribbit WASM API', () => {
   });
 
   test('should work across different browsers', async ({ page, browserName }) => {
+    // Ensure settings are complete before testing WASM functions
+    await ensureSettingsComplete(page);
+    
     await page.goto('/test_wasm_api.html');
 
     // Basic functionality should work in all browsers
@@ -161,6 +191,9 @@ test.describe('Ribbit WASM API', () => {
   });
 
   test('should handle large messages', async ({ page }) => {
+    // Ensure settings are complete before testing encoding
+    await ensureSettingsComplete(page);
+    
     await page.goto('/test_wasm_api.html');
 
     // Wait for WASM to load
@@ -186,6 +219,9 @@ test.describe('Ribbit WASM API', () => {
   });
 
   test('should handle special characters in messages', async ({ page }) => {
+    // Ensure settings are complete before testing encoding
+    await ensureSettingsComplete(page);
+    
     await page.goto('/test_wasm_api.html');
 
     // Wait for WASM to load
@@ -207,6 +243,9 @@ test.describe('Ribbit WASM API', () => {
   });
 
   test('should provide performance metrics', async ({ page }) => {
+    // Ensure settings are complete before testing encoding
+    await ensureSettingsComplete(page);
+    
     await page.goto('/test_wasm_api.html');
 
     // Wait for WASM to load
@@ -223,5 +262,42 @@ test.describe('Ribbit WASM API', () => {
     const resultText = await page.locator('#encode-test-result pre').textContent();
     expect(resultText).toContain('Encoding time');
     expect(resultText).toMatch(/Encoding time: \d+\.\d+ms/);
+  });
+
+  test('should require settings before encoding messages in main app', async ({ page }) => {
+    // Clear settings to simulate incomplete setup
+    await page.evaluate(() => {
+      localStorage.clear();
+    });
+
+    await page.goto('/');
+
+    // Wait for page to load
+    await page.waitForLoadState('networkidle');
+
+    // Settings should be visible
+    const settings = page.locator('#settings');
+    await expect(settings).toBeVisible();
+
+    // Try to encode a message without completing settings
+    const textarea = page.locator('#textarea');
+    await textarea.fill('Test message');
+
+    const encodeButton = page.locator('#encodebutton');
+    await encodeButton.click();
+
+    // Wait a bit for any error messages or settings to appear
+    await page.waitForTimeout(1000);
+
+    // Either settings should still be visible, or an error message should appear
+    const settingsStillVisible = await settings.isVisible();
+    const bodyText = await page.locator('body').textContent();
+    const hasSettingsError = bodyText.includes('settings') || 
+                            bodyText.includes('callsign') || 
+                            bodyText.includes('gridsquare') ||
+                            bodyText.includes('Please complete');
+
+    // Settings should be visible or error should be shown
+    expect(settingsStillVisible || hasSettingsError).toBe(true);
   });
 });
