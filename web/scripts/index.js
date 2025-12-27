@@ -300,7 +300,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
         }
 
         async handleEncode() {
-            if (!this.isInitialized || this.isTransmitting || !this.listen) {
+            if (!this.isInitialized || this.isTransmitting) {
                 return;
             }
 
@@ -323,6 +323,10 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 }
                 return;
             }
+
+            // Suspend audio listening before encoding
+            this.listen = false;
+            console.log('Audio listening suspended for transmission');
 
             const message = messagebox.value.trim();
             this.isTransmitting = true;
@@ -357,6 +361,9 @@ document.addEventListener("DOMContentLoaded", (e) => {
             } catch (error) {
                 console.error('Encoding failed:', error);
                 this.showError('Failed to encode message: ' + error.message);
+                // Resume listening even if encoding fails
+                this.listen = true;
+                console.log('Audio listening resumed after encoding error');
             } finally {
                 this.isTransmitting = false;
             }
@@ -378,22 +385,34 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 source.buffer = audioBufferNode;
                 source.connect(this.tx_context.destination);
 
-                // Set up end handler
+                // Set up end handler to resume listening after playback completes
                 source.onended = () => {
                     if (this.savewavfile) {
                         this.saveWavFile(audioBufferNode, "ribbit.wav");
                         this.savewavfile = false;
                     }
+                    // Resume audio listening after playback completes
                     this.listen = true;
+                    console.log('✓ Audio playback completed, listening resumed');
+                };
+
+                // Set up error handler to resume listening if playback fails
+                source.onerror = (error) => {
+                    console.error('Audio playback error:', error);
+                    this.listen = true;
+                    console.log('Audio listening resumed after playback error');
                 };
 
                 source.start();
-                this.listen = false; // Don't listen while transmitting
+                // Note: this.listen is already set to false in handleEncode() before encoding starts
 
-                console.log('✓ Audio playing');
+                console.log('✓ Audio playing through speakers');
 
             } catch (error) {
                 console.error('Audio playback failed:', error);
+                // Resume listening even if playback fails
+                this.listen = true;
+                console.log('Audio listening resumed after playback failure');
                 throw new Error('Audio playback failed: ' + error.message);
             }
         }
@@ -461,6 +480,67 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 video: false,
             };
 
+            // Track last decoded message to prevent duplicates
+            let lastDecodedHash = null;
+            let lastDecodeTime = 0;
+            const DEBOUNCE_MS = 2000; // Don't process same message within 2 seconds
+            
+            // Track invalid message hashes to prevent repeated processing
+            const invalidMessageHashes = new Set();
+            const INVALID_MESSAGE_TTL = 5000; // Remember invalid messages for 5 seconds
+
+            // Helper function to validate decoded message
+            const isValidDecodedMessage = (decoded) => {
+                if (!decoded) return false;
+                
+                // Check if required fields exist and are strings
+                if (typeof decoded.callsign !== 'string' || typeof decoded.text !== 'string') {
+                    return false;
+                }
+                
+                // Check for null bytes or invalid characters
+                const hasNullBytes = (str) => str && str.includes('\u0000');
+                if (hasNullBytes(decoded.callsign) || hasNullBytes(decoded.text)) {
+                    return false;
+                }
+                
+                // Check if callsign is reasonable (not empty, reasonable length)
+                if (!decoded.callsign || decoded.callsign.trim().length === 0 || decoded.callsign.length > 20) {
+                    return false;
+                }
+                
+                // Validate callsign format - should only contain alphanumeric characters and common callsign separators
+                // Valid callsign format: letters/numbers, may contain / for portable/mobile designators
+                const callsignRegex = /^[A-Z0-9/]+$/i;
+                if (!callsignRegex.test(decoded.callsign.trim())) {
+                    return false;
+                }
+                
+                // Check if text is reasonable (not empty, reasonable length)
+                if (!decoded.text || decoded.text.trim().length === 0 || decoded.text.length > 1000) {
+                    return false;
+                }
+                
+                // Check for garbled text (too many non-printable characters or replacement characters)
+                const nonPrintableRegex = /[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F-\x9F\uFFFD]/g;
+                const nonPrintableCount = (decoded.text.match(nonPrintableRegex) || []).length;
+                if (nonPrintableCount > decoded.text.length * 0.1) { // More than 10% non-printable
+                    return false;
+                }
+                
+                // Check for replacement characters (�) which indicate decoding errors
+                if (decoded.text.includes('\uFFFD') || decoded.callsign.includes('\uFFFD')) {
+                    return false;
+                }
+                
+                return true;
+            };
+
+            // Helper function to create hash of decoded message
+            const createMessageHash = (decoded) => {
+                return `${decoded.callsign}|${decoded.text}`.substring(0, 100);
+            };
+
             navigator.mediaDevices
                 .getUserMedia(mediaConstraints)
                 .then((stream) => {
@@ -480,16 +560,49 @@ document.addEventListener("DOMContentLoaded", (e) => {
                             const decoded = await this.ribbit.decodeAudio(inputData);
 
                             if (decoded) {
+                                // Create hash for duplicate/invalid checking
+                                const messageHash = createMessageHash(decoded);
+                                
+                                // Check if this is a known invalid message
+                                if (invalidMessageHashes.has(messageHash)) {
+                                    // Skip known invalid messages
+                                    return;
+                                }
+                                
+                                // Validate the decoded message BEFORE logging
+                                if (!isValidDecodedMessage(decoded)) {
+                                    // Mark as invalid and skip
+                                    invalidMessageHashes.add(messageHash);
+                                    // Clean up old invalid hashes after TTL
+                                    setTimeout(() => {
+                                        invalidMessageHashes.delete(messageHash);
+                                    }, INVALID_MESSAGE_TTL);
+                                    // Silently skip invalid/corrupted messages
+                                    return;
+                                }
+                                
+                                // Check for duplicate messages (debounce)
+                                const now = Date.now();
+                                if (messageHash === lastDecodedHash && (now - lastDecodeTime) < DEBOUNCE_MS) {
+                                    // Same message within debounce period, skip it
+                                    return;
+                                }
+                                
+                                // Update tracking
+                                lastDecodedHash = messageHash;
+                                lastDecodeTime = now;
+
+                                // Only log valid, unique messages
                                 console.log("Received:", decoded.callsign, decoded.text);
 
                                 // Validate message format (same as before)
-                                const fullMessage = `${decoded.name}|${decoded.callsign}|${decoded.gridsquare}&=${decoded.text}`;
+                                const fullMessage = `${decoded.name || ''}|${decoded.callsign}|${decoded.gridsquare || ''}&=${decoded.text}`;
 
                                 const event = new CustomEvent("receivemessage", {
                                     detail: {
                                         save: true,
                                         type: "text",
-                                        sender: `${decoded.name}|${decoded.callsign}|${decoded.gridsquare}`,
+                                        sender: `${decoded.name || ''}|${decoded.callsign}|${decoded.gridsquare || ''}`,
                                         message: decoded.text,
                                         timestamp: new Date().toISOString(),
                                     },
