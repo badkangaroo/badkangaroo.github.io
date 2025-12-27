@@ -1,73 +1,60 @@
 #settings {
+    position: fixed;
+    top: 0;
+    width: 100svw;
+    height: 100svh;
     background: var(--dark-green);
+    z-index: 1;
 }
 #settings * {
-    padding: 1svh;
     box-sizing: border-box;
-    width: 100%;
-    border-radius: 1dvi;
-    font-size: 3svw;
 }
 #settings > .page {
+    height: 100svh;
     display: flex;
     flex-direction: column;
-}
-#settings > .page-content {
-    background: var(--dark-green);
-    color: var(--light-green);
-    display: flex;
+    align-items: center;
     flex-direction: column;
-    padding: 1svh 4svw;
-    justify-content: space-around;
-    overflow-y: auto;
-    overflow-x: hidden;
-    position: fixed;
-    transition: top .3s ease-in;
-    z-index: 2;
-    font-family: 'NotoSansDisplay-Bold';
+    justify-content: center;
 }
+
 #settings > .page > input {
     display: none;
 }
 #settings > .page > label {
     text-align: center;
-    font-size: 4svw;
     font-weight: bold;
-    color: var(--light-green);
     text-decoration: underline;
 }
 #settings > .page > label:has(+ input:checked) {
-    background: var(--middle-green);
-    color: var(--light-green);
+    background: var(--white-green);
+    color: var(--dark-green);
     border-radius: 1.5dvi 1.5dvi 0dvi 0dvi;
+    width: 90svw;
 }
 .setting {
     display: flex;
     justify-content: space-between;
-    gap: 1svh;
 }
-.setting > label {
-    color: var(--light-green);
-}
-.page-content > h2 {
-    color: var(--light-green);
-    font-size: 3dvi;
-    text-align: center;
-}
+
+.setting > label,
 .setting > button,
 .setting > select,
 .setting > input,
 .setting > input:enabled {
-    text-align: left;
-    background-color: var(--light-green);
-    color: var(--dark-green);
+    padding: 3px;
     border: none;
+    color: var(--dark-green);
 }
 .setting > button {
     background: var(--dark-green);
     color: var(--light-green);
     border-radius: 0;
     border: 1px solid var(--light-green);
+}
+.setting > button > .icon {
+    height: 1em;
+    padding: 0 !important;
 }
 .setting > #cancel,
 .setting > #close {
@@ -79,27 +66,25 @@
 }
 
 #settings > .page > .page-content {
+    background: var(--white-green);
     display: none;
+    flex-direction: column;
+    font-family: 'NotoSansDisplay-Bold';
 }
 #settings > .page > input:checked + .page-content {
-    display: block;
-    background: var(--middle-green);
+    display: flex;
     border-radius: 0 0 1.5dvi 1.5dvi;
+    width: 90svw;
+    padding: 10px;
 }
 #settings > .page > .setting > #cancel,
 #settings > .page > .setting > #close {
-    width: 50%;
 }
-@media (min-aspect-ratio: 1/1) {
-    #settings > .page > label {
-        font-size: 4svh;
-    }
-    .setting > label {
-        font-size: 4svh;
-    }
-    .setting > * {
-        font-size: 3svh;
-    }
+#settings > .page > .page-content > .setting > .GPS-Coordinates {
+    display: flex;
+    padding: 0;
+    gap: 1svh;
+    flex-direction: row;
 }
 
 .setting > label:hover + .info,
@@ -131,7 +116,6 @@
 .setting > .info > p {
     background: white;
     color: var(--dark-green);
-    font-size: 3svw;
     margin: 0;
     padding: 0;
     padding: 1svh;
@@ -141,5 +125,8 @@
 }
 .setting > .info > p:before {
     content: '📝';
-    font-size: 3svw;
+}
+
+.setting.hidden {
+    display: none;
 }

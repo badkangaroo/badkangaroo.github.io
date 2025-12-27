@@ -9,7 +9,7 @@
     font-size: 1.75rem;
     color: var(--light-green);
     z-index: 3;
-    height: 4rem;
+    height: 35px;
 }
 
 #titlebar > #modeTitle {

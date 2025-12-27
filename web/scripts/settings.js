@@ -2,10 +2,11 @@
 
 // settings.js
 var settingsOpen = false;
-
-// force uppercase
-document.getElementById("callsign").addEventListener("input", (e) => {
-    e.target.value = e.target.value.toUpperCase();
+window.addEventListener("DOMContentLoaded", (e) => {
+    // force uppercase
+    document.getElementById("callsign").addEventListener("input", (e) => {
+        e.target.value = e.target.value.toUpperCase();
+    });
 });
 
 const toggleSettings = () => {
@@ -38,30 +39,24 @@ const openSettings = () => {
 };
 
 const closeSettings = () => {
-    document.dispatchEvent(new CustomEvent("closeSettings"));
     const elements = document.getElementsByName("open");
     elements.forEach((e) => e.beginElement());
     settingsOpen = false;
+    const settings = document.getElementById("settings");
+    settings.style.top = "-100svh";
 };
 
-const saveSettings = () => {
-    const name = document.getElementById("name").value;
+document.addEventListener('saveSettings', (e) => {
+    const operatorName = document.getElementById("operatorName").value;
     const callsign = document.getElementById("callsign").value;
-    const phone = document.getElementById("phone").value;
-    const gps = {
-        longitude: document.getElementById("longitude").value,
-        latitude: document.getElementById("latitude").value,
-    };
     const gridsquare = document.getElementById("gridsquare").value;
     const microphone = document.getElementById("microphone").value;
     const speaker = document.getElementById("speaker").value;
     const savemessages = document.getElementById("savemessages").checked;
     const useOptimizedDigest = document.getElementById("useOptimizedDigest").checked;
     console.log(
-        name,
+        operatorName,
         callsign,
-        phone,
-        gps,
         gridsquare,
         savemessages,
         microphone,
@@ -73,17 +68,16 @@ const saveSettings = () => {
         console.error("Local Storage is not available.");
         return;
     }
-    db.setItem("name", name);
+    db.setItem("operatorName", operatorName);
     db.setItem("callsign", callsign);
-    db.setItem("gps", JSON.stringify(gps));
     db.setItem("gridsquare", gridsquare);
-    db.setItem("phone", phone);
     db.setItem("saveMessages", savemessages);
     db.setItem("microphone", microphone);
     db.setItem("speaker", speaker);
     db.setItem("useOptimizedDigest", useOptimizedDigest);
     closeSettings();
-};
+});
+
 document.addEventListener("openSettings", (e) => {
     const settings = document.getElementById("settings");
     settings.style.top = "0svh";
@@ -95,25 +89,18 @@ document.addEventListener("openSettings", (e) => {
     }
     const name = db.getItem("name");
     const callsign = db.getItem("callsign");
-    const phone = db.getItem("phone");
     const gridsquare = db.getItem("gridsquare");
     const microphone = db.getItem("microphone");
     const speaker = db.getItem("speaker");
-    const gps = db.getItem("gps");
     const useOptimizedDigest = db.getItem("useOptimizedDigest");
-    const { latitude, longitude } = JSON.parse(gps ? gps : "{}");
 
-    document.getElementById("name").value = name ? name : "";
+    document.getElementById("operatorName").value = operatorName ? operatorName : "";
     document.getElementById("callsign").value = callsign ? callsign : "";
-    document.getElementById("longitude").value = longitude ? longitude : "";
-    document.getElementById("latitude").value = latitude ? latitude : "";
     document.getElementById("gridsquare").value = gridsquare ? gridsquare : "";
-    document.getElementById("phone").value = phone ? phone : "";
     document.getElementById("microphone").value = microphone ? microphone : "";
     document.getElementById("speaker").value = speaker ? speaker : "";
     document.getElementById("useOptimizedDigest").checked = useOptimizedDigest === "true";
 });
 document.addEventListener("closeSettings", (e) => {
-    const settings = document.getElementById("settings");
-    settings.style.top = "-100svh";
+    closeSettings();
 });

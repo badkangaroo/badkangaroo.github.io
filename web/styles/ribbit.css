@@ -23,14 +23,17 @@
     font-family: "NotoSansDisplay-Regular";
     padding: 0;
     margin: 0;
+    --white-green:#e8eee0;
     --light-green: #7fcf21;
     --middle-green: #333;
     --dark-green: #106c2f;
+    --dark-gray:#212121;
     --border-radius: 2dvi;
+    --light-gray:#afafaf;
 }
 
 body {
-    background: var(--dark-green);
+    background: var(--dark-gray);
     height: 100svh;
     width: 100svw;
     overflow: hidden;

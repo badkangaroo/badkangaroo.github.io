@@ -38,8 +38,12 @@ const UpdateGPSPosition = () => {
     navigator.geolocation.getCurrentPosition(location => {
         document.getElementById('latitude').value = location.coords.latitude;
         document.getElementById('longitude').value = location.coords.longitude;
-        document.getElementById('GPSIcon').setAttribute('fill', 'var(--light-green)');
-        // from latitude and lontitude get grid square
+        // Update GPS icon if it exists
+        const gpsIcon = document.getElementById('GPSIcon');
+        if (gpsIcon) {
+            gpsIcon.setAttribute('fill', 'var(--light-green)');
+        }
+        // from latitude and longitude get grid square
         const lat = location.coords.latitude;
         const lon = location.coords.longitude;
         const latLonToQth = (y, x, gsLevel = 6) => {
@@ -97,7 +101,11 @@ const UpdateGPSPosition = () => {
         console.log(err);
         if (err.code === 1) {
             alert('Please enable location services.');
-            document.getElementById('GPSIcon').setAttribute('fill', 'black');
+            // Update GPS icon if it exists
+            const gpsIcon = document.getElementById('GPSIcon');
+            if (gpsIcon) {
+                gpsIcon.setAttribute('fill', 'black');
+            }
         }
     }, {
         enableHighAccuracy: true,

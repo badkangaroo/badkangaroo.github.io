@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta id="extViewportMeta" name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <title>Ribbit - Development</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-loadingpage" content="Ribbit Mobile App">
@@ -18,11 +18,13 @@
     <link rel="stylesheet" href="./styles/ribbit.css">
     <link rel="stylesheet" href="./styles/titlebar.css">
     <link rel="stylesheet" href="./styles/settings.css">
+    <link rel="stylesheet" href="./styles/chat.css">
     <script src="./scripts/ribbit.js"></script>
     <script src="./scripts/index.js"></script>
     <script src="./scripts/gps.js"></script>
     <script src="./scripts/settings.js"></script>
     <script src="./scripts/messages.js"></script>
+
 <body>
     <div id="titlebar">
         <b>Ribbit - Development</b><i style="padding: 0vh 1vw;">v0.1.1</i>
@@ -51,7 +53,7 @@
             <label for="settings-1">User Settings</label>
             <input type="radio" name="settings" id="settings-1" checked>
             <div class="page-content">
-                <div class="setting">
+                <div class="setting hidden">
                     <label for="mode">Mode:</label>
                     <div class="info">
                         <p>
@@ -67,14 +69,14 @@
                     </select>
                 </div>
                 <div class="setting">
-                    <label for="name">Operator Name:</label>
+                    <label for="operatorName">Operator Name:</label>
                     <div class="info">
                         <p>
                             The name of the operator. This will be displayed to
                             other users. Character limit is 32 characters.
                         </p>
                     </div>
-                    <input id="name" type="text" required placeholder="John Doe">
+                    <input id="operatorName" type="text" required placeholder="John Doe">
                 </div>
                 <div class="setting">
                     <label for="callsign">Callsign:</label>
@@ -89,10 +91,12 @@
                     <script type="text/javascript">
                     </script>
                 </div>
-                <h2>GPS:</h2>
                 <div class="setting">
                     <button id="updateGPS" onclick="UpdateGPSPosition();">
                         Update GPS
+                        <SVG class="icon" viewBox="0 0 4 6" fill="var(--light-green)">
+                            <path d="M0 2A1 1 0 014 2C4 3 3 4 2 6 1 4 0 3.1 0 2Z" />
+                        </SVG>
                     </button>
                     <div class="info">
                         <p>
@@ -163,7 +167,7 @@
                         <p>
                             The time offset of the operator. Your time zone is
                             set by the GPS coordinates. But you can modify it
-                            here if needed. +/- 12 hours. 0 means you'll see 
+                            here if needed. +/- 12 hours. 0 means you'll see
                             UTC time.
                         </p>
                     </div>
@@ -200,7 +204,7 @@
             <label for="settings-3">System Settings</label>
             <input type="radio" name="settings" id="settings-3">
             <div class="page-content">
-                <h2>Updates:</h2>
+                <p>Updates:</p>
                 <div class="setting">
                     <button id="checkForUpdates">Check for Updates</button>
                     <div class="info">
@@ -217,7 +221,7 @@
                         </p>
                     </div>
                 </div>
-                <h2>Configuration:</h2>
+                <p>Configuration:</p>
                 <div class="setting">
                     <button id="resetConfig" onclick="resetConfig();">Restore Default</button>
                     <div class="info">
@@ -241,7 +245,7 @@
                         </p>
                     </div>
                 </div>
-                <h2>Performance:</h2>
+                <p>Performance:</p>
                 <div class="setting">
                     <label for="useOptimizedDigest">Use Optimized Digest Function:</label>
                     <div class="info">
@@ -253,7 +257,7 @@
                     </div>
                     <input id="useOptimizedDigest" type="checkbox">
                 </div>
-                <h2>Logs:</h2>
+                <p>Logs:</p>
                 <div class="setting">
                     <button id="clearCache" onclick="clearCache();">Clear Messages Log</button>
                     <div class="info">
@@ -281,8 +285,8 @@
                 </div>
             </div>
             <div class="setting">
-                <button id="cancel" onclick="closeSettings();">CONTINUE WITHOUT SAVING</span></button>
-                <button id="close" onclick="saveSettings();">SAVE & CONTINUE</button>
+                <button id="cancel" onclick="document.dispatchEvent(new CustomEvent('closeSettings'));">CONTINUE WITHOUT SAVING</span></button>
+                <button id="close" onclick="document.dispatchEvent(new CustomEvent('saveSettings'))">SAVE & CONTINUE</button>
             </div>
         </div>
     </div>

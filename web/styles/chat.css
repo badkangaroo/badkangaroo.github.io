@@ -3,25 +3,25 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5svh 2.5svh;
+    position: fixed;
+    bottom: 0;
+    width: 100svw;
     height: 5rem;
-    z-index: 1;
     box-shadow: 0 0 1rem black;
 }
 
 #input > textarea {
-    width: calc(100svw - 10rem);
+    width: calc(100svw - 4rem);
     overflow: hidden;
     resize: none;
     background: var(--light-green);
-    padding: 1svw;
+    padding: 10px;
     height: -webkit-fill-available;
     border-radius: var(--radius);
     font-family: "NotoSansDisplay-Regular";
 }
 
 #input > svg {
-    height: 4rem;
 }
 
 #chat {
@@ -31,7 +31,10 @@
     background: white;
     scrollbar-color: var(--light-green) var(--dark-green);
     scrollbar-width: thin;
-    padding: 0.5rem;
+    height: 90svh;
+    position: fixed;
+    top: 35px;
+    width: 100%;
 }
 
 .message {
