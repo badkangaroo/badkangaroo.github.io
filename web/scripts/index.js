@@ -282,13 +282,24 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 return;
             }
 
+            // Check if required settings are complete
+            const settings = this.getSettings();
+            if (!settings.name || !settings.callsign || !settings.gridsquare || 
+                settings.name.trim().length === 0 || 
+                settings.callsign.trim().length === 0 || 
+                settings.gridsquare.trim().length < 6) {
+                this.showError('Please complete your settings (Name, Callsign, and Grid Square) before encoding messages.');
+                // Open settings if not already open
+                if (typeof openSettings === 'function') {
+                    openSettings();
+                }
+                return;
+            }
+
             const message = messagebox.value.trim();
             this.isTransmitting = true;
 
             try {
-                // Get settings
-                const settings = this.getSettings();
-
                 console.log('Encoding message:', message);
 
                 // Create the message format (same as before for compatibility)
@@ -474,10 +485,13 @@ document.addEventListener("DOMContentLoaded", (e) => {
 
         getSettings() {
             const db = window.localStorage;
+            const name = db.getItem("name") || db.getItem("operatorName") || '';
+            const callsign = db.getItem("callsign") || '';
+            const gridsquare = db.getItem("gridsquare") || '';
             return {
-                name: db.getItem("name") || '',
-                callsign: db.getItem("callsign") || 'NOCALL',
-                gridsquare: db.getItem("gridsquare") || 'AA00aa',
+                name: name,
+                callsign: callsign,
+                gridsquare: gridsquare,
                 phone: db.getItem("phone") || ''
             };
         }

@@ -1,132 +1,417 @@
 #settings {
     position: fixed;
     top: 0;
+    left: 0;
     width: 100svw;
     height: 100svh;
-    background: var(--dark-green);
-    z-index: 1;
+    background: var(--background);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    transition: var(--transition);
+    box-shadow: 0 0 2rem var(--shadow-lg);
 }
+
 #settings * {
     box-sizing: border-box;
 }
+
 #settings > .page {
-    height: 100svh;
+    min-height: 100svh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
 }
 
-#settings > .page > input {
+/* Welcome/Required Message */
+.settings-required-message {
+    width: 100%;
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: var(--surface);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 6px var(--shadow);
+    border: 2px solid var(--primary);
+}
+
+.required-message-content h2 {
+    color: var(--primary);
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.required-message-content p {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.required-message-content ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.required-message-content li {
+    padding: 0.5rem 0;
+    color: var(--text-secondary);
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.required-message-content li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--primary);
+    font-weight: bold;
+}
+
+/* Validation Errors */
+.validation-errors {
+    width: 100%;
+    max-width: 600px;
+    margin: 1rem auto;
+    padding: 1rem;
+    background: var(--error);
+    color: white;
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 4px var(--shadow);
+}
+
+.error-content ul {
+    margin: 0.5rem 0 0 0;
+    padding-left: 1.5rem;
+}
+
+.error-content li {
+    margin: 0.25rem 0;
+}
+
+/* Settings Tabs */
+#settings > .page > input[type="radio"] {
     display: none;
 }
+
 #settings > .page > label {
+    display: inline-block;
+    padding: 1rem 2rem;
+    margin: 0.5rem;
     text-align: center;
     font-weight: bold;
-    text-decoration: underline;
+    cursor: pointer;
+    border-radius: var(--border-radius);
+    background: var(--surface);
+    color: var(--text-secondary);
+    transition: var(--transition);
+    border: 2px solid transparent;
+    min-width: 150px;
 }
+
+#settings > .page > label:hover {
+    background: var(--primary-light);
+    color: var(--background);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px var(--shadow);
+}
+
 #settings > .page > label:has(+ input:checked) {
-    background: var(--white-green);
-    color: var(--dark-green);
-    border-radius: 1.5dvi 1.5dvi 0dvi 0dvi;
-    width: 90svw;
-}
-.setting {
-    display: flex;
-    justify-content: space-between;
+    background: var(--primary);
+    color: var(--background);
+    border-color: var(--primary-dark);
+    box-shadow: 0 4px 12px var(--shadow-lg);
 }
 
-.setting > label,
-.setting > button,
-.setting > select,
-.setting > input,
-.setting > input:enabled {
-    padding: 3px;
-    border: none;
-    color: var(--dark-green);
-}
-.setting > button {
-    background: var(--dark-green);
-    color: var(--light-green);
-    border-radius: 0;
-    border: 1px solid var(--light-green);
-}
-.setting > button > .icon {
-    height: 1em;
-    padding: 0 !important;
-}
-.setting > #cancel,
-.setting > #close {
-    text-align: center;
-}
-.setting > #close {
-    background: var(--light-green);
-    color: var(--dark-green);
-}
-
+/* Page Content */
 #settings > .page > .page-content {
-    background: var(--white-green);
+    background: var(--surface);
     display: none;
     flex-direction: column;
-    font-family: 'NotoSansDisplay-Bold';
+    width: 100%;
+    max-width: 600px;
+    margin: 1rem auto;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 6px var(--shadow);
+    gap: 1.5rem;
 }
+
 #settings > .page > input:checked + .page-content {
     display: flex;
-    border-radius: 0 0 1.5dvi 1.5dvi;
-    width: 90svw;
-    padding: 10px;
 }
-#settings > .page > .setting > #cancel,
-#settings > .page > .setting > #close {
-}
-#settings > .page > .page-content > .setting > .GPS-Coordinates {
+
+/* Setting Items */
+.setting {
     display: flex;
-    padding: 0;
-    gap: 1svh;
-    flex-direction: row;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--background);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border);
+    transition: var(--transition);
+}
+
+.setting:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 4px var(--shadow);
+}
+
+.setting > label {
+    font-weight: bold;
+    color: var(--text-primary);
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.setting > input[type="text"],
+.setting > input[type="number"],
+.setting > select {
+    padding: 0.75rem;
+    border: 2px solid var(--border);
+    border-radius: var(--border-radius);
+    background: var(--background);
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: var(--transition);
+    width: 100%;
+}
+
+.setting > input:focus,
+.setting > select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(16, 108, 47, 0.1);
+}
+
+.setting > input.valid {
+    border-color: var(--success);
+    background-color: rgba(127, 207, 33, 0.05);
+}
+
+.setting > input.invalid {
+    border-color: var(--error);
+    background-color: rgba(211, 47, 47, 0.05);
+}
+
+.setting > input:disabled {
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+}
+
+.setting > button {
+    padding: 0.75rem 1.5rem;
+    background: var(--primary);
+    color: var(--background);
+    border: 2px solid var(--primary-dark);
+    border-radius: var(--border-radius);
+    font-weight: bold;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.setting > button:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px var(--shadow);
+}
+
+.setting > button:active {
+    transform: translateY(0);
+}
+
+.setting > button > .icon {
+    height: 1em;
+    width: 1em;
+}
+
+.setting > #cancel {
+    background: var(--text-secondary);
+    color: var(--background);
+    border-color: var(--text-secondary);
+}
+
+.setting > #cancel:hover {
+    background: var(--text-primary);
+}
+
+.setting > #close {
+    background: var(--success);
+    color: var(--background);
+    border-color: var(--primary-dark);
+}
+
+.setting > #close:hover {
+    background: var(--primary-dark);
+}
+
+.setting > input[type="checkbox"] {
+    width: 1.5rem;
+    height: 1.5rem;
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+
+/* Info Tooltips */
+.setting > .info {
+    display: none;
+    position: absolute;
+    background: var(--background);
+    border: 2px solid var(--primary);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    box-shadow: 0 4px 12px var(--shadow-lg);
+    z-index: 10;
+    max-width: 300px;
+    margin-top: 0.5rem;
 }
 
 .setting > label:hover + .info,
 .setting > label:focus + .info,
-.setting > label:active + .info,
-.setting > label:focus-within + .info,
 .setting > button:hover + .info {
     display: block;
-    position: absolute;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    width: 100svw;
-    height: 100svh;
-    top: 0;
-    left: 0;
-    z-index: 1;
-    pointer-events: none;
-    border: none !important;
-    color: var(--dark-green);
-    border: 1dvi solid var(--dark-green);
-    margin: 0;
-    padding: 0 !important;
 }
-.setting > .info {
-    display: none;
-}
+
 .setting > .info > p {
-    background: white;
-    color: var(--dark-green);
     margin: 0;
-    padding: 0;
-    padding: 1svh;
-    box-sizing: border-box;
-    width: 60% !important;
-    border-radius: 0 0 2dvi 2dvi !important;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    line-height: 1.5;
 }
+
 .setting > .info > p:before {
-    content: '📝';
+    content: 'ℹ️ ';
+    margin-right: 0.5rem;
 }
 
 .setting.hidden {
     display: none;
+}
+
+/* GPS Coordinates */
+.GPS-Coordinates {
+    display: flex;
+    gap: 1rem;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.GPS-Coordinates > input {
+    flex: 1;
+    min-width: 150px;
+}
+
+/* Action Buttons */
+#settings > .page > .setting {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    justify-content: space-between;
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: var(--surface);
+    border-radius: var(--border-radius);
+    border: 2px solid var(--primary);
+}
+
+#settings > .page > .setting > #cancel,
+#settings > .page > .setting > #close {
+    flex: 1;
+    padding: 1rem;
+    font-size: 1.1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #settings > .page {
+        padding: 0.5rem;
+    }
+
+    #settings > .page > label {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        min-width: 120px;
+    }
+
+    #settings > .page > .page-content {
+        padding: 1rem;
+    }
+
+    .settings-required-message {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
+
+    .GPS-Coordinates {
+        flex-direction: column;
+    }
+
+    .GPS-Coordinates > input {
+        width: 100%;
+    }
+
+    #settings > .page > .setting {
+        flex-direction: column;
+    }
+
+    #settings > .page > .setting > #cancel,
+    #settings > .page > .setting > #close {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    #settings > .page > label {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        min-width: 100px;
+    }
+
+    .settings-required-message {
+        padding: 1rem;
+    }
+
+    .required-message-content h2 {
+        font-size: 1.25rem;
+    }
+}
+
+/* Dark theme adjustments */
+[data-theme="ribbit-dark"] #settings {
+    background: var(--background);
+}
+
+[data-theme="ribbit-dark"] .settings-required-message {
+    background: var(--surface);
+    border-color: var(--primary);
+}
+
+[data-theme="ribbit-dark"] .setting {
+    background: var(--surface);
+}
+
+[data-theme="ribbit-dark"] .setting > input,
+[data-theme="ribbit-dark"] .setting > select {
+    background: var(--background);
+    color: var(--text-primary);
+}
+
+/* World Radio League theme adjustments */
+[data-theme="world-radio-league"] #settings {
+    background: var(--background);
+}
+
+[data-theme="world-radio-league"] .settings-required-message {
+    border-color: var(--primary);
 }

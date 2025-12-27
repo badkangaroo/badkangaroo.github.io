@@ -1,80 +1,197 @@
 #input {
-    background: var(--dark-green);
+    background: var(--primary);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 0.5rem;
     position: fixed;
     bottom: 0;
+    left: 0;
     width: 100svw;
-    height: 5rem;
-    box-shadow: 0 0 1rem black;
+    min-height: 4rem;
+    padding: 0.75rem;
+    box-shadow: 0 -2px 8px var(--shadow-lg);
+    z-index: 100;
+    transition: var(--transition);
 }
 
 #input > textarea {
-    width: calc(100svw - 4rem);
+    flex: 1;
     overflow: hidden;
     resize: none;
-    background: var(--light-green);
-    padding: 10px;
-    height: -webkit-fill-available;
-    border-radius: var(--radius);
-    font-family: "NotoSansDisplay-Regular";
+    background: var(--background);
+    color: var(--text-primary);
+    padding: 0.75rem;
+    min-height: 2.5rem;
+    max-height: 8rem;
+    border: 2px solid var(--border);
+    border-radius: var(--border-radius);
+    font-family: "NotoSansDisplay-Regular", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+#input > textarea:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 3px rgba(127, 207, 33, 0.2);
 }
 
 #input > svg {
 }
 
 #chat {
-    height: -webkit-fill-available;
-    overflow-y: scroll;
+    height: calc(100svh - 35px - 4rem);
+    overflow-y: auto;
     overflow-x: hidden;
-    background: white;
-    scrollbar-color: var(--light-green) var(--dark-green);
+    background: var(--background);
+    scrollbar-color: var(--primary-light) var(--primary);
     scrollbar-width: thin;
-    height: 90svh;
     position: fixed;
     top: 35px;
+    left: 0;
     width: 100%;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+#chat::-webkit-scrollbar {
+    width: 8px;
+}
+
+#chat::-webkit-scrollbar-track {
+    background: var(--surface);
+}
+
+#chat::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 4px;
+}
+
+#chat::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
 }
 
 .message {
-    margin: 0.5rem 0.25rem;
-    font-size: 1.1rem;
+    margin: 1rem 0;
+    font-size: 1rem;
+    max-width: 80%;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .message > .sender {
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+    gap: 0.5rem;
 }
 
 .message.tx > .sender {
     flex-direction: row-reverse;
 }
 
+.message.tx {
+    margin-left: auto;
+}
+
 .message > .sender > .name {
-    padding: 0.25rem 1rem;
-    border-radius: 0.25rem 0.25rem 0 0;
-    font-family: "NotoSansDisplay-Medium";
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    font-family: "NotoSansDisplay-Medium", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--primary);
+    color: var(--background);
+    font-weight: 600;
+}
+
+.message.tx > .sender > .name {
+    background: var(--primary-dark);
 }
 
 .message > .sender > .time {
     background: none;
-    font-size: 0.8rem;
-    font-family: "NotoSansDisplay-Italic";
+    font-size: 0.75rem;
+    font-family: "NotoSansDisplay-Italic", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--text-secondary);
 }
 
-p {
-    background: var(--light-green);
-    padding: 0.25rem;
+.message > p {
+    background: var(--surface);
+    color: var(--text-primary);
+    padding: 0.75rem 1rem;
+    margin: 0;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    border: 1px solid var(--border);
+    word-wrap: break-word;
+    line-height: 1.5;
+}
+
+.message.tx > p {
+    background: var(--primary-light);
+    color: var(--text-primary);
 }
 
 
-@media screen and (orientation: landscape) {
-    #input {
-        height: 5rem;
+@media screen and (max-width: 768px) {
+    #chat {
+        height: calc(100svh - 35px - 3.5rem);
+        padding: 0.5rem;
     }
 
-    #input > svg {
-        height: 4rem;
+    .message {
+        max-width: 90%;
+        font-size: 0.9rem;
+    }
+
+    #input {
+        min-height: 3.5rem;
+        padding: 0.5rem;
+    }
+
+    #input > textarea {
+        font-size: 0.9rem;
+        padding: 0.5rem;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    #chat {
+        padding: 0.25rem;
+    }
+
+    .message {
+        max-width: 95%;
+        margin: 0.5rem 0;
+    }
+
+    .message > .sender > .name {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .message > p {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media screen and (orientation: landscape) and (max-height: 500px) {
+    #input {
+        min-height: 3rem;
+    }
+
+    #chat {
+        height: calc(100svh - 35px - 3rem);
     }
 }

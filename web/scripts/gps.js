@@ -35,17 +35,32 @@
 *******************************************************************************/
 
 const UpdateGPSPosition = () => {
+    const gpsButton = document.getElementById('updateGPS');
+    const latitudeInput = document.getElementById('latitude');
+    const longitudeInput = document.getElementById('longitude');
+    const gridsquareInput = document.getElementById('gridsquare');
+    
+    // Show loading state
+    if (gpsButton) {
+        gpsButton.disabled = true;
+        gpsButton.textContent = 'Getting Location...';
+    }
+    
     navigator.geolocation.getCurrentPosition(location => {
-        document.getElementById('latitude').value = location.coords.latitude;
-        document.getElementById('longitude').value = location.coords.longitude;
+        const lat = location.coords.latitude;
+        const lon = location.coords.longitude;
+        
+        // Update latitude and longitude inputs
+        if (latitudeInput) latitudeInput.value = lat.toFixed(6);
+        if (longitudeInput) longitudeInput.value = lon.toFixed(6);
+        
         // Update GPS icon if it exists
         const gpsIcon = document.getElementById('GPSIcon');
         if (gpsIcon) {
-            gpsIcon.setAttribute('fill', 'var(--light-green)');
+            gpsIcon.setAttribute('fill', 'var(--primary-light)');
         }
-        // from latitude and longitude get grid square
-        const lat = location.coords.latitude;
-        const lon = location.coords.longitude;
+        
+        // Convert lat/lon to grid square
         const latLonToQth = (y, x, gsLevel = 6) => {
             let qth = ''
             let spread = ''
@@ -96,20 +111,80 @@ const UpdateGPSPosition = () => {
             return { qth, spread, error }
         }
         const result = latLonToQth(lat, lon);
-        document.getElementById('gridsquare').value = result.qth;
-    }, err => {
-        console.log(err);
-        if (err.code === 1) {
-            alert('Please enable location services.');
-            // Update GPS icon if it exists
-            const gpsIcon = document.getElementById('GPSIcon');
-            if (gpsIcon) {
-                gpsIcon.setAttribute('fill', 'black');
+        if (result.error) {
+            console.error('Grid square calculation error:', result.error);
+            if (gpsButton) {
+                gpsButton.textContent = 'Error';
+                setTimeout(() => {
+                    gpsButton.disabled = false;
+                    gpsButton.innerHTML = `
+                        <svg class="icon" viewBox="0 0 4 6" fill="currentColor" style="width: 1em; height: 1em; margin-right: 0.25em;">
+                            <path d="M0 2A1 1 0 014 2C4 3 3 4 2 6 1 4 0 3.1 0 2Z" />
+                        </svg>
+                        Get GPS
+                    `;
+                }, 2000);
             }
+            return;
+        }
+        
+        // Update gridsquare input
+        if (gridsquareInput) {
+            gridsquareInput.value = result.qth.toUpperCase();
+            // Trigger validation
+            if (gridsquareInput.dispatchEvent) {
+                gridsquareInput.dispatchEvent(new Event('input'));
+            }
+        }
+        
+        // Reset button
+        if (gpsButton) {
+            gpsButton.disabled = false;
+            gpsButton.innerHTML = `
+                <svg class="icon" viewBox="0 0 4 6" fill="currentColor" style="width: 1em; height: 1em; margin-right: 0.25em;">
+                    <path d="M0 2A1 1 0 014 2C4 3 3 4 2 6 1 4 0 3.1 0 2Z" />
+                </svg>
+                Get GPS
+            `;
+        }
+        
+        console.log('GPS updated successfully:', result.qth);
+    }, err => {
+        console.error('GPS error:', err);
+        if (gpsButton) {
+            gpsButton.disabled = false;
+            gpsButton.innerHTML = `
+                <svg class="icon" viewBox="0 0 4 6" fill="currentColor" style="width: 1em; height: 1em; margin-right: 0.25em;">
+                    <path d="M0 2A1 1 0 014 2C4 3 3 4 2 6 1 4 0 3.1 0 2Z" />
+                </svg>
+                Get GPS
+            `;
+        }
+        
+        let errorMsg = 'Failed to get GPS location.';
+        if (err.code === 1) {
+            errorMsg = 'Location access denied. Please enable location services in your browser settings.';
+        } else if (err.code === 2) {
+            errorMsg = 'Location unavailable. Please check your GPS settings.';
+        } else if (err.code === 3) {
+            errorMsg = 'Location request timed out. Please try again.';
+        }
+        
+        // Show user-friendly error
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--error, #d32f2f); color: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.2); z-index: 10000; max-width: 300px;';
+        errorDiv.textContent = errorMsg;
+        document.body.appendChild(errorDiv);
+        setTimeout(() => errorDiv.remove(), 5000);
+        
+        // Update GPS icon if it exists
+        const gpsIcon = document.getElementById('GPSIcon');
+        if (gpsIcon) {
+            gpsIcon.setAttribute('fill', 'var(--error, #d32f2f)');
         }
     }, {
         enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0
+        timeout: 10000,
+        maximumAge: 60000 // Cache for 1 minute
     });
 }
