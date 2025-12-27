@@ -216,7 +216,7 @@ class MessageDecoder {
         feedView.set(audioData.subarray(0, copyLength));
 
         // Feed to decoder
-        this.module._digestFeedOptimized();
+        this.module._digestFeed();
     }
 
     /**
@@ -315,9 +315,38 @@ export class RibbitWASM {
      */
     static async load() {
         try {
-            // Check if Module is already available (loaded by main page)
+            // Check if Module is already available (loaded by main page script tag)
             if (typeof Module !== 'undefined') {
-                const instance = new RibbitWASM(Module);
+                let moduleInstance;
+
+                // Handle different Emscripten output formats
+                if (typeof Module === 'function') {
+                    // MODULARIZE=1: Module is a factory function that returns a Promise
+                    moduleInstance = await Module();
+                } else if (Module.ready && typeof Module.ready.then === 'function') {
+                    // Module.ready is a Promise
+                    moduleInstance = await Module.ready;
+                } else if (Module.calledRun) {
+                    // Module is already initialized
+                    moduleInstance = Module;
+                } else {
+                    // Wait for module to initialize
+                    await new Promise((resolve, reject) => {
+                        const checkReady = () => {
+                            if (Module.ready && typeof Module.ready.then === 'function') {
+                                Module.ready.then(() => resolve()).catch(reject);
+                            } else if (Module.calledRun) {
+                                resolve();
+                            } else {
+                                setTimeout(checkReady, 10);
+                            }
+                        };
+                        checkReady();
+                    });
+                    moduleInstance = Module;
+                }
+
+                const instance = new RibbitWASM(moduleInstance);
                 await instance._initialize();
                 return instance;
             }
@@ -476,9 +505,10 @@ export class RibbitWASM {
             return { used: 0, total: 0, percentage: 0 };
         }
 
-        // This is a simplified memory check - in a real implementation
-        // you'd want more sophisticated memory tracking
-        const used = this._memoryRefs.size * 256; // Rough estimate
+        // Track allocated buffers from our encoder/decoder instances
+        const encoderBuffers = this.encoder ? this.encoder._allocatedBuffers.size : 0;
+        const decoderBuffers = this.decoder ? this.decoder._allocatedBuffers.size : 0;
+        const used = (encoderBuffers + decoderBuffers) * 256; // Rough estimate per buffer
         const total = this.module.HEAPU8.length;
         const percentage = total > 0 ? (used / total) * 100 : 0;
 

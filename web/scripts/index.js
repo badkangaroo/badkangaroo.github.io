@@ -175,6 +175,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
             this.listen = true;
             this.tx_context = null;
             this.savewavfile = false;
+            this.initializationError = null;
             this.init();
         }
 
@@ -206,6 +207,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
 
             } catch (error) {
                 console.error('Failed to initialize Ribbit App:', error);
+                this.initializationError = error.message;
                 this.showError('Failed to initialize: ' + error.message);
             }
         }

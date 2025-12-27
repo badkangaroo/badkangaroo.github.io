@@ -20,6 +20,30 @@
     <link rel="stylesheet" href="./styles/settings.css">
     <link rel="stylesheet" href="./styles/chat.css">
     <script src="./scripts/ribbit.js"></script>
+    <script>
+        // Console log capture for testing (only in development)
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            window.testConsoleLogs = [];
+            const originalLog = console.log;
+            const originalError = console.error;
+            const originalWarn = console.warn;
+
+            console.log = function(...args) {
+                window.testConsoleLogs.push({ level: 'log', message: args.join(' '), timestamp: Date.now() });
+                originalLog.apply(console, args);
+            };
+
+            console.error = function(...args) {
+                window.testConsoleLogs.push({ level: 'error', message: args.join(' '), timestamp: Date.now() });
+                originalError.apply(console, args);
+            };
+
+            console.warn = function(...args) {
+                window.testConsoleLogs.push({ level: 'warn', message: args.join(' '), timestamp: Date.now() });
+                originalWarn.apply(console, args);
+            };
+        }
+    </script>
     <script src="./scripts/index.js"></script>
     <script src="./scripts/gps.js"></script>
     <script src="./scripts/settings.js"></script>

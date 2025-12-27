@@ -20,7 +20,7 @@ test.describe('Ribbit WASM API', () => {
     await page.goto('/test_wasm_api.html');
 
     // Click the load test button
-    await page.click('#load-test-result + button');
+    await page.click('button:has-text("Run Load Test")');
 
     // Wait for test to complete
     await page.waitForSelector('#load-test-result.success', { timeout: 10000 });
@@ -34,14 +34,14 @@ test.describe('Ribbit WASM API', () => {
     await page.goto('/test_wasm_api.html');
 
     // Wait for WASM to load
-    await page.click('#load-test-result + button');
+    await page.click('button:has-text("Run Load Test")');
     await page.waitForSelector('#load-test-result.success');
 
     // Set test message
     await page.fill('#test-message', 'E2E test message');
 
     // Click encode test
-    await page.click('#encode-test-result + button');
+    await page.click('button:has-text("Run Encode Test")');
 
     // Wait for encoding to complete
     await page.waitForSelector('#encode-test-result.success', { timeout: 10000 });
@@ -57,11 +57,11 @@ test.describe('Ribbit WASM API', () => {
     await page.goto('/test_wasm_api.html');
 
     // Wait for WASM to load
-    await page.click('#load-test-result + button');
+    await page.click('button:has-text("Run Load Test")');
     await page.waitForSelector('#load-test-result.success');
 
     // Click round-trip test
-    await page.click('#roundtrip-test-result + button');
+    await page.click('button:has-text("Run Round-trip Test")');
 
     // Wait for test to complete
     await page.waitForSelector('#roundtrip-test-result.success', { timeout: 15000 });
@@ -76,11 +76,11 @@ test.describe('Ribbit WASM API', () => {
     await page.goto('/test_wasm_api.html');
 
     // Wait for WASM to load
-    await page.click('#load-test-result + button');
+    await page.click('button:has-text("Run Load Test")');
     await page.waitForSelector('#load-test-result.success');
 
     // Click memory test
-    await page.click('#memory-test-result + button');
+    await page.click('button:has-text("Run Memory Test")');
 
     // Wait for test to complete
     await page.waitForSelector('#memory-test-result.success', { timeout: 20000 });
