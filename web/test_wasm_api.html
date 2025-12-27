@@ -25,6 +25,17 @@
             margin: 5px;
             cursor: pointer;
         }
+        input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
         pre {
             background: #f4f4f4;
             padding: 10px;
@@ -47,7 +58,14 @@
 
     <div class="test-section">
         <h3>Test 2: Encode Message</h3>
-        <input type="text" id="test-message" value="Hello WASM API!" placeholder="Enter test message">
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
+            <input type="text" id="test-message" value="Hello WASM API!" placeholder="Enter test message">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="text" id="test-callsign" value="TESTCALL" placeholder="Callsign" style="flex: 1; min-width: 120px;">
+                <input type="text" id="test-name" value="" placeholder="Name (optional)" style="flex: 1; min-width: 120px;">
+                <input type="text" id="test-gridsquare" value="AA00aa" placeholder="Gridsquare" style="flex: 1; min-width: 120px;">
+            </div>
+        </div>
         <button onclick="runEncodeTest()">Run Encode Test</button>
         <div id="encode-test-result"></div>
     </div>
@@ -121,19 +139,36 @@
             }
 
             const message = document.getElementById('test-message').value;
+            const callsign = document.getElementById('test-callsign').value || 'NOCALL';
+            const name = document.getElementById('test-name').value || '';
+            const gridsquare = document.getElementById('test-gridsquare').value || 'AA00aa';
+
+            if (!callsign || callsign.trim() === '') {
+                updateTestResult('encode-test-result', '✗ Callsign is required', 'error');
+                return;
+            }
+
+            if (!gridsquare || gridsquare.trim() === '') {
+                updateTestResult('encode-test-result', '✗ Gridsquare is required', 'error');
+                return;
+            }
 
             try {
-                console.log('Encoding message:', message);
+                console.log('Encoding message:', message, 'with callsign:', callsign, 'gridsquare:', gridsquare);
                 const startTime = performance.now();
                 const audioBuffer = await ribbit.encodeMessage(message, {
-                    callsign: 'TESTCALL',
-                    gridsquare: 'AA00aa'
+                    callsign: callsign.trim(),
+                    gridsquare: gridsquare.trim(),
+                    name: name.trim()
                 });
                 const endTime = performance.now();
 
                 updateTestResult('encode-test-result',
                     `✓ Message encoded successfully\n` +
-                    `Original: "${message}"\n` +
+                    `Message: "${message}"\n` +
+                    `Callsign: ${callsign}\n` +
+                    `Name: ${name || '(none)'}\n` +
+                    `Gridsquare: ${gridsquare}\n` +
                     `Audio length: ${audioBuffer.length} samples\n` +
                     `Encoding time: ${(endTime - startTime).toFixed(2)}ms`,
                     'success');
@@ -151,22 +186,39 @@
                 return;
             }
 
-            const testMessage = "Round-trip test message!";
+            const message = document.getElementById('test-message').value || "Round-trip test message!";
+            const callsign = document.getElementById('test-callsign').value || 'NOCALL';
+            const name = document.getElementById('test-name').value || '';
+            const gridsquare = document.getElementById('test-gridsquare').value || 'AA00aa';
+
+            if (!callsign || callsign.trim() === '') {
+                updateTestResult('roundtrip-test-result', '✗ Callsign is required', 'error');
+                return;
+            }
+
+            if (!gridsquare || gridsquare.trim() === '') {
+                updateTestResult('roundtrip-test-result', '✗ Gridsquare is required', 'error');
+                return;
+            }
 
             try {
                 console.log('Starting round-trip test...');
 
                 // Encode
-                const audioBuffer = await ribbit.encodeMessage(testMessage, {
-                    callsign: 'ROUNDTEST',
-                    gridsquare: 'BB11bb'
+                const audioBuffer = await ribbit.encodeMessage(message, {
+                    callsign: callsign.trim(),
+                    gridsquare: gridsquare.trim(),
+                    name: name.trim()
                 });
 
                 // For a real round-trip test, we'd need to simulate the decoding
                 // process. For now, we'll just verify encoding works
                 updateTestResult('roundtrip-test-result',
                     `✓ Round-trip test setup complete\n` +
-                    `Encoded: "${testMessage}"\n` +
+                    `Message: "${message}"\n` +
+                    `Callsign: ${callsign}\n` +
+                    `Name: ${name || '(none)'}\n` +
+                    `Gridsquare: ${gridsquare}\n` +
                     `Audio buffer created: ${audioBuffer.length} samples\n` +
                     `Note: Full decode test requires audio playback/simulation`,
                     'success');
@@ -184,14 +236,29 @@
                 return;
             }
 
+            const callsign = document.getElementById('test-callsign').value || 'NOCALL';
+            const name = document.getElementById('test-name').value || '';
+            const gridsquare = document.getElementById('test-gridsquare').value || 'AA00aa';
+
+            if (!callsign || callsign.trim() === '') {
+                updateTestResult('memory-test-result', '✗ Callsign is required', 'error');
+                return;
+            }
+
+            if (!gridsquare || gridsquare.trim() === '') {
+                updateTestResult('memory-test-result', '✗ Gridsquare is required', 'error');
+                return;
+            }
+
             try {
                 const initialMemory = ribbit.getMemoryUsage();
 
                 // Perform several encoding operations
                 for (let i = 0; i < 5; i++) {
                     await ribbit.encodeMessage(`Memory test message ${i}`, {
-                        callsign: 'MEMTEST',
-                        gridsquare: 'CC22cc'
+                        callsign: callsign.trim(),
+                        gridsquare: gridsquare.trim(),
+                        name: name.trim()
                     });
                 }
 
@@ -199,6 +266,9 @@
 
                 updateTestResult('memory-test-result',
                     `✓ Memory test completed\n` +
+                    `Callsign: ${callsign}\n` +
+                    `Name: ${name || '(none)'}\n` +
+                    `Gridsquare: ${gridsquare}\n` +
                     `Initial memory: ${JSON.stringify(initialMemory)}\n` +
                     `Final memory: ${JSON.stringify(finalMemory)}\n` +
                     `Memory management appears to be working`,

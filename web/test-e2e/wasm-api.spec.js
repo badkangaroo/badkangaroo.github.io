@@ -4,6 +4,10 @@
 
 import { test, expect } from '@playwright/test';
 
+// Shared state to track WASM initialization status
+let wasmInitialized = false;
+let wasmInitError = null;
+
 test.describe('Ribbit WASM API', () => {
   test('should load WASM API test page', async ({ page }) => {
     await page.goto('/test_wasm_api.html');
@@ -17,17 +21,55 @@ test.describe('Ribbit WASM API', () => {
   });
 
   test('should initialize WASM module in test page', async ({ page }) => {
-    await page.goto('/test_wasm_api.html');
+    try {
+      await page.goto('/test_wasm_api.html');
 
-    // Click the load test button
-    await page.click('button:has-text("Run Load Test")');
+      // Wait for WASM to initialize (check status element)
+      await page.waitForFunction(() => {
+        const status = document.getElementById('status');
+        if (!status) return false;
+        const text = status.textContent || '';
+        return text.includes('Ready') || text.includes('Failed');
+      }, { timeout: 30000 });
 
-    // Wait for test to complete
-    await page.waitForSelector('#load-test-result.success', { timeout: 10000 });
+      // Check if initialization succeeded
+      const statusText = await page.locator('#status').textContent();
+      if (statusText && statusText.includes('Failed')) {
+        throw new Error(`WASM initialization failed: ${statusText}`);
+      }
 
-    // Check that test passed
-    const resultText = await page.locator('#load-test-result pre').textContent();
-    expect(resultText).toContain('✓ WASM loaded successfully');
+      // Click the load test button
+      await page.click('button:has-text("Run Load Test")');
+
+      // Wait for test to complete
+      await page.waitForSelector('#load-test-result.success', { timeout: 10000 });
+
+      // Check that test passed
+      const resultText = await page.locator('#load-test-result pre').textContent();
+      expect(resultText).toContain('✓ WASM loaded successfully');
+
+      // Mark WASM as initialized on success
+      wasmInitialized = true;
+      wasmInitError = null;
+    } catch (error) {
+      // Mark WASM initialization as failed
+      wasmInitialized = false;
+      wasmInitError = error.message;
+      throw error; // Re-throw to fail the test
+    }
+  });
+
+  // Skip all subsequent tests if WASM initialization failed
+  test.beforeEach(async ({ page }, testInfo) => {
+    // Allow the WASM initialization test to run
+    if (testInfo.title === 'should initialize WASM module in test page') {
+      return;
+    }
+
+    // Skip all other tests if WASM failed to initialize
+    if (wasmInitError !== null && !wasmInitialized) {
+      test.skip(true, `Skipping test because WASM initialization failed: ${wasmInitError}`);
+    }
   });
 
   test('should encode messages', async ({ page }) => {

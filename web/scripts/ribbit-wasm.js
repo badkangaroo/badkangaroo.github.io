@@ -40,16 +40,47 @@ class MessageEncoder {
             ...options
         };
 
+        // Ensure callsign and gridsquare are not empty (defensive check)
+        let callsign = opts.callsign;
+        if (typeof callsign === 'string') {
+            callsign = callsign.trim();
+        }
+        if (!callsign || callsign === '') {
+            callsign = 'NOCALL';
+        }
+
+        let gridsquare = opts.gridsquare;
+        if (typeof gridsquare === 'string') {
+            gridsquare = gridsquare.trim();
+        }
+        if (!gridsquare || gridsquare === '') {
+            gridsquare = 'AA00aa';
+        }
+
+        // Parse name into firstName and lastName if provided
+        let firstName = '';
+        let lastName = '';
+        if (opts.name && typeof opts.name === 'string') {
+            const nameParts = opts.name.trim().split(/\s+/);
+            firstName = nameParts[0] || '';
+            lastName = nameParts.slice(1).join(' ') || '';
+        }
+
         // Use MessageCodec to create the packed message
-        const packedMessage = this.codec.EncodeMessage(text, {
-            callsign: opts.callsign,
-            gridsquare: opts.gridsquare,
-            name: opts.name,
+        // EncodeMessage expects a single object with message, callsign, gridsquare, etc.
+        const messageData = {
+            message: text,
+            callsign: callsign,
+            gridsquare: gridsquare,
+            firstName: firstName,
+            lastName: lastName,
             emergency: opts.emergency,
             ntp: opts.ntp,
             gps: opts.gps,
             messageType: opts.messageType
-        });
+        };
+
+        const packedMessage = this.codec.EncodeMessage(messageData);
 
         // Convert to bytes and allocate in WASM memory
         const messageBytes = this._stringToBytes(packedMessage);
@@ -315,6 +346,19 @@ export class RibbitWASM {
      */
     static async load() {
         try {
+            // Set up required callback functions that the WASM module expects
+            // These must be defined before the module initializes
+            if (typeof window !== 'undefined') {
+                window.encoderCreated = window.encoderCreated || (() => {});
+                window.decoderCreated = window.decoderCreated || (() => {});
+                window.encoderDestroyed = window.encoderDestroyed || (() => {});
+                window.decoderDestroyed = window.decoderDestroyed || (() => {});
+                window.readEncoded = window.readEncoded || (() => {});
+                window.fetchDecoded = window.fetchDecoded || (() => {});
+                window.encoderCreatedError = window.encoderCreatedError || (() => {});
+                window.encoderReadError = window.encoderReadError || (() => {});
+            }
+
             // Check if Module is already available (loaded by main page script tag)
             if (typeof Module !== 'undefined') {
                 let moduleInstance;
@@ -352,23 +396,85 @@ export class RibbitWASM {
             }
 
             // Otherwise, load the WASM module dynamically
-            const module = await new Promise((resolve, reject) => {
+            console.log('Loading Ribbit WASM module dynamically...');
+
+            await new Promise((resolve, reject) => {
                 // Create a script element to load the WASM module
                 const script = document.createElement('script');
                 script.src = './scripts/ribbit.js';
+                const timeout = setTimeout(() => {
+                    reject(new Error('Timeout waiting for ribbit.js to load'));
+                }, 30000); // 30 second timeout
                 script.onload = () => {
-                    // Wait for Module to be ready
-                    if (typeof Module !== 'undefined') {
-                        Module.ready.then(resolve).catch(reject);
-                    } else {
-                        reject(new Error('Module not available after script load'));
-                    }
+                    clearTimeout(timeout);
+                    console.log('ribbit.js script loaded, waiting for Module...');
+                    // Give the script a moment to set up Module
+                    setTimeout(() => {
+                        if (typeof Module === 'undefined') {
+                            reject(new Error('Module not available after script load'));
+                        } else {
+                            resolve();
+                        }
+                    }, 100);
                 };
-                script.onerror = () => reject(new Error('Failed to load ribbit.js'));
+                script.onerror = () => {
+                    clearTimeout(timeout);
+                    reject(new Error('Failed to load ribbit.js'));
+                };
                 document.head.appendChild(script);
             });
 
-            const instance = new RibbitWASM(module);
+            // Now wait for the Module to be available and ready
+            if (typeof Module === 'undefined') {
+                throw new Error('Module not available after script load');
+            }
+
+            console.log('Module type:', typeof Module);
+            let moduleInstance;
+            if (typeof Module === 'function') {
+                console.log('Calling Module() function...');
+                // Set locateFile to ensure WASM file is found correctly
+                const moduleOptions = {
+                    locateFile: (path) => {
+                        if (path === 'ribbit.wasm') {
+                            return './scripts/ribbit.wasm';
+                        }
+                        return path;
+                    }
+                };
+                moduleInstance = await Promise.race([
+                    Module(moduleOptions),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout waiting for Module() to resolve')), 30000))
+                ]);
+                console.log('Module() resolved successfully');
+            } else if (Module.ready && typeof Module.ready.then === 'function') {
+                console.log('Waiting for Module.ready...');
+                moduleInstance = await Promise.race([
+                    Module.ready,
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout waiting for Module.ready')), 30000))
+                ]);
+                console.log('Module.ready resolved successfully');
+            } else {
+                // Wait for module to be ready
+                console.log('Waiting for Module.calledRun...');
+                await Promise.race([
+                    new Promise((resolve) => {
+                        const checkReady = () => {
+                            if (Module.calledRun) {
+                                resolve();
+                            } else {
+                                setTimeout(checkReady, 10);
+                            }
+                        };
+                        checkReady();
+                    }),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout waiting for Module.calledRun')), 30000))
+                ]);
+                moduleInstance = Module;
+                console.log('Module.calledRun is true');
+            }
+
+            const instance = new RibbitWASM(moduleInstance);
             await instance._initialize();
             return instance;
         } catch (error) {
@@ -397,6 +503,19 @@ export class RibbitWASM {
         if (this._isInitialized) return;
 
         try {
+            // Set up required callback functions that the WASM module expects
+            // These are called from the WASM code via ASM_CONSTS
+            if (typeof window !== 'undefined') {
+                window.encoderCreated = window.encoderCreated || (() => {});
+                window.decoderCreated = window.decoderCreated || (() => {});
+                window.encoderDestroyed = window.encoderDestroyed || (() => {});
+                window.decoderDestroyed = window.decoderDestroyed || (() => {});
+                window.readEncoded = window.readEncoded || (() => {});
+                window.fetchDecoded = window.fetchDecoded || (() => {});
+                window.encoderCreatedError = window.encoderCreatedError || (() => {});
+                window.encoderReadError = window.encoderReadError || (() => {});
+            }
+
             // Create encoder and decoder instances
             this.module._createEncoder();
             this.module._createDecoder();

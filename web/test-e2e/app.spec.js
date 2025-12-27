@@ -4,6 +4,10 @@
 
 import { test, expect } from '@playwright/test';
 
+// Shared state to track WASM initialization status
+let wasmInitialized = false;
+let wasmInitError = null;
+
 test.describe('Ribbit Web App', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the app
@@ -13,12 +17,13 @@ test.describe('Ribbit Web App', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  // Critical test - if this fails, all other tests will likely fail too
+  // Critical test - if this fails, all other tests will be skipped
   test('should load WASM module successfully', async ({ page }) => {
-    // Wait for Module to be available (loaded by ribbit.js script tag)
-    await page.waitForFunction(() => {
-      return typeof window.Module !== 'undefined';
-    }, { timeout: 10000 });
+    try {
+      // Wait for Module to be available (loaded by ribbit.js script tag)
+      await page.waitForFunction(() => {
+        return typeof window.Module !== 'undefined';
+      }, { timeout: 10000 });
 
     // Wait for Module to be ready (Promise resolution)
     await page.waitForFunction(async () => {
@@ -114,6 +119,30 @@ test.describe('Ribbit Web App', () => {
       }
       expect(moduleInfo.hasCreateEncoder).toBe(true);
       expect(moduleInfo.hasCreateDecoder).toBe(true);
+    }
+
+    // Mark WASM as initialized on success
+    wasmInitialized = true;
+    wasmInitError = null;
+    } catch (error) {
+      // Mark WASM initialization as failed
+      wasmInitialized = false;
+      wasmInitError = error.message;
+      throw error; // Re-throw to fail the test
+    }
+  });
+
+  // Skip all subsequent tests if WASM initialization failed
+  test.beforeEach(async ({ page }, testInfo) => {
+    // Allow the WASM load test to run without skipping
+    if (testInfo.title === 'should load WASM module successfully') {
+      return;
+    }
+
+    // Skip all other tests if WASM failed to initialize
+    // Note: This check happens after the WASM test has run (or failed)
+    if (wasmInitError !== null && !wasmInitialized) {
+      test.skip(true, `Skipping test because WASM initialization failed: ${wasmInitError}`);
     }
   });
 
