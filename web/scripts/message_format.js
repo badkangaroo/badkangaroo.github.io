@@ -10,9 +10,9 @@ class RibbitMessageFormat {
         if (!wasmModule) {
             throw new Error('WASM module is required');
         }
-        
+
         this.Module = wasmModule;
-        
+
         // Allocate persistent buffers
         this.inputBuffer = this.Module._malloc(512);
         this.outputBuffer = this.Module._malloc(512);
@@ -24,10 +24,10 @@ class RibbitMessageFormat {
         this.timestampBuffer = this.Module._malloc(4);
         this.flagsBuffer = this.Module._malloc(1);
         this.messageLenBuffer = this.Module._malloc(2);
-        
+
         console.log('RibbitMessageFormat initialized');
     }
-    
+
     /**
      * Encode a message based on type
      * @param {number} messageType - 1 for chat, 2 for contest
@@ -42,19 +42,19 @@ class RibbitMessageFormat {
         }
         throw new Error(`Unsupported message type: ${messageType}`);
     }
-    
+
     /**
      * Encode chat mode message (current format)
      * Format: "Name|Callsign|Gridsquare|Phone&=Message"
      */
     encodeChatMode(data) {
-        const { name, callsign, gridsquare, phone, message } = data;
-        const str = `${name}|${callsign}|${gridsquare}|${phone}&=${message}`;
-        
+        const { name, callsign, gridsquare, message } = data;
+        const str = `${name}|${callsign}|${gridsquare}&=${message}`;
+
         const encoder = new TextEncoder();
         return encoder.encode(str);
     }
-    
+
     /**
      * Encode contest mode message (bitwise-packed)
      * New order: Callsign → Timestamp → Emergency → Gridsquare → NTP → GPS
@@ -72,24 +72,24 @@ class RibbitMessageFormat {
             lastName = '',
             message = ''
         } = data;
-        
+
         // Write strings to WASM memory
         this.Module.stringToUTF8(callsign, this.callsignBuffer, 9);
         this.Module.stringToUTF8(gridsquare, this.gridsquareBuffer, 7);
         this.Module.stringToUTF8(firstName, this.firstNameBuffer, 16);
         this.Module.stringToUTF8(lastName, this.lastNameBuffer, 16);
-        
+
         // Prepare message bytes
         const messageEncoder = new TextEncoder();
         const messageBytes = messageEncoder.encode(message);
         this.Module.HEAPU8.set(messageBytes, this.inputBuffer);
-        
+
         // Pack flags (3 bits: emergency|ntp|gps)
         // Note: C++ code now handles emergency separately as part of Message ID
-        const flags = (emergency ? 0x04 : 0) | 
-                     (ntp ? 0x02 : 0) | 
-                     (gps ? 0x01 : 0);
-        
+        const flags = (emergency ? 0x04 : 0) |
+            (ntp ? 0x02 : 0) |
+            (gps ? 0x01 : 0);
+
         // Call C++ packer
         const packedSize = this.Module._pack_contest_message(
             this.callsignBuffer,
@@ -103,23 +103,23 @@ class RibbitMessageFormat {
             this.outputBuffer,
             512
         );
-        
+
         if (packedSize < 0) {
             throw new Error(`Failed to pack contest message: error code ${packedSize}`);
         }
-        
+
         console.log(`Contest message packed: ${packedSize} bytes`);
-        
+
         // Copy packed bytes to JavaScript array
         const packed = new Uint8Array(packedSize);
         packed.set(this.Module.HEAPU8.subarray(
             this.outputBuffer,
             this.outputBuffer + packedSize
         ));
-        
+
         return packed;
     }
-    
+
     /**
      * Decode a message (auto-detects type)
      * @param {Uint8Array} bytes - Encoded message bytes
@@ -129,16 +129,16 @@ class RibbitMessageFormat {
         if (!bytes || bytes.length < 1) {
             throw new Error('Empty message');
         }
-        
+
         // Try to detect message type from first 2 bits
         const firstByte = bytes[0];
         const messageType = firstByte & 0x03;
-        
+
         // If it looks like contest mode (type 2)
         if (messageType === 2) {
             return this.decodeContestMode(bytes);
         }
-        
+
         // Otherwise try chat mode
         try {
             return this.decodeChatMode(bytes);
@@ -147,43 +147,42 @@ class RibbitMessageFormat {
             throw new Error('Unable to decode message');
         }
     }
-    
+
     /**
      * Decode chat mode message
      */
     decodeChatMode(bytes) {
         const decoder = new TextDecoder();
         const str = decoder.decode(bytes);
-        
-        // Parse format: "Name|Callsign|Gridsquare|Phone&=Message"
+
+        // Parse format: "Name|Callsign|Gridsquare&=Message"
         const parts = str.split('&=');
         if (parts.length !== 2) {
             throw new Error('Invalid chat message format');
         }
-        
+
         const header = parts[0].split('|');
-        if (header.length !== 4) {
+        if (header.length !== 3) {
             throw new Error('Invalid chat message header');
         }
-        
+
         return {
             type: 1,
             mode: 'chat',
             name: header[0],
             callsign: header[1],
             gridsquare: header[2],
-            phone: header[3],
             message: parts[1]
         };
     }
-    
+
     /**
      * Decode contest mode message
      */
     decodeContestMode(bytes) {
         // Copy to WASM memory
         this.Module.HEAPU8.set(bytes, this.inputBuffer);
-        
+
         // Call C++ unpacker
         const result = this.Module._unpack_contest_message(
             this.inputBuffer,
@@ -197,15 +196,15 @@ class RibbitMessageFormat {
             this.messageBuffer,
             this.messageLenBuffer
         );
-        
+
         if (result < 0) {
             throw new Error(`Failed to unpack contest message: error code ${result}`);
         }
-        
+
         // Read unpacked data
         const flags = this.Module.HEAPU8[this.flagsBuffer];
         const timestamp = this.Module.HEAPU32[this.timestampBuffer >> 2];
-        
+
         const decoded = {
             type: 2,
             mode: 'contest',
@@ -220,19 +219,19 @@ class RibbitMessageFormat {
             lastName: this.Module.UTF8ToString(this.lastNameBuffer),
             message: this.Module.UTF8ToString(this.messageBuffer)
         };
-        
+
         console.log('Contest message decoded:', decoded);
-        
+
         return decoded;
     }
-    
+
     /**
      * Get efficiency comparison between modes
      */
     compareEfficiency(data) {
         const chatEncoded = this.encodeChatMode(data);
         const contestEncoded = this.encodeContestMode(data);
-        
+
         return {
             chatSize: chatEncoded.length,
             contestSize: contestEncoded.length,
@@ -240,7 +239,7 @@ class RibbitMessageFormat {
             savingsPercent: ((chatEncoded.length - contestEncoded.length) / chatEncoded.length * 100).toFixed(1)
         };
     }
-    
+
     /**
      * Clean up allocated buffers
      */
@@ -255,7 +254,7 @@ class RibbitMessageFormat {
         if (this.timestampBuffer) this.Module._free(this.timestampBuffer);
         if (this.flagsBuffer) this.Module._free(this.flagsBuffer);
         if (this.messageLenBuffer) this.Module._free(this.messageLenBuffer);
-        
+
         console.log('RibbitMessageFormat cleaned up');
     }
 }

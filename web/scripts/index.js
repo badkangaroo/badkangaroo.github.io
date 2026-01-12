@@ -193,6 +193,61 @@ document.addEventListener("DOMContentLoaded", (e) => {
         }
     };
     console.log("request:", request);
+    
+    // Set up message display handler
+    document.addEventListener("receivemessage", (e) => {
+        const { detail } = e;
+        const chat = document.getElementById("chat");
+        if (!chat) return;
+
+        const messageDiv = document.createElement("div");
+        messageDiv.className = "message";
+        
+        if (detail.type === "decode-error") {
+            // Special styling for decode errors
+            messageDiv.classList.add("decode-error");
+            messageDiv.innerHTML = `
+                <div class="sender">
+                    <span class="name" style="background: var(--warning, #ff9800);">⚠️ Decode Error</span>
+                    <span class="time">${new Date(detail.timestamp).toLocaleTimeString()}</span>
+                </div>
+                <p style="background: rgba(255, 152, 0, 0.1); border-color: var(--warning, #ff9800);">
+                    ${detail.message}
+                </p>
+            `;
+        } else if (detail.type === "alert") {
+            // Alert messages
+            messageDiv.classList.add("alert");
+            messageDiv.innerHTML = `
+                <div class="sender">
+                    <span class="name" style="background: var(--error, #d32f2f);">Alert</span>
+                    <span class="time">${new Date(detail.timestamp || Date.now()).toLocaleTimeString()}</span>
+                </div>
+                <p style="background: rgba(211, 47, 47, 0.1); border-color: var(--error, #d32f2f);">
+                    ${detail.message}
+                </p>
+            `;
+        } else if (detail.type === "text") {
+            // Regular text messages
+            const isTx = detail.sender && detail.sender.includes(window.localStorage?.getItem("callsign") || "");
+            if (isTx) {
+                messageDiv.classList.add("tx");
+            }
+            
+            const senderParts = detail.sender ? detail.sender.split("|") : ["Unknown", "", ""];
+            messageDiv.innerHTML = `
+                <div class="sender">
+                    <span class="name">${senderParts[0] || "Unknown"} ${senderParts[1] ? `[${senderParts[1]}]` : ""} ${senderParts[2] ? `@${senderParts[2]}` : ""}</span>
+                    <span class="time">${new Date(detail.timestamp || Date.now()).toLocaleTimeString()}</span>
+                </div>
+                <p>${detail.message || ""}</p>
+            `;
+        }
+
+        chat.appendChild(messageDiv);
+        chat.scrollTop = chat.scrollHeight;
+    });
+    
     // Initialize the Ribbit App with the new friendly WASM API
     class RibbitApp {
         constructor() {
@@ -204,12 +259,32 @@ document.addEventListener("DOMContentLoaded", (e) => {
             this.tx_context = null;
             this.savewavfile = false;
             this.initializationError = null;
+            // Track decode errors to prevent spam
+            this.decodeErrorHashes = new Set();
+            this.decodeErrorTimes = new Map(); // Map of hash -> timestamp
+            this.DECODE_ERROR_DEBOUNCE_MS = 5000; // Don't show same decode error within 5 seconds
             this.init();
         }
 
         async init() {
             try {
                 console.log('Initializing Ribbit App...');
+
+                // Set up WASM callbacks BEFORE loading
+                // The WASM module calls fetchDecoded when it detects a decoded message
+                // Store reference to 'this' for use in callback
+                const appInstance = this;
+                window.fetchDecoded = (payloadPtr) => {
+                    // Don't process decode errors until app is fully initialized and listening
+                    if (!appInstance.isInitialized || !appInstance.listen || !appInstance.ribbit) {
+                        return;
+                    }
+                    
+                    // Process the decoded message asynchronously
+                    appInstance.handleWasmDecodedMessage(payloadPtr).catch(error => {
+                        console.warn('Error handling WASM decoded message:', error);
+                    });
+                };
 
                 // Load WASM with one line - this is the magic!
                 this.ribbit = await RibbitWASM.load();
@@ -470,6 +545,137 @@ document.addEventListener("DOMContentLoaded", (e) => {
             URL.revokeObjectURL(url);
         }
 
+        async handleWasmDecodedMessage(payloadPtr) {
+            // This is called by the WASM module when it detects a decoded message via fetchDecoded callback
+            // Don't process if app isn't initialized or not listening
+            if (!this.isInitialized || !this.ribbit || !this.listen) {
+                return;
+            }
+
+            try {
+                // Get payload from WASM memory
+                const payloadLength = this.ribbit.module._payload_length();
+                if (payloadLength === 0) {
+                    return;
+                }
+
+                // Copy payload data
+                const payloadView = new Uint8Array(
+                    this.ribbit.module.HEAPU8.buffer,
+                    payloadPtr || this.ribbit.module._payload_pointer(),
+                    payloadLength
+                );
+                const payloadBytes = new Uint8Array(payloadView);
+                
+                // Ignore empty or all-zero payloads (likely initialization artifacts)
+                const hasNonZero = payloadBytes.some(byte => byte !== 0);
+                if (!hasNonZero) {
+                    return;
+                }
+
+                // Decode using MessageCodec
+                const decoded = this.ribbit.codec.DecodeMessage(payloadBytes);
+
+                if (decoded) {
+                    // Use the same validation logic as setupRealTimeDecoding
+                    const isValidDecodedMessage = (decoded) => {
+                        if (!decoded) return false;
+                        if (typeof decoded.callsign !== 'string' || typeof decoded.message !== 'string') {
+                            return false;
+                        }
+                        const hasNullBytes = (str) => str && str.includes('\u0000');
+                        if (hasNullBytes(decoded.callsign) || hasNullBytes(decoded.message)) {
+                            return false;
+                        }
+                        if (!decoded.callsign || decoded.callsign.trim().length === 0 || decoded.callsign.length > 20) {
+                            return false;
+                        }
+                        const callsignRegex = /^[A-Z0-9/]+$/i;
+                        if (!callsignRegex.test(decoded.callsign.trim())) {
+                            return false;
+                        }
+                        if (!decoded.message || decoded.message.trim().length === 0 || decoded.message.length > 1000) {
+                            return false;
+                        }
+                        const nonPrintableRegex = /[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F-\x9F\uFFFD]/g;
+                        const nonPrintableCount = (decoded.message.match(nonPrintableRegex) || []).length;
+                        if (nonPrintableCount > decoded.message.length * 0.1) {
+                            return false;
+                        }
+                        if (decoded.message.includes('\uFFFD') || decoded.callsign.includes('\uFFFD')) {
+                            return false;
+                        }
+                        return true;
+                    };
+
+                    if (!isValidDecodedMessage(decoded)) {
+                        // Create hash from payload to identify duplicate decode errors
+                        // Use more of the payload for better uniqueness (first 64 bytes)
+                        const payloadHash = Array.from(payloadBytes.slice(0, Math.min(64, payloadBytes.length)))
+                            .map(b => b.toString(16).padStart(2, '0'))
+                            .join('');
+                        
+                        const now = Date.now();
+                        const lastErrorTime = this.decodeErrorTimes.get(payloadHash) || 0;
+                        
+                        // Only show decode error if we haven't seen this exact payload recently
+                        if (now - lastErrorTime > this.DECODE_ERROR_DEBOUNCE_MS) {
+                            // Update tracking
+                            this.decodeErrorTimes.set(payloadHash, now);
+                            
+                            // Clean up old entries (keep only last 100)
+                            if (this.decodeErrorTimes.size > 100) {
+                                const oldestHash = Array.from(this.decodeErrorTimes.entries())
+                                    .sort((a, b) => a[1] - b[1])[0][0];
+                                this.decodeErrorTimes.delete(oldestHash);
+                            }
+                            
+                            // Only show decode error if we're actually listening (not during initialization)
+                            if (this.listen && this.isInitialized) {
+                                // Show decode error in UI
+                                const failedDecodeEvent = new CustomEvent("receivemessage", {
+                                    detail: {
+                                        save: false,
+                                        type: "decode-error",
+                                        message: "Message received but could not be decoded",
+                                        timestamp: new Date().toISOString(),
+                                    },
+                                });
+                                document.dispatchEvent(failedDecodeEvent);
+                            }
+                        }
+                        return;
+                    }
+
+                    // Valid message - process it
+                    const decodedResult = {
+                        text: decoded.message,
+                        callsign: decoded.callsign,
+                        gridsquare: decoded.gridsquare,
+                        name: decoded.name || '',
+                        timestamp: decoded.timestamp
+                    };
+
+                    console.log("Received (from WASM fetchDecoded callback):", decodedResult.callsign, decodedResult.text);
+
+                    const fullMessage = `${decodedResult.name || ''}|${decodedResult.callsign}|${decodedResult.gridsquare || ''}&=${decodedResult.text}`;
+
+                    const event = new CustomEvent("receivemessage", {
+                        detail: {
+                            save: true,
+                            type: "text",
+                            sender: `${decodedResult.name || ''}|${decodedResult.callsign}|${decodedResult.gridsquare || ''}`,
+                            message: decodedResult.text,
+                            timestamp: new Date().toISOString(),
+                        },
+                    });
+                    document.dispatchEvent(event);
+                }
+            } catch (error) {
+                console.warn('Error processing WASM decoded message:', error);
+            }
+        }
+
         setupRealTimeDecoding() {
             const mediaConstraints = {
                 audio: {
@@ -488,6 +694,11 @@ document.addEventListener("DOMContentLoaded", (e) => {
             // Track invalid message hashes to prevent repeated processing
             const invalidMessageHashes = new Set();
             const INVALID_MESSAGE_TTL = 5000; // Remember invalid messages for 5 seconds
+            
+            // Track decode errors to prevent spam (shared with handleWasmDecodedMessage)
+            const decodeErrorHashes = this.decodeErrorHashes;
+            const decodeErrorTimes = this.decodeErrorTimes;
+            const DECODE_ERROR_DEBOUNCE_MS = this.DECODE_ERROR_DEBOUNCE_MS;
 
             // Helper function to validate decoded message
             const isValidDecodedMessage = (decoded) => {
@@ -577,7 +788,35 @@ document.addEventListener("DOMContentLoaded", (e) => {
                                     setTimeout(() => {
                                         invalidMessageHashes.delete(messageHash);
                                     }, INVALID_MESSAGE_TTL);
-                                    // Silently skip invalid/corrupted messages
+                                    
+                                    // Create hash from decoded data to identify duplicate decode errors
+                                    const errorHash = messageHash; // Reuse the message hash
+                                    const now = Date.now();
+                                    const lastErrorTime = decodeErrorTimes.get(errorHash) || 0;
+                                    
+                                    // Only show decode error if we haven't seen this exact message recently
+                                    if (now - lastErrorTime > DECODE_ERROR_DEBOUNCE_MS) {
+                                        // Update tracking
+                                        decodeErrorTimes.set(errorHash, now);
+                                        
+                                        // Clean up old entries (keep only last 100)
+                                        if (decodeErrorTimes.size > 100) {
+                                            const oldestHash = Array.from(decodeErrorTimes.entries())
+                                                .sort((a, b) => a[1] - b[1])[0][0];
+                                            decodeErrorTimes.delete(oldestHash);
+                                        }
+                                        
+                                        // Show UI notification that a message was received but failed to decode
+                                        const failedDecodeEvent = new CustomEvent("receivemessage", {
+                                            detail: {
+                                                save: false,
+                                                type: "decode-error",
+                                                message: "Message received but could not be decoded",
+                                                timestamp: new Date().toISOString(),
+                                            },
+                                        });
+                                        document.dispatchEvent(failedDecodeEvent);
+                                    }
                                     return;
                                 }
                                 

@@ -142,6 +142,30 @@
     color: var(--text-primary);
 }
 
+.message.decode-error > .sender > .name {
+    background: var(--warning, #ff9800);
+    color: var(--background);
+}
+
+.message.decode-error > p {
+    background: rgba(255, 152, 0, 0.1);
+    border-color: var(--warning, #ff9800);
+    border-width: 2px;
+    border-style: solid;
+}
+
+.message.alert > .sender > .name {
+    background: var(--error, #d32f2f);
+    color: var(--background);
+}
+
+.message.alert > p {
+    background: rgba(211, 47, 47, 0.1);
+    border-color: var(--error, #d32f2f);
+    border-width: 2px;
+    border-style: solid;
+}
+
 
 @media screen and (max-width: 768px) {
     #chat {

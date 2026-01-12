@@ -17,22 +17,22 @@ Ribbit supports two message encoding modes:
 
 All messages follow a 128+ bit structure with the following components:
 
-| Field | Bits | Type | Description |
-|-------|------|------|-------------|
-| Callsign | 48 | alphanum | Ham radio callsign (8 chars max) |
-| Timestamp | 31 | composite | UTC time with 2-second resolution |
-| Emergency | 1 | boolean | Emergency flag |
-| Message ID | 80 | composite | Unique identifier (Callsign + Timestamp + Emergency) |
-| Gridsquare | 28 | maidenhead | Location (6 chars: AA00aa) |
-| NTP | 1 | boolean | NTP time sync flag |
-| GPS | 1 | boolean | GPS location flag |
-| Name Length | 8 | nibbles | FirstName(4) + LastName(4) (0-15 each) |
-| Message Length | 8 | number | Length in bytes (0-240) |
-| Message Type | 2 | number | 0=Emergency, 1=Chat, 2=Contest, 3=Other |
-| First Name | variable | alphabit | 5 bits per char (0-15 chars) |
-| Last Name | variable | alphabit | 5 bits per char (0-15 chars) |
-| Message | variable | UTF-8 | Message content (8 bits per byte) |
-| ACK Array | variable | alphanum | Acknowledgement data |
+| Field          | Bits     | Type       | Description                                          |
+| -------------- | -------- | ---------- | ---------------------------------------------------- |
+| Callsign       | 48       | alphanum   | Ham radio callsign (8 chars max)                     |
+| Timestamp      | 31       | composite  | UTC time with 2-second resolution                    |
+| Emergency      | 1        | boolean    | Emergency flag                                       |
+| Message ID     | 80       | composite  | Unique identifier (Callsign + Timestamp + Emergency) |
+| Gridsquare     | 28       | maidenhead | Location (6 chars: AA00aa)                           |
+| NTP            | 1        | boolean    | NTP time sync flag                                   |
+| GPS            | 1        | boolean    | GPS location flag                                    |
+| Name Length    | 8        | nibbles    | FirstName(4) + LastName(4) (0-15 each)               |
+| Message Length | 8        | number     | Length in bytes (0-240)                              |
+| Message Type   | 2        | number     | 0=Emergency, 1=Chat, 2=Contest, 3=Other              |
+| First Name     | variable | alphabit   | 5 bits per char (0-15 chars)                         |
+| Last Name      | variable | alphabit   | 5 bits per char (0-15 chars)                         |
+| Message        | variable | UTF-8      | Message content (8 bits per byte)                    |
+| ACK Array      | variable | alphanum   | Acknowledgement data                                 |
 
 ## Encoding Formats
 
@@ -72,6 +72,28 @@ All messages follow a 128+ bit structure with the following components:
 - Second: 5 bits (0-29, ×2 for 0-58 range)
 
 **Resolution:** 2 seconds (to align with ~1.6s transmission time)
+
+### Message ID Structure
+
+The **Message ID** is a unique 80-bit identifier used to track and deduplicate messages, particularly in Contest Mode. It is constructed by concatenating:
+
+1.  **Callsign** (48 bits)
+2.  **Timestamp** (31 bits)
+3.  **Emergency Flag** (1 bit)
+
+**Total:** 80 bits (10 bytes)
+
+**Purpose:**
+- **Deduplication:** Receivers can identify if they've already processed a message by checking this unique ID.
+- **Acknowledgements:** ACKs use this ID (or a hash of it) to confirm receipt of specific messages.
+- **Persistence:** The ID remains constant even if the message is retransmitted multiple times.
+
+**Visual Representation:**
+In the Web UI, this 80-bit ID is displayed as a **20-character Hexadecimal string**. You can visualize this in:
+- **Header Codec** (`headerCodec.html`): Shows the breakdown of the ID bits.
+- **Message Demo** (`message_format_demo.html`): Shows the ID generated in real-time for contest messages.
+
+Example: `KO6BVA...` → `4B4F36425641...`
 
 ## Message Types
 

@@ -12,15 +12,17 @@
         <h1>🐸 Ribbit Header Codec</h1>
         <div class="intro">
             <p>Compact message header encoding/decoding system for amateur radio data transmission.<br>
-            Watch data flow from human-readable → binary → bytes → binary → human-readable</p>
+                Watch data flow from human-readable → binary → bytes → binary → human-readable</p>
         </div>
 
         <div class="data-type-list">
             <strong>Header Structure (128+ bits):</strong>
             <ul>
                 <li><span class="highlight-callsign">Callsign</span> - 48 bits [8 chars × 6 bits alphanumbit]</li>
-                <li><span class="highlight-timestamp">Timestamp</span> - 31 bits [Year/Month(10) + Day(5) + Hour(5) + Minute(6) + Second(5)]</li>
-                <li><span class="highlight-gridsquare">Gridsquare</span> - 28 bits [Letters(5+5) + Numbers(4+4) + Letters(5+5)]</li>
+                <li><span class="highlight-timestamp">Timestamp</span> - 31 bits [Year/Month(10) + Day(5) + Hour(5) +
+                    Minute(6) + Second(5)]</li>
+                <li><span class="highlight-gridsquare">Gridsquare</span> - 28 bits [Letters(5+5) + Numbers(4+4) +
+                    Letters(5+5)]</li>
                 <li><span class="highlight-emergency">Emergency</span> - 1 bit (boolean flag)</li>
                 <li><span class="highlight-meta">NTP</span> - 1 bit (boolean flag)</li>
                 <li><span class="highlight-meta">GPS</span> - 1 bit (boolean flag)</li>
@@ -43,11 +45,13 @@
                 <h3><span class="highlight-callsign">Callsign</span></h3>
                 <div class="input-row">
                     <label for="callsign">Ham Radio Callsign (up to 8 chars)</label>
-                    <input type="text" id="callsign" name="callsign" onkeyup="callsignChange()" maxlength="8" placeholder="KN6FZY">
+                    <input type="text" id="callsign" name="callsign" onkeyup="callsignChange()" maxlength="8"
+                        placeholder="KN6FZY">
                 </div>
                 <div class="bit-output">
                     <strong>Callsign (48 bits):</strong><br>
-                    <span class="highlight-callsign" id="callsign-bits">000000000000000000000000000000000000000000000000</span>
+                    <span class="highlight-callsign"
+                        id="callsign-bits">000000000000000000000000000000000000000000000000</span>
                 </div>
             </div>
 
@@ -55,38 +59,42 @@
                 <h3><span class="highlight-timestamp">Timestamp (UTC)</span></h3>
                 <div class="input-row">
                     <label for="year">Year (2026-2111)</label>
-                    <input type="number" id="year" name="year" onchange="yearChange()" placeholder="2026" min="2026" max="2111">
+                    <input type="number" id="year" name="year" onchange="yearChange()" placeholder="2026" min="2026"
+                        max="2111">
                 </div>
                 <div class="input-row">
                     <label for="month">Month (0=Jan, 11=Dec)</label>
-                    <input type="number" id="month" name="month" onchange="monthChange()" placeholder="0" min="0" max="11">
+                    <input type="number" id="month" name="month" onchange="monthChange()" placeholder="0" min="0"
+                        max="11">
                 </div>
                 <div class="bit-output">Year+Month (10 bits): <span id="year-bits">0000000000</span></div>
-                
+
                 <div class="input-row">
                     <label for="day">Day (0-30)</label>
                     <input type="number" id="day" name="day" onchange="dayChange()" placeholder="1" min="0" max="30">
                 </div>
                 <div class="bit-output">Day (5 bits): <span id="day-bits">00000</span></div>
-                
+
                 <div class="input-row">
                     <label for="hour">Hour (0-23)</label>
                     <input type="number" id="hour" name="hour" onchange="hourChange()" placeholder="0" min="0" max="23">
                 </div>
                 <div class="bit-output">Hour (5 bits): <span id="hour-bits">00000</span></div>
-                
+
                 <div class="input-row">
                     <label for="minute">Minute (0-59)</label>
-                    <input type="number" id="minute" name="minute" onchange="minuteChange()" placeholder="0" min="0" max="59">
+                    <input type="number" id="minute" name="minute" onchange="minuteChange()" placeholder="0" min="0"
+                        max="59">
                 </div>
                 <div class="bit-output">Minute (6 bits): <span id="minute-bits">000000</span></div>
-                
+
                 <div class="input-row">
                     <label for="second">Second (0-29, 2s intervals)</label>
-                    <input type="number" id="second" name="second" onchange="secondChange()" placeholder="0" min="0" max="29">
+                    <input type="number" id="second" name="second" onchange="secondChange()" placeholder="0" min="0"
+                        max="29">
                 </div>
                 <div class="bit-output">Second (5 bits): <span id="second-bits">00000</span></div>
-                
+
                 <div class="bit-output" style="border: 2px solid #fbbf24;">
                     <strong>Timestamp Combined (31 bits):</strong><br>
                     <span class="highlight-timestamp" id="time-bits">0000000000000000000000000000000</span>
@@ -99,11 +107,18 @@
                     <input type="checkbox" id="emergency" name="emergency" onchange="emergencyChange()">
                     <label for="emergency">Emergency Mode Active</label>
                 </div>
-                <div class="bit-output"><span class="highlight-emergency">Emergency (1 bit):</span> <span id="emergency-bits">0</span></div>
-                
+                <div class="bit-output"><span class="highlight-emergency">Emergency (1 bit):</span> <span
+                        id="emergency-bits">0</span></div>
+
                 <div class="bit-output" style="border: 2px solid #ef4444; margin-top: 10px;">
                     <strong>Message ID Complete (80 bits):</strong><br>
-                    <span style="color: #a0a0a0; font-size: 11px;">Callsign (48) + Timestamp (31) + Emergency (1) = Unique Message Identifier</span>
+                    <span style="color: #a0a0a0; font-size: 11px;">Callsign (48) + Timestamp (31) + Emergency (1) =
+                        Unique Message Identifier</span>
+                    <div style="margin-top: 5px; border-top: 1px dashed #ef4444; padding-top: 5px;">
+                        <span style="color: #ef4444; font-weight: bold;">ID Values (Hex): </span>
+                        <span id="message-id-hex"
+                            style="color: #ffffff; font-family: monospace;">00000000000000000000</span>
+                    </div>
                 </div>
             </div>
 
@@ -111,7 +126,8 @@
                 <h3><span class="highlight-gridsquare">Gridsquare</span></h3>
                 <div class="input-row">
                     <label for="gridsquare">Maidenhead Locator (6 chars: AA00aa)</label>
-                    <input type="text" id="gridsquare" name="gridsquare" onkeyup="gridsquareChange()" maxlength="6" placeholder="CM87uq">
+                    <input type="text" id="gridsquare" name="gridsquare" onkeyup="gridsquareChange()" maxlength="6"
+                        placeholder="CM87uq">
                 </div>
                 <div class="bit-output">
                     <strong>Gridsquare (28 bits):</strong><br>
@@ -121,45 +137,50 @@
 
             <div class="field-group">
                 <h3><span class="highlight-meta">Meta Flags</span></h3>
-                
+
                 <div class="input-row">
                     <input type="checkbox" id="ntp" name="ntp" onchange="ntpChange()">
                     <label for="ntp">NTP Time Sync</label>
                 </div>
-                <div class="bit-output"><span class="highlight-meta">NTP (1 bit):</span> <span id="ntp-bits">0</span></div>
-                
+                <div class="bit-output"><span class="highlight-meta">NTP (1 bit):</span> <span id="ntp-bits">0</span>
+                </div>
+
                 <div class="input-row">
                     <input type="checkbox" id="gps" name="gps" onchange="gpsChange()">
                     <label for="gps">GPS Location Active</label>
                 </div>
-                <div class="bit-output"><span class="highlight-meta">GPS (1 bit):</span> <span id="gps-bits">0</span></div>
+                <div class="bit-output"><span class="highlight-meta">GPS (1 bit):</span> <span id="gps-bits">0</span>
+                </div>
             </div>
 
             <div class="field-group">
                 <h3><span class="highlight-meta">Lengths and Type</span></h3>
                 <div class="input-row">
                     <label for="firstname-length">First Name Length (0-15 chars)</label>
-                    <input type="number" id="firstname-length" name="firstname-length" onchange="nameLengthChange()" placeholder="0" min="0" max="15" value="0" readonly>
+                    <input type="number" id="firstname-length" name="firstname-length" onchange="nameLengthChange()"
+                        placeholder="0" min="0" max="15" value="0" readonly>
                 </div>
                 <div class="bit-output">First Name Length (4 bits): <span id="firstname-length-bits">0000</span></div>
-                
+
                 <div class="input-row">
                     <label for="lastname-length">Last Name Length (0-15 chars)</label>
-                    <input type="number" id="lastname-length" name="lastname-length" onchange="nameLengthChange()" placeholder="0" min="0" max="15" value="0" readonly>
+                    <input type="number" id="lastname-length" name="lastname-length" onchange="nameLengthChange()"
+                        placeholder="0" min="0" max="15" value="0" readonly>
                 </div>
                 <div class="bit-output">Last Name Length (4 bits): <span id="lastname-length-bits">0000</span></div>
-                
+
                 <div class="bit-output" style="border: 2px solid #a78bfa;">
                     <strong>Combined Name Length (8 bits):</strong><br>
                     <span id="name-length-bits">00000000</span>
                 </div>
-                
+
                 <div class="input-row">
                     <label for="message-length">Message Length (0-240 bytes)</label>
-                    <input type="number" id="message-length" name="message-length" onchange="messageLengthChange()" placeholder="0" min="0" max="240" value="0">
+                    <input type="number" id="message-length" name="message-length" onchange="messageLengthChange()"
+                        placeholder="0" min="0" max="240" value="0">
                 </div>
                 <div class="bit-output">Message Length (8 bits): <span id="message-length-bits">00000000</span></div>
-                
+
                 <div class="input-row">
                     <label for="message-type">Message Type (0-3)</label>
                     <select id="message-type" name="message-type" onchange="messageTypeChange()">
@@ -176,16 +197,18 @@
                 <h3><span class="highlight-name">Name</span></h3>
                 <div class="input-row">
                     <label for="firstname">First Name (up to 15 letters)</label>
-                    <input type="text" id="firstname" name="firstname" onkeyup="firstNameChange()" maxlength="15" placeholder="Alex">
+                    <input type="text" id="firstname" name="firstname" onkeyup="firstNameChange()" maxlength="15"
+                        placeholder="Alex">
                 </div>
                 <div class="bit-output">
                     <strong>First Name (0-75 bits):</strong><br>
                     <span class="highlight-name" id="firstname-bits"></span>
                 </div>
-                
+
                 <div class="input-row">
                     <label for="lastname">Last Name (up to 15 letters)</label>
-                    <input type="text" id="lastname" name="lastname" onkeyup="lastNameChange()" maxlength="15" placeholder="Okita">
+                    <input type="text" id="lastname" name="lastname" onkeyup="lastNameChange()" maxlength="15"
+                        placeholder="Okita">
                 </div>
                 <div class="bit-output">
                     <strong>Last Name (0-75 bits):</strong><br>
@@ -197,7 +220,9 @@
                 <h3><span class="highlight-message">Message</span></h3>
                 <div class="input-row">
                     <label for="message">Message (UTF-8, up to 240 bytes)</label>
-                    <textarea id="message" name="message" onkeyup="messageChange()" maxlength="240" placeholder="Hello world!" rows="3" style="width: 100%; background: #1a1a1a; border: 1px solid #4ade80; color: #4ade80; padding: 8px; border-radius: 4px; font-family: 'Courier New', monospace;"></textarea>
+                    <textarea id="message" name="message" onkeyup="messageChange()" maxlength="240"
+                        placeholder="Hello world!" rows="3"
+                        style="width: 100%; background: #1a1a1a; border: 1px solid #4ade80; color: #4ade80; padding: 8px; border-radius: 4px; font-family: 'Courier New', monospace;"></textarea>
                 </div>
                 <div class="bit-output">
                     <strong>Message (0-1920 bits):</strong><br>
@@ -205,10 +230,24 @@
                 </div>
             </div>
 
-            <div style="background: rgba(74, 222, 128, 0.1); padding: 20px; border-radius: 8px; border: 2px solid #4ade80;">
+            <div
+                style="background: rgba(74, 222, 128, 0.1); padding: 20px; border-radius: 8px; border: 2px solid #4ade80;">
                 <h3>✅ Complete Encoded Bitstream</h3>
                 <div class="bit-output" style="font-size: 11px; word-break: break-all;">
-                    <span class="highlight-callsign" id="total-callsign-display">000000000000000000000000000000000000000000000000</span><span class="highlight-timestamp" id="total-timestamp-display">0000000000000000000000000000000</span><span class="highlight-emergency" id="total-emergency-display">0</span><span class="highlight-gridsquare" id="total-gridsquare-display">0000000000000000000000000000</span><span class="highlight-meta" id="total-ntp-display">0</span><span class="highlight-meta" id="total-gps-display">0</span><span class="highlight-meta" id="total-name-length-display">00000000</span><span class="highlight-meta" id="total-message-length-display">00000000</span><span class="highlight-meta" id="total-message-type-display">01</span><span class="highlight-name" id="total-firstname-display"></span><span class="highlight-name" id="total-lastname-display"></span><span class="highlight-message" id="total-message-display"></span>
+                    <span class="highlight-callsign"
+                        id="total-callsign-display">000000000000000000000000000000000000000000000000</span><span
+                        class="highlight-timestamp"
+                        id="total-timestamp-display">0000000000000000000000000000000</span><span
+                        class="highlight-emergency" id="total-emergency-display">0</span><span
+                        class="highlight-gridsquare"
+                        id="total-gridsquare-display">0000000000000000000000000000</span><span class="highlight-meta"
+                        id="total-ntp-display">0</span><span class="highlight-meta" id="total-gps-display">0</span><span
+                        class="highlight-meta" id="total-name-length-display">00000000</span><span
+                        class="highlight-meta" id="total-message-length-display">00000000</span><span
+                        class="highlight-meta" id="total-message-type-display">01</span><span class="highlight-name"
+                        id="total-firstname-display"></span><span class="highlight-name"
+                        id="total-lastname-display"></span><span class="highlight-message"
+                        id="total-message-display"></span>
                 </div>
                 <p style="color: #a0a0a0; font-size: 12px; margin-top: 10px;">
                     Total bits: <span id="total-bit-count">128</span> bits | Message ID: 80 bits
@@ -243,7 +282,7 @@
         <div class="section decoder-section">
             <span class="flow-label">📥 Step 3: Decoding</span>
             <h2>Decode Binary → Human-Readable Data</h2>
-            
+
             <div class="field-group">
                 <h3>Recompose Bitstream from Bytes</h3>
                 <div class="bit-output" style="font-size: 11px; word-break: break-all;">
@@ -254,74 +293,94 @@
             <div class="field-group">
                 <h3>Extract Fragments</h3>
                 <div class="bit-output">
-                    <span class="highlight-callsign">Callsign (48 bits):</span> 
+                    <span class="highlight-callsign">Callsign (48 bits):</span>
                     <span id="decoded-header-callsign-bits">000000000000000000000000000000000000000000000000</span>
                 </div>
                 <div class="bit-output">
-                    <span class="highlight-timestamp">Timestamp (31 bits):</span> 
+                    <span class="highlight-timestamp">Timestamp (31 bits):</span>
                     <span id="decoded-header-timestamp-bits">0000000000000000000000000000000</span>
                 </div>
                 <div class="bit-output">
-                    <span class="highlight-emergency">Emergency (1 bit):</span> 
+                    <span class="highlight-emergency">Emergency (1 bit):</span>
                     <span id="decoded-header-emergency-bit">0</span>
                 </div>
                 <div class="bit-output" style="border: 2px solid #ef4444; margin: 8px 0;">
                     <strong style="color: #ef4444;">Message ID Complete (80 bits)</strong>
+                    <div style="margin-top: 5px; border-top: 1px dashed #ef4444; padding-top: 5px;">
+                        <span style="color: #ef4444; font-size: 11px;">Hex: </span>
+                        <span id="decoded-header-message-id-hex"
+                            style="color: #ffffff; font-family: monospace; font-size: 11px;">00000000000000000000</span>
+                    </div>
                 </div>
                 <div class="bit-output">
-                    <span class="highlight-gridsquare">Gridsquare (28 bits):</span> 
+                    <span class="highlight-gridsquare">Gridsquare (28 bits):</span>
                     <span id="decoded-header-gridsquare-bits">0000000000000000000000000000</span>
                 </div>
                 <div class="bit-output">
-                    <span class="highlight-meta">NTP (1 bit):</span> 
+                    <span class="highlight-meta">NTP (1 bit):</span>
                     <span id="decoded-header-ntp-bit">0</span>
                 </div>
                 <div class="bit-output">
-                    <span class="highlight-meta">GPS (1 bit):</span> 
+                    <span class="highlight-meta">GPS (1 bit):</span>
                     <span id="decoded-header-gps-bit">0</span>
                 </div>
                 <div class="bit-output">
-                    <span class="highlight-meta">Name Length (8 bits):</span> 
+                    <span class="highlight-meta">Name Length (8 bits):</span>
                     <span id="decoded-header-name-length-bits">00000000</span>
                 </div>
                 <div class="bit-output">
-                    <span class="highlight-meta">Message Length (8 bits):</span> 
+                    <span class="highlight-meta">Message Length (8 bits):</span>
                     <span id="decoded-header-message-length-bits">00000000</span>
                 </div>
                 <div class="bit-output">
-                    <span class="highlight-meta">Message Type (2 bits):</span> 
+                    <span class="highlight-meta">Message Type (2 bits):</span>
                     <span id="decoded-header-message-type-bits">01</span>
                 </div>
                 <div class="bit-output">
-                    <span class="highlight-name">First Name (variable):</span> 
+                    <span class="highlight-name">First Name (variable):</span>
                     <span id="decoded-header-firstname-bits"></span>
                 </div>
                 <div class="bit-output">
-                    <span class="highlight-name">Last Name (variable):</span> 
+                    <span class="highlight-name">Last Name (variable):</span>
                     <span id="decoded-header-lastname-bits"></span>
                 </div>
                 <div class="bit-output">
-                    <span class="highlight-message">Message (variable):</span> 
+                    <span class="highlight-message">Message (variable):</span>
                     <span id="decoded-header-message-bits"></span>
                 </div>
             </div>
 
             <div class="decoded-values">
                 <h3>✅ Decoded Values</h3>
-                <h4><span class="highlight-callsign">Callsign:</span> <span class="decoded-value" id="decoded-header-callsign-value">--------</span></h4>
-                <h4><span class="highlight-timestamp">Timestamp:</span> <span class="decoded-value" id="decoded-header-timestamp-value">2026-01-01 00:00:00</span></h4>
-                <h4><span class="highlight-emergency">Emergency:</span> <span class="decoded-value" id="decoded-header-emergency-value">false</span></h4>
+                <h4><span class="highlight-callsign">Callsign:</span> <span class="decoded-value"
+                        id="decoded-header-callsign-value">--------</span></h4>
+                <h4><span class="highlight-timestamp">Timestamp:</span> <span class="decoded-value"
+                        id="decoded-header-timestamp-value">2026-01-01 00:00:00</span></h4>
+                <h4><span class="highlight-emergency">Emergency:</span> <span class="decoded-value"
+                        id="decoded-header-emergency-value">false</span></h4>
                 <h4 style="color: #ef4444; margin: 5px 0;">Message ID (80 bits): Callsign + Timestamp + Emergency</h4>
-                <h4><span class="highlight-gridsquare">Gridsquare:</span> <span class="decoded-value" id="decoded-header-gridsquare-value">------</span></h4>
-                <h4><span class="highlight-meta">NTP:</span> <span class="decoded-value" id="decoded-header-ntp-value">false</span></h4>
-                <h4><span class="highlight-meta">GPS:</span> <span class="decoded-value" id="decoded-header-gps-value">false</span></h4>
-                <h4><span class="highlight-meta">First Name Length:</span> <span class="decoded-value" id="decoded-header-firstname-length-value">0</span></h4>
-                <h4><span class="highlight-meta">Last Name Length:</span> <span class="decoded-value" id="decoded-header-lastname-length-value">0</span></h4>
-                <h4><span class="highlight-meta">Message Length:</span> <span class="decoded-value" id="decoded-header-message-length-value">0</span></h4>
-                <h4><span class="highlight-meta">Message Type:</span> <span class="decoded-value" id="decoded-header-message-type-value">1 - Chat</span></h4>
-                <h4><span class="highlight-name">First Name:</span> <span class="decoded-value" id="decoded-header-firstname-value"></span></h4>
-                <h4><span class="highlight-name">Last Name:</span> <span class="decoded-value" id="decoded-header-lastname-value"></span></h4>
-                <h4><span class="highlight-message">Message:</span> <span class="decoded-value" id="decoded-header-message-value"></span></h4>
+                <h4><span style="color: #ef4444;">Message ID (Hex):</span> <span class="decoded-value"
+                        id="decoded-header-message-id-value" style="color: #ffffff;">00000000000000000000</span></h4>
+                <h4><span class="highlight-gridsquare">Gridsquare:</span> <span class="decoded-value"
+                        id="decoded-header-gridsquare-value">------</span></h4>
+                <h4><span class="highlight-meta">NTP:</span> <span class="decoded-value"
+                        id="decoded-header-ntp-value">false</span></h4>
+                <h4><span class="highlight-meta">GPS:</span> <span class="decoded-value"
+                        id="decoded-header-gps-value">false</span></h4>
+                <h4><span class="highlight-meta">First Name Length:</span> <span class="decoded-value"
+                        id="decoded-header-firstname-length-value">0</span></h4>
+                <h4><span class="highlight-meta">Last Name Length:</span> <span class="decoded-value"
+                        id="decoded-header-lastname-length-value">0</span></h4>
+                <h4><span class="highlight-meta">Message Length:</span> <span class="decoded-value"
+                        id="decoded-header-message-length-value">0</span></h4>
+                <h4><span class="highlight-meta">Message Type:</span> <span class="decoded-value"
+                        id="decoded-header-message-type-value">1 - Chat</span></h4>
+                <h4><span class="highlight-name">First Name:</span> <span class="decoded-value"
+                        id="decoded-header-firstname-value"></span></h4>
+                <h4><span class="highlight-name">Last Name:</span> <span class="decoded-value"
+                        id="decoded-header-lastname-value"></span></h4>
+                <h4><span class="highlight-message">Message:</span> <span class="decoded-value"
+                        id="decoded-header-message-value"></span></h4>
             </div>
         </div>
     </div>
@@ -509,8 +568,15 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
 
         .decoded-values {
@@ -640,11 +706,11 @@
         const nameLengthChange = () => {
             const firstNameLength = parseInt(document.getElementById("firstname-length").value) || 0;
             const lastNameLength = parseInt(document.getElementById("lastname-length").value) || 0;
-            
+
             const firstNameLengthBits = firstNameLength.toString(2).padStart(4, '0');
             const lastNameLengthBits = lastNameLength.toString(2).padStart(4, '0');
             const combinedBits = firstNameLengthBits + lastNameLengthBits;
-            
+
             document.getElementById("firstname-length-bits").innerHTML = `${firstNameLengthBits}`;
             document.getElementById("lastname-length-bits").innerHTML = `${lastNameLengthBits}`;
             document.getElementById("name-length-bits").innerHTML = `${combinedBits}`;
@@ -674,7 +740,7 @@
         const firstNameChange = () => {
             const nameInput = document.getElementById("firstname").value;
             const nameUpper = nameInput.toUpperCase();
-            
+
             let nameBits = '';
             for (let i = 0; i < nameUpper.length; i++) {
                 const char = nameUpper[i];
@@ -682,9 +748,9 @@
                 const charBits = charValue.toString(2).padStart(5, '0');
                 nameBits += charBits;
             }
-            
+
             document.getElementById("firstname-bits").innerHTML = `${nameBits}`;
-            
+
             // Auto-update first name length
             const nameLength = nameUpper.length;
             document.getElementById("firstname-length").value = nameLength;
@@ -694,7 +760,7 @@
         const lastNameChange = () => {
             const nameInput = document.getElementById("lastname").value;
             const nameUpper = nameInput.toUpperCase();
-            
+
             let nameBits = '';
             for (let i = 0; i < nameUpper.length; i++) {
                 const char = nameUpper[i];
@@ -702,9 +768,9 @@
                 const charBits = charValue.toString(2).padStart(5, '0');
                 nameBits += charBits;
             }
-            
+
             document.getElementById("lastname-bits").innerHTML = `${nameBits}`;
-            
+
             // Auto-update last name length
             const nameLength = nameUpper.length;
             document.getElementById("lastname-length").value = nameLength;
@@ -715,18 +781,18 @@
 
         const messageChange = () => {
             const messageInput = document.getElementById("message").value;
-            
+
             // Convert string to UTF-8 bytes and then to bits
             const encoder = new TextEncoder();
             const messageBytes = encoder.encode(messageInput);
-            
+
             let messageBits = '';
             for (let i = 0; i < messageBytes.length; i++) {
                 messageBits += messageBytes[i].toString(2).padStart(8, '0');
             }
-            
+
             document.getElementById("message-bits").innerHTML = `${messageBits}`;
-            
+
             // Auto-update message length
             const messageLength = messageBytes.length;
             document.getElementById("message-length").value = messageLength;
@@ -899,55 +965,55 @@
 
         const fragmentedBits = () => {
             const bitstream = document.getElementById("recomposed-header-bits").innerHTML;
-            
+
             // New order: Callsign, Timestamp, Emergency (Message ID = 80 bits), Gridsquare, NTP, GPS, Name Length, Message Length, Message Type, Name, Message
             let offset = 0;
-            
+
             const callsignFragment = bitstream.slice(offset, offset + 48);
             offset += 48;
-            
+
             const timestampFragment = bitstream.slice(offset, offset + 31);
             offset += 31;
-            
+
             const emergencyFragment = bitstream.slice(offset, offset + 1);
             offset += 1;
             // Message ID complete (80 bits)
-            
+
             const gridsquareFragment = bitstream.slice(offset, offset + 28);
             offset += 28;
-            
+
             const ntpFragment = bitstream.slice(offset, offset + 1);
             offset += 1;
-            
+
             const gpsFragment = bitstream.slice(offset, offset + 1);
             offset += 1;
-            
+
             const nameLengthFragment = bitstream.slice(offset, offset + 8);
             offset += 8;
-            
+
             const messageLengthFragment = bitstream.slice(offset, offset + 8);
             offset += 8;
-            
+
             const messageTypeFragment = bitstream.slice(offset, offset + 2);
             offset += 2;
-            
+
             // Get the name lengths to determine how many bits to read
             const firstNameLength = parseInt(nameLengthFragment.substring(0, 4), 2);
             const lastNameLength = parseInt(nameLengthFragment.substring(4, 8), 2);
-            
+
             const firstNameBitLength = firstNameLength * 5;
             const firstNameFragment = bitstream.slice(offset, offset + firstNameBitLength);
             offset += firstNameBitLength;
-            
+
             const lastNameBitLength = lastNameLength * 5;
             const lastNameFragment = bitstream.slice(offset, offset + lastNameBitLength);
             offset += lastNameBitLength;
-            
+
             // Get the message length to determine how many bits to read
             const messageLength = parseInt(messageLengthFragment, 2);
             const messageBitLength = messageLength * 8;
             const messageFragment = bitstream.slice(offset, offset + messageBitLength);
-            
+
             document.getElementById("decoded-header-callsign-bits").innerHTML = `${callsignFragment}`;
             document.getElementById("decoded-header-timestamp-bits").innerHTML = `${timestampFragment}`;
             document.getElementById("decoded-header-gridsquare-bits").innerHTML = `${gridsquareFragment}`;
@@ -961,13 +1027,13 @@
             document.getElementById("decoded-header-lastname-bits").innerHTML = `${lastNameFragment}`;
             document.getElementById("decoded-header-message-bits").innerHTML = `${messageFragment}`;
         }
-        
+
         const fragmentsToReadableText = () => {
             const bitstream = document.getElementById("recomposed-header-bits").innerHTML;
-            
+
             // New order: Callsign, Timestamp, Emergency (Message ID = 80 bits), Gridsquare, NTP, GPS, Name Length, Message Length, Message Type, Name, Message
             let offset = 0;
-            
+
             // Callsign (48 bits)
             const callsignFragment = bitstream.slice(offset, offset + 48);
             offset += 48;
@@ -978,7 +1044,7 @@
                 callsignValue += alphanumbitReverse[charValue] || ' ';
             }
             document.getElementById("decoded-header-callsign-value").innerHTML = callsignValue.trim();
-            
+
             // Timestamp (31 bits)
             const timestampFragment = bitstream.slice(offset, offset + 31);
             offset += 31;
@@ -987,7 +1053,7 @@
             const hourBits = timestampFragment.slice(15, 20);
             const minuteBits = timestampFragment.slice(20, 26);
             const secondBits = timestampFragment.slice(26, 31);
-            
+
             const monthYear = parseInt(yearMonthBits, 2);
             const year = Math.floor(monthYear / 12) + 2026;
             const month = monthYear % 12;
@@ -995,18 +1061,29 @@
             const hour = parseInt(hourBits, 2);
             const minute = parseInt(minuteBits, 2);
             const second = parseInt(secondBits, 2) * 2;
-            
+
             const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             const timestampValue = `${year}-${monthNames[month]}-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
             document.getElementById("decoded-header-timestamp-value").innerHTML = timestampValue;
-            
+
             // Emergency (1 bit)
             const emergencyFragment = bitstream.slice(offset, offset + 1);
             offset += 1;
             const emergencyValue = parseInt(emergencyFragment, 2) > 0;
             document.getElementById("decoded-header-emergency-value").innerHTML = emergencyValue ? 'true' : 'false';
-            // Message ID complete (80 bits)
-            
+
+            // Message ID complete (80 bits) - Reconstruct Hex
+            // We need to look back at callsignFragment (48) + timestampFragment (31) + emergencyFragment (1)
+            const messageIdBits = callsignFragment + timestampFragment + emergencyFragment;
+            const idHexArray = [];
+            for (let i = 0; i < messageIdBits.length; i += 8) {
+                const byte = parseInt(messageIdBits.substring(i, i + 8), 2);
+                idHexArray.push(byte.toString(16).padStart(2, '0').toUpperCase());
+            }
+            const idHexString = idHexArray.join('');
+            document.getElementById("decoded-header-message-id-hex").innerHTML = idHexString;
+            document.getElementById("decoded-header-message-id-value").innerHTML = idHexString;
+
             // Gridsquare (28 bits)
             const gridsquareFragment = bitstream.slice(offset, offset + 28);
             offset += 28;
@@ -1016,28 +1093,28 @@
             const number2Value = parseInt(gridsquareFragment.substring(14, 18), 2);
             const letter3Value = parseInt(gridsquareFragment.substring(18, 23), 2);
             const letter4Value = parseInt(gridsquareFragment.substring(23, 28), 2);
-            
-            const gridsquareValue = 
-                (alphabitReverse[letter1Value] || '') + 
-                (alphabitReverse[letter2Value] || '') + 
-                (nibbleReverse[number1Value] || '') + 
-                (nibbleReverse[number2Value] || '') + 
-                (alphabitReverse[letter3Value] || '') + 
+
+            const gridsquareValue =
+                (alphabitReverse[letter1Value] || '') +
+                (alphabitReverse[letter2Value] || '') +
+                (nibbleReverse[number1Value] || '') +
+                (nibbleReverse[number2Value] || '') +
+                (alphabitReverse[letter3Value] || '') +
                 (alphabitReverse[letter4Value] || '');
             document.getElementById("decoded-header-gridsquare-value").innerHTML = gridsquareValue;
-            
+
             // NTP (1 bit)
             const ntpFragment = bitstream.slice(offset, offset + 1);
             offset += 1;
             const ntpValue = parseInt(ntpFragment, 2) > 0;
             document.getElementById("decoded-header-ntp-value").innerHTML = ntpValue ? 'true' : 'false';
-            
+
             // GPS (1 bit)
             const gpsFragment = bitstream.slice(offset, offset + 1);
             offset += 1;
             const gpsValue = parseInt(gpsFragment, 2) > 0;
             document.getElementById("decoded-header-gps-value").innerHTML = gpsValue ? 'true' : 'false';
-            
+
             // Name Length (8 bits) - split into first and last
             const nameLengthFragment = bitstream.slice(offset, offset + 8);
             offset += 8;
@@ -1045,20 +1122,20 @@
             const lastNameLength = parseInt(nameLengthFragment.substring(4, 8), 2);
             document.getElementById("decoded-header-firstname-length-value").innerHTML = firstNameLength;
             document.getElementById("decoded-header-lastname-length-value").innerHTML = lastNameLength;
-            
+
             // Message Length (8 bits)
             const messageLengthFragment = bitstream.slice(offset, offset + 8);
             offset += 8;
             const messageLength = parseInt(messageLengthFragment, 2);
             document.getElementById("decoded-header-message-length-value").innerHTML = messageLength;
-            
+
             // Message Type (2 bits)
             const messageTypeFragment = bitstream.slice(offset, offset + 2);
             offset += 2;
             const messageType = parseInt(messageTypeFragment, 2);
             const messageTypeNames = ['0 - Emergency', '1 - Chat', '2 - Contest', '3 - Other'];
             document.getElementById("decoded-header-message-type-value").innerHTML = messageTypeNames[messageType] || messageType;
-            
+
             // First Name (variable length)
             const firstNameBitLength = firstNameLength * 5;
             const firstNameFragment = bitstream.slice(offset, offset + firstNameBitLength);
@@ -1075,7 +1152,7 @@
                 firstNameValue = firstNameValue.charAt(0).toUpperCase() + firstNameValue.substring(1).toLowerCase();
             }
             document.getElementById("decoded-header-firstname-value").innerHTML = firstNameValue;
-            
+
             // Last Name (variable length)
             const lastNameBitLength = lastNameLength * 5;
             const lastNameFragment = bitstream.slice(offset, offset + lastNameBitLength);
@@ -1092,12 +1169,12 @@
                 lastNameValue = lastNameValue.charAt(0).toUpperCase() + lastNameValue.substring(1).toLowerCase();
             }
             document.getElementById("decoded-header-lastname-value").innerHTML = lastNameValue;
-            
+
             // Message (variable length)
             const messageBitLength = messageLength * 8;
             const messageFragment = bitstream.slice(offset, offset + messageBitLength);
             offset += messageBitLength;
-            
+
             // Convert bits to bytes and decode UTF-8
             const messageBytes = [];
             for (let i = 0; i < messageBitLength; i += 8) {
@@ -1133,19 +1210,19 @@
             const firstNameBits = document.getElementById("total-firstname-display").innerHTML;
             const lastNameBits = document.getElementById("total-lastname-display").innerHTML;
             const messageBits = document.getElementById("total-message-display").innerHTML;
-            
-            const bits = callsignBits + timestampBits + emergencyBits + gridsquareBits + ntpBits + gpsBits + 
-                        nameLengthBits + messageLengthBits + messageTypeBits + firstNameBits + lastNameBits + messageBits;
-            
+
+            const bits = callsignBits + timestampBits + emergencyBits + gridsquareBits + ntpBits + gpsBits +
+                nameLengthBits + messageLengthBits + messageTypeBits + firstNameBits + lastNameBits + messageBits;
+
             // split the bits into 8 bit chunks
             let bytes = splitAndPad(bits, 8);
             bytes = bytes.map(bin => "0b" + bin);
             const decodedHeaderBytes = document.getElementById("decoded-header-bytes");
             decodedHeaderBytes.innerHTML = `[${bytes.join(', ')}]`;
-            
+
             // Update byte count
             document.getElementById("total-byte-count").innerHTML = bytes.length;
-            
+
             concatenateBits();
         };
 
@@ -1180,12 +1257,31 @@
             document.getElementById("total-lastname-display").innerHTML = lastNameBits;
             document.getElementById("total-message-display").innerHTML = messageBits;
 
-            const totalBits = callsignBits + timeBitsRaw + emergencyBits + gridsquareBits + ntpBits + gpsBits + 
-                            nameLengthBits + messageLengthBits + messageTypeBits + firstNameBits + lastNameBits + messageBits;
-            
+            const totalBits = callsignBits + timeBitsRaw + emergencyBits + gridsquareBits + ntpBits + gpsBits +
+                nameLengthBits + messageLengthBits + messageTypeBits + firstNameBits + lastNameBits + messageBits;
+
+
             // Update bit count
             document.getElementById("total-bit-count").innerHTML = totalBits.length;
-            
+
+            // Calculate and display Message ID Hex
+            const messageIdBits = callsignBits + timeBitsRaw + emergencyBits;
+            // Pad to ensure we have full bytes (should be 80 bits = 10 bytes exactly)
+            const hexArray = [];
+            for (let i = 0; i < messageIdBits.length; i += 8) {
+                if (i + 8 <= messageIdBits.length) {
+                    const byte = parseInt(messageIdBits.substring(i, i + 8), 2);
+                    hexArray.push(byte.toString(16).padStart(2, '0').toUpperCase());
+                } else {
+                    // Should not happen for 80 bits, but for safety
+                    const remaining = messageIdBits.substring(i);
+                    const byte = parseInt(remaining.padEnd(8, '0'), 2);
+                    hexArray.push(byte.toString(16).padStart(2, '0').toUpperCase());
+                }
+            }
+            const hexString = hexArray.join('');
+            document.getElementById("message-id-hex").innerHTML = hexString;
+
             splitBytes();
         };
 

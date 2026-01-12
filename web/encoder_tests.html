@@ -1,42 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Encoder Tests</title>
+    <title>Ribbit Message Codec Tests</title>
     <style>
-        body { font-family: sans-serif; }
-        .test-results div { margin-bottom: 5px; }
-        .pass { color: green; }
-        .fail { color: red; font-weight: bold; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        h1 {
+            color: #2c3e50;
+        }
+
+        .test-results {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-results div {
+            margin-bottom: 8px;
+            padding: 4px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .pass {
+            color: green;
+            font-weight: bold;
+        }
+
+        .fail {
+            color: red;
+            font-weight: bold;
+            background: #ffe6e6;
+        }
     </style>
 </head>
-<body>
-    <h1>Encoder Class Tests</h1>
 
-    <!-- Hidden DOM elements required by Encoder constructor -->
-    <div style="display: none;">
-        <input id="version" type="text">
-        <output id="version-bits"></output>
-        <input id="gridsquare" type="text">
-        <output id="gridsquare-bits"></output>
-        <input id="name" type="text">
-        <output id="name-bits"></output>
-        <input id="callsign" type="text">
-        <output id="callsign-bits"></output>
-        <input id="time" type="text">
-        <output id="time-bits"></output>
-        <button id="encode">Encode</button>
-        <button id="decode">Decode</button>
-        <output id="output"></output>
-    </div>
+<body>
+    <h1>🐸 Ribbit Message Codec Tests</h1>
+    <p>Verifying <code>MessageCodec.js</code> functionality.</p>
 
     <div class="test-results" id="testResults">Running tests...</div>
 
-    <!-- Load Encoder script as module -->
-    <script type="module" src="scripts/encoder.js"></script>
     <!-- Load Test script as module -->
-    <script type="module" src="scripts/encoder_tests.js"></script>
+    <script type="module" src="scripts/message_codec_tests.js?v=2"></script>
 
 </body>
-</html> 
+
+</html>

@@ -52,11 +52,11 @@ A WebAssembly-based digital radio communication application supporting real-time
 ├── run_tests.sh           # Linux/Mac test server launcher
 ├── README.md              # This file
 ├── Docs/                  # Comprehensive documentation
-│   ├── BITWISE_ENCODING_ANALYSIS.md
-│   ├── CODEC_INTEGRATION_COMPLETE.md
-│   ├── DUAL_MODE_MESSAGE_ARCHITECTURE.md
-│   ├── IMPLEMENTATION_COMPLETE.md
-│   └── ... (20+ documentation files)
+├── Docs/                  # Comprehensive documentation
+│   ├── codec.md             # Codec & Message Architecture
+│   ├── quick_start.md       # Quick Start Guide
+│   ├── ribbit_wasm.md       # WASM Implementation Details
+│   └── ...
 ├── web/                   # Web assets served to clients
 │   ├── index.html         # Main application
 │   ├── messageCodec.html  # Visual message encoder/decoder
@@ -234,22 +234,32 @@ Then open your browser to: `http://localhost:8000/web/wasm_tests.html`
 - Stress testing with multiple iterations
 - Real-time result display with pass/fail indicators
 
-See [web/TESTING.md](web/TESTING.md) for detailed testing documentation.
+See [Docs/testing_plan.md](Docs/testing_plan.md) for detailed testing documentation.
 
-## 🎨 Visual Message Codec
+## 🎨 Visual Tools & Demos
 
-**Try it now**: `http://localhost:8000/web/messageCodec.html` ⭐
+### 1. Visual Message Codec
+**URL**: `http://localhost:8000/web/messageCodec.html` ⭐
 
 Interactive encoder/decoder that shows:
-
 - **Binary visualization** (1s and 0s, color-coded by field)
 - **Hex encoding/decoding** (copy/paste friendly)
 - **Mode comparison** (see efficiency gains)
 - **Round-trip verification** (encode → decode → verify)
 
-Perfect for learning how Ribbit packs data for radio transmission!
+### 2. Message Format Demo (WASM Verification)
+**URL**: `http://localhost:8000/web/message_format_demo.html` 🐸
 
-**Quick Start**: [CODEC_QUICK_START.md](CODEC_QUICK_START.md) | **Details**: [CODEC_INTEGRATION_COMPLETE.md](CODEC_INTEGRATION_COMPLETE.md)
+A complete end-to-end demo of the Ribbit message format using the **actual WebAssembly binary**.
+- **Verify Message IDs**: See the unique 80-bit ID generated in real-time.
+- **Test Contest Mode**: Toggle between Chat (UTF-8) and Contest (Packed) modes.
+- **Compare Efficiency**: See exact byte savings.
+
+> [!NOTE]
+> Both tools require a local HTTP server to run (due to WASM security restrictions).
+> Run: `python3 -m http.server 8000`
+
+**Quick Start**: [Docs/quick_start.md](Docs/quick_start.md) | **Details**: [Docs/codec.md](Docs/codec.md)
 
 ## Message Formats
 
@@ -267,41 +277,34 @@ Ribbit now supports **dual-mode messaging**:
 - **40-60% smaller** than chat mode
 - **Includes UTC timestamp** (31 bits, 2-sec resolution, auto-updated)
 - **Timestamp visualization** - See Year/Month, Day, Hour, Minute, Second bits
+- **Unique Message ID (80-bit Hex)** - Callsign + Timestamp + Emergency flag for deduplication
 - Room for ACK arrays (20+ ACKs possible)
 - Best for contests, structured communications
 - **ACK/QSO ready** - Callsign + timestamp for contact confirmation
 
 **Example Savings**: "Hello from Ribbit!" is **37% smaller** in Contest mode (52 → 33 bytes)
 
-**Full Details**: [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md)
+**Full Details**: [Docs/ribbit_wasm.md](Docs/ribbit_wasm.md)
 
 ## Known Issues & Bugs
 
 ### 🐛 Confirmed Bugs
 
-1. **Overflow Buffer Bug** (`src/ribbit/src/ribbit.cc:196`)
-   - **Location**: `digestFeed()` function, line 196
-   - **Issue**: `overflow[i] = overflow[i];` is a no-op that doesn't copy data correctly
-   - **Impact**: May cause data loss or corruption when processing audio chunks
-   - **Status**: ✅ FIXED - New `digestFeedOptimized()` function added that fixes this bug and improves performance
-   - **Solution**: Created optimized version with proper memory management using `std::copy`, eliminates redundant copies, and adds bounds checking. Users can toggle between old and new versions in System Settings.
-   - **Severity**: Medium (may affect decoder reliability) - RESOLVED
-
-2. **Memory Cleanup**
+1. **Memory Cleanup**
    - **Location**: `web/scripts/message_format.js` - `RibbitMessageFormat` class
    - **Issue**: `cleanup()` method exists but may not be called in all error paths
    - **Impact**: Potential memory leaks with repeated encode/decode operations
    - **Status**: Should add automatic cleanup on page unload
    - **Severity**: Low (memory grows slowly)
 
-3. **Service Worker Cache Versioning**
+2. **Service Worker Cache Versioning**
    - **Location**: `web/sw.js`
    - **Issue**: Cache version `'ribbit-cache-v1'` is hardcoded and may not invalidate old caches
    - **Impact**: Users may see stale versions after updates
    - **Status**: Should implement cache versioning strategy
    - **Severity**: Low (affects updates)
 
-4. **Error Handling in Message Decoding**
+3. **Error Handling in Message Decoding**
    - **Location**: `web/scripts/index.js` - `fetchDecoded()` function
    - **Issue**: Some malformed messages may not be handled gracefully
    - **Impact**: Could cause UI errors or incomplete error messages
@@ -407,17 +410,14 @@ Ribbit now supports **dual-mode messaging**:
 
 ### Immediate (Next Sprint)
 
-1. **Fix Overflow Buffer Bug**
-   - Investigate `digestFeed()` overflow handling
-   - Add unit tests for buffer boundary conditions
-   - Fix the no-op assignment on line 196
 
-2. **Contest Mode UI Integration**
+
+1. **Contest Mode UI Integration**
    - Add mode selector to main application
    - Integrate contest mode encoding/decoding in `index.js`
    - Add UI for contest mode message fields (timestamp, flags, etc.)
 
-3. **Memory Cleanup Enhancement**
+2. **Memory Cleanup Enhancement**
    - Ensure `cleanup()` is called on page unload
    - Add error handling to ensure cleanup happens in all paths
 
@@ -474,8 +474,8 @@ When reporting bugs or implementing optimizations:
 
 ## Resources & Documentation
 
-- **Quick Start**: [Docs/CODEC_QUICK_START.md](Docs/CODEC_QUICK_START.md)
-- **Architecture**: [Docs/DUAL_MODE_MESSAGE_ARCHITECTURE.md](Docs/DUAL_MODE_MESSAGE_ARCHITECTURE.md)
-- **Testing Guide**: [web/TESTING.md](web/TESTING.md)
-- **Troubleshooting**: [web/WASM_TROUBLESHOOTING.md](web/WASM_TROUBLESHOOTING.md)
-- **Message Format Spec**: [web/HeaderReadme.md](web/HeaderReadme.md)
+- **Quick Start**: [Docs/quick_start.md](Docs/quick_start.md)
+- **Architecture**: [Docs/codec.md](Docs/codec.md)
+- **Testing Guide**: [Docs/testing_plan.md](Docs/testing_plan.md)
+- **Troubleshooting**: [Docs/ribbit_wasm.md](Docs/ribbit_wasm.md)
+- **Message Format Spec**: [Docs/codec.md](Docs/codec.md)

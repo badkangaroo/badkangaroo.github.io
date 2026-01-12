@@ -20,6 +20,91 @@ The WebAssembly implementation consists of two files:
 3. **DSP Library**: FFT, filters, Hilbert transform, and modulation/demodulation algorithms
 4. **Memory Management**: Efficient heap allocation for audio buffers
 
+## Message ID Structure
+
+The Ribbit protocol caches a unique 80-bit Message ID for each transmission to handle deduplication and metadata. This packaged component consists of:
+
+| Component | Bits | Description |
+|-----------|------|-------------|
+| **Callsign** | 48 | Alphanumeric sender identifier (8 chars × 6 bits) |
+| **Timestamp** | 31 | Unix timestamp packed with custom epoch |
+| **Emergency** | 1 | High-priority flag (0 = Normal, 1 = Emergency) |
+| **Total** | **80** | Unique message identifier |
+
+This 80-bit structure is critical for the "Contest Mode" and general message handling, ensuring that repeat transmissions of the same message are identified correctly.
+
+### Hex Visualization
+In the Web UI, this ID is presented as a **20-character Hexadecimal string** (e.g., `4B4F36...`). This allows operators to easily visually verify message uniqueness and trace specific transmissions in logs.
+
+### Demo & Verification
+
+You can verify the Message ID generation and test the full message format using the **Message Format Demo**.
+
+**Location**: `web/message_format_demo.html`
+
+> [!IMPORTANT]
+> **Local Server Required**: Due to browser security restrictions on WebAssembly and file access, you cannot open this file directly (e.g., `file://...`). You must run a local HTTP server.
+
+**How to Run**:
+
+1.  Open a terminal in the project root.
+2.  Start a Python HTTP server:
+    ```bash
+    python3 -m http.server 8000
+    ```
+3.  Open your browser to: `http://localhost:8000/web/message_format_demo.html`
+
+This tool allows you to:
+*   Switch between **Chat Mode** and **Contest Mode**.
+*   See the **80-bit Message ID** generated in real-time.
+*   Compare message sizes and efficiency.
+*   Verify the encoding/decoding loop using the actual WASM binary.
+
+## Processing Flow
+
+The following diagram illustrates how audio data flows from the browser's microphone input through the WebAssembly/Ribbit processing pipeline to decode messages.
+
+```mermaid
+graph TD
+    subgraph "Browser / JavaScript Layer"
+        Mic[Microphone Input] -->|Audio Stream| WebAudio[Web Audio API]
+        WebAudio -->|"Float32 Array (2048 samples)"| JS_Feed["JS: Feed Buffer"]
+        JS_Feed -->|Write to WASM Heap| WASM_Mem["WASM Memory: feed[]"]
+    end
+
+    subgraph "WebAssembly Interface (ribbit.cc)"
+        WASM_Mem -->|Call _digestFeedOptimized| Digest["digestFeedOptimized()"]
+        Digest -->|Accumulate| Overflow["Overflow Buffer"]
+        Overflow -->|"Chunk Ready? (160 samples)"| FeedFunc["feedDecoder()"]
+    end
+
+    subgraph "DSP Core (C++)"
+        FeedFunc -->|"Call decoder->feed()"| DSP_Feed["Decoder::feed()"]
+        DSP_Feed -->|Signal Processing| DSP_Algo{"Message Detected?"}
+        
+        DSP_Algo -- No --> Wait["Wait for more samples"]
+        DSP_Algo -- Yes --> Fetch["Decoder::fetch()"]
+    end
+
+    subgraph "Message Extraction"
+        Fetch -->|Write Bytes| Payload["WASM Memory: payload[]"]
+        Payload -->|Callback| JS_Callback["JS: fetchDecoded()"]
+        JS_Callback -->|UTF8ToString| UserMsg["User Interface: Display Message"]
+    end
+
+    classDef cpp fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef js fill:#ff9,stroke:#333,stroke-width:2px;
+    class Digest,FeedFunc,Overflow,Payload cpp;
+    class Mic,WebAudio,JS_Feed,JS_Callback,UserMsg js;
+```
+
+### Key Functions & Triggers
+
+*   **`digestFeedOptimized()`**: The main entry point for audio data. It handles the mismatch between Web Audio API buffer sizes (typically 2048 or 4096 samples) and the Ribbit decoder's internal requirement (160 samples). It buffers incoming data into an `overflow` array.
+*   **`feedDecoder()`**: Automatically triggered by `digestFeedOptimized` whenever 160 samples (20ms at 8kHz) are accumulated. This ensures the DSP core receives a consistent stream of data.
+*   **`Decoder::feed()`**: The core C++ signal processing function. It runs the FFT and demodulation algorithms. It returns `true` **only** when a complete message has been successfully detected and decoded.
+*   **`fetchDecoded()`**: A JavaScript callback triggered immediately upon message detection. This notifies the web app to read the `payload` buffer and display the message.
+
 ## Loading the WASM Module
 
 ### Correct Loading Method
