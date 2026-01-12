@@ -8,7 +8,7 @@
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
+    overflow: hidden;
     transition: var(--transition);
     box-shadow: 0 0 2rem var(--shadow-lg);
 }
@@ -27,6 +27,7 @@
     max-width: 1200px;
     margin: 0 auto;
     width: 100%;
+    /* Only the content area should scroll; keep tabs + actions always visible */
     overflow: hidden;
 }
 
@@ -95,14 +96,26 @@
 }
 
 /* Settings Tabs */
-#settings > .page > input[type="radio"] {
+#settings .page input[type="radio"][name="settings"] {
     display: none;
 }
 
-#settings > .page > label {
-    display: inline-block;
-    padding: 0.75rem 1.5rem;
-    margin: 0.25rem;
+#settings .tabs {
+    width: 100%;
+    /* Keep tabs on a single row (no wrapping) */
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    background: var(--background);
+    flex: 0 0 auto;
+}
+
+#settings .tabs > label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.65rem 0.75rem;
     text-align: center;
     font-weight: bold;
     cursor: pointer;
@@ -111,18 +124,23 @@
     color: var(--text-secondary);
     transition: var(--transition);
     border: 2px solid transparent;
-    min-width: 150px;
-    flex-shrink: 0;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-#settings > .page > label:hover {
+#settings .tabs > label:hover {
     background: var(--primary-light);
     color: var(--background);
     transform: translateY(-2px);
     box-shadow: 0 4px 8px var(--shadow);
 }
 
-#settings > .page > label:has(+ input:checked) {
+/* Active tab styling without :has() */
+#settings-1:checked ~ .tabs label[for="settings-1"],
+#settings-2:checked ~ .tabs label[for="settings-2"],
+#settings-3:checked ~ .tabs label[for="settings-3"] {
     background: var(--primary);
     color: var(--background);
     border-color: var(--primary-dark);
@@ -130,7 +148,20 @@
 }
 
 /* Page Content */
-#settings > .page > .page-content {
+#settings .contents {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    /* Scroll area lives between tabs and actions */
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: 0.75rem;
+}
+
+#settings .page-content {
     background: var(--surface);
     display: none;
     flex-direction: column;
@@ -141,19 +172,18 @@
     border-radius: var(--border-radius);
     box-shadow: 0 4px 6px var(--shadow);
     gap: 1rem;
-    flex: 1;
-    overflow-y: auto;
-    min-height: 0;
 }
 
-#settings > .page > .page-content > h2 {
+#settings .page-content > h2 {
     margin: 0.5rem 0 0.25rem 0;
     font-size: 1.1rem;
     color: var(--text-primary);
     font-weight: bold;
 }
 
-#settings > .page > input:checked + .page-content {
+#settings-1:checked ~ .contents #settings-content-1,
+#settings-2:checked ~ .contents #settings-content-2,
+#settings-3:checked ~ .contents #settings-content-3 {
     display: flex;
 }
 
@@ -167,6 +197,7 @@
     border-radius: var(--border-radius);
     border: 1px solid var(--border);
     transition: var(--transition);
+    position: relative;
 }
 
 .setting:hover {
@@ -179,6 +210,32 @@
     color: var(--text-primary);
     font-size: 0.95rem;
     margin-bottom: 0.25rem;
+}
+
+.setting.required > label::after {
+    content: "Required";
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background: rgba(16, 108, 47, 0.12);
+    color: var(--primary-dark);
+    border: 1px solid rgba(16, 108, 47, 0.25);
+    vertical-align: middle;
+}
+
+.setting.required.missing {
+    border-color: var(--error);
+    box-shadow: 0 2px 8px rgba(211, 47, 47, 0.15);
+}
+
+.setting.required.missing > label::after {
+    background: var(--error);
+    color: white;
+    border-color: rgba(0, 0, 0, 0.12);
 }
 
 .setting > input[type="text"],
@@ -285,8 +342,10 @@
     padding: 1rem;
     box-shadow: 0 4px 12px var(--shadow-lg);
     z-index: 10;
-    max-width: 300px;
+    max-width: 320px;
     margin-top: 0.5rem;
+    left: 0;
+    top: calc(100% - 0.25rem);
 }
 
 .setting > label:hover + .info,
@@ -302,6 +361,11 @@
     line-height: 1.4;
 }
 
+.setting.required > .info > p {
+    font-size: 0.8rem;
+    line-height: 1.25;
+}
+
 .setting > .info > p:before {
     content: 'ℹ️ ';
     margin-right: 0.5rem;
@@ -309,6 +373,47 @@
 
 .setting.hidden {
     display: none;
+}
+
+/* Inline rows used in some settings */
+.setting-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.setting-row > input,
+.setting-row > select {
+    flex: 1 1 240px;
+    min-width: 160px;
+}
+
+.setting-row > button {
+    flex: 0 0 auto;
+}
+
+/* GPS row in Grid Square setting: button + lat + lon on one line */
+.gps-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    width: 100%;
+}
+
+.gps-row > button {
+    flex: 0 0 auto;
+    padding: 0.6rem 0.9rem;
+}
+
+.gps-coord {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    padding: 0.6rem;
 }
 
 /* GPS Coordinates */
@@ -325,24 +430,28 @@
 }
 
 /* Action Buttons */
-#settings > .page > .setting {
+#settings .settings-actions {
+    /* Less "box-in-a-box": keep actions compact */
     display: flex;
     flex-direction: row;
-    gap: 1rem;
+    gap: 0.75rem;
     justify-content: space-between;
     margin-top: 0.5rem;
-    padding: 1rem;
-    background: var(--surface);
-    border-radius: var(--border-radius);
-    border: 2px solid var(--primary);
+    padding: 0.5rem 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
     flex-shrink: 0;
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 600px;
 }
 
-#settings > .page > .setting > #cancel,
-#settings > .page > .setting > #close {
+#settings .settings-actions > #cancel,
+#settings .settings-actions > #close {
     flex: 1;
-    padding: 0.875rem;
-    font-size: 1rem;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.95rem;
 }
 
 /* Responsive Design */
@@ -351,13 +460,17 @@
         padding: 0.5rem;
     }
 
-    #settings > .page > label {
-        padding: 0.75rem 1rem;
-        font-size: 0.9rem;
-        min-width: 120px;
+    #settings .tabs {
+        gap: 0.4rem;
     }
 
-    #settings > .page > .page-content {
+    #settings .tabs > label {
+        padding: 0.6rem 0.5rem;
+        font-size: 0.85rem;
+        border-width: 1px;
+    }
+
+    #settings .page-content {
         padding: 1rem;
     }
 
@@ -374,21 +487,39 @@
         width: 100%;
     }
 
-    #settings > .page > .setting {
+    #settings .settings-actions {
         flex-direction: column;
+        gap: 0.5rem;
     }
 
-    #settings > .page > .setting > #cancel,
-    #settings > .page > .setting > #close {
+    #settings .settings-actions > #cancel,
+    #settings .settings-actions > #close {
         width: 100%;
+    }
+
+    /* On touch/mobile, show help text inline instead of hover tooltips */
+    .setting > .info {
+        display: block;
+        position: static;
+        border: 0;
+        box-shadow: none;
+        padding: 0;
+        margin-top: 0.15rem;
+        max-width: none;
+        background: transparent;
+        opacity: 0.9;
+    }
+
+    .setting.required > .info > p {
+        font-size: 0.75rem;
+        line-height: 1.2;
     }
 }
 
 @media (max-width: 480px) {
-    #settings > .page > label {
-        padding: 0.5rem 0.75rem;
-        font-size: 0.85rem;
-        min-width: 100px;
+    #settings .tabs > label {
+        padding: 0.55rem 0.35rem;
+        font-size: 0.8rem;
     }
 
     .settings-required-message {

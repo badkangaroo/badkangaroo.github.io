@@ -381,9 +381,10 @@ test.describe('Ribbit Web App', () => {
     const settings = page.locator('#settings');
     await expect(settings).toBeVisible();
 
-    // Settings required message should be visible
-    const requiredMessage = page.locator('#settings-required-message, .settings-required-message');
-    await expect(requiredMessage.first()).toBeVisible();
+    // Required fields should be visible (inline guidance replaces large welcome banner)
+    await expect(page.locator('#operatorName')).toBeVisible();
+    await expect(page.locator('#callsign')).toBeVisible();
+    await expect(page.locator('#gridsquare')).toBeVisible();
 
     // Main chat interface should not be accessible
     const textarea = page.locator('#textarea');

@@ -74,9 +74,18 @@
     </div>
     <div id="settings" style="top: -100svh;">
         <div class="page">
-            <label for="settings-1">User Settings</label>
             <input type="radio" name="settings" id="settings-1" checked>
-            <div class="page-content">
+            <input type="radio" name="settings" id="settings-2">
+            <input type="radio" name="settings" id="settings-3">
+
+            <div class="tabs" role="tablist" aria-label="Settings Tabs">
+                <label for="settings-1">User</label>
+                <label for="settings-2">Application</label>
+                <label for="settings-3">System</label>
+            </div>
+
+            <div class="contents">
+            <div class="page-content" id="settings-content-1">
                 <div class="setting hidden">
                     <label for="mode">Mode:</label>
                     <div class="info">
@@ -92,22 +101,20 @@
                         <option option="QSO">QSO (Coming Soon...)</option>
                     </select>
                 </div>
-                <div class="setting">
+                <div class="setting required">
                     <label for="operatorName">Operator Name:</label>
                     <div class="info">
                         <p>
-                            The name of the operator. This will be displayed to
-                            other users. Character limit is 32 characters.
+                            Shown to other users. Max 32 characters.
                         </p>
                     </div>
                     <input id="operatorName" type="text" required placeholder="John Doe">
                 </div>
-                <div class="setting">
+                <div class="setting required">
                     <label for="callsign">Callsign:</label>
                     <div class="info">
                         <p>
-                            The callsign of the operator. This will be displayed
-                            to other users. Character limit is 8 characters.
+                            Shown to other users. Max 8 characters.
                         </p>
                     </div>
                     <!-- force callsign to be all uppercase -->
@@ -115,33 +122,27 @@
                     <script type="text/javascript">
                     </script>
                 </div>
-                <div class="setting">
-                    <label for="gridsquare">Grid Square (Required):</label>
+                <div class="setting required">
+                    <label for="gridsquare">Grid Square:</label>
                     <div class="info">
                         <p>
-                            The grid square of the operator (6 characters: AA00aa format).
-                            This will be displayed to other users. You can either enable GPS
-                            to auto-populate or enter it manually.
+                            6-char Maidenhead (AA00aa). Use GPS or enter manually.
                         </p>
                     </div>
-                    <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <input id="gridsquare" type="text" required placeholder="AA00aa" maxlength="6" pattern="[A-Ra-r]{2}[0-9]{2}[A-Xa-x]{2}">
+                    <input id="gridsquare" type="text" required placeholder="AA00aa" maxlength="6" pattern="[A-Ra-r]{2}[0-9]{2}[A-Xa-x]{2}">
+                    <div class="gps-row">
                         <button id="updateGPS" onclick="UpdateGPSPosition();" type="button" style="white-space: nowrap;">
                             <svg class="icon" viewBox="0 0 4 6" fill="currentColor" style="width: 1em; height: 1em; margin-right: 0.25em;">
                                 <path d="M0 2A1 1 0 014 2C4 3 3 4 2 6 1 4 0 3.1 0 2Z" />
                             </svg>
                             Get GPS
                         </button>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-                        <input id="latitude" type="number" readonly placeholder="Latitude" style="flex: 1;">
-                        <input id="longitude" type="number" readonly placeholder="Longitude" style="flex: 1;">
+                        <input id="latitude" class="gps-coord" type="text" readonly placeholder="Lat" aria-label="Latitude">
+                        <input id="longitude" class="gps-coord" type="text" readonly placeholder="Lon" aria-label="Longitude">
                     </div>
                 </div>
             </div>
-            <label for="settings-2">Application Settings</label>
-            <input type="radio" name="settings" id="settings-2">
-            <div class="page-content">
+            <div class="page-content" id="settings-content-2">
                 <div class="setting">
                     <label for="Theme">Theme:</label>
                     <div class="info">
@@ -219,9 +220,7 @@
                     </div>
                 </div>
             </div>
-            <label for="settings-3">System Settings</label>
-            <input type="radio" name="settings" id="settings-3">
-            <div class="page-content">
+            <div class="page-content" id="settings-content-3">
                 <p>Updates:</p>
                 <div class="setting">
                     <button id="checkForUpdates">Check for Updates</button>
@@ -302,8 +301,9 @@
                     </div>
                 </div>
             </div>
-            <div class="setting">
-                <button id="cancel" onclick="document.dispatchEvent(new CustomEvent('closeSettings'));">CONTINUE WITHOUT SAVING</span></button>
+            </div>
+            <div class="setting settings-actions">
+                <button id="cancel" onclick="document.dispatchEvent(new CustomEvent('closeSettings'));">CONTINUE WITHOUT SAVING</button>
                 <button id="close" onclick="document.dispatchEvent(new CustomEvent('saveSettings'))">SAVE & CONTINUE</button>
             </div>
         </div>

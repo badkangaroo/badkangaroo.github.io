@@ -39,6 +39,15 @@ const UpdateGPSPosition = () => {
     const latitudeInput = document.getElementById('latitude');
     const longitudeInput = document.getElementById('longitude');
     const gridsquareInput = document.getElementById('gridsquare');
+
+    const formatCoord = (coord, maxAbs) => {
+        if (typeof coord !== 'number' || Number.isNaN(coord)) return '';
+        const clamped = Math.max(-maxAbs, Math.min(maxAbs, coord));
+        const abs = Math.abs(clamped);
+        // Always show sign, 4 decimals: ±DDD.dddd
+        const sign = clamped >= 0 ? '+' : '-';
+        return `${sign}${abs.toFixed(4)}`;
+    };
     
     // Show loading state
     if (gpsButton) {
@@ -51,8 +60,8 @@ const UpdateGPSPosition = () => {
         const lon = location.coords.longitude;
         
         // Update latitude and longitude inputs
-        if (latitudeInput) latitudeInput.value = lat.toFixed(6);
-        if (longitudeInput) longitudeInput.value = lon.toFixed(6);
+        if (latitudeInput) latitudeInput.value = formatCoord(lat, 90);
+        if (longitudeInput) longitudeInput.value = formatCoord(lon, 180);
         
         // Update GPS icon if it exists
         const gpsIcon = document.getElementById('GPSIcon');

@@ -4,6 +4,43 @@
 var settingsOpen = false;
 var isInitialLoad = true;
 
+// Required fields we want to guide users through (inline, no big banner)
+const REQUIRED_INPUT_IDS = ["operatorName", "callsign", "gridsquare"];
+
+function updateRequiredFieldIndicators() {
+    for (const id of REQUIRED_INPUT_IDS) {
+        const input = document.getElementById(id);
+        if (!input) continue;
+
+        const setting = input.closest(".setting");
+        if (!setting) continue;
+
+        const value = (input.value || "").trim();
+        let missing = value.length === 0;
+
+        // Gridsquare has format requirements, treat invalid as missing guidance
+        if (!missing && id === "gridsquare") {
+            missing = !validateGridsquare(value);
+        }
+
+        setting.classList.toggle("missing", missing);
+    }
+}
+
+function focusFirstMissingRequired() {
+    for (const id of REQUIRED_INPUT_IDS) {
+        const input = document.getElementById(id);
+        if (!input) continue;
+
+        const value = (input.value || "").trim();
+        const missing = value.length === 0 || (id === "gridsquare" && !validateGridsquare(value));
+        if (missing) {
+            input.focus();
+            return;
+        }
+    }
+}
+
 // Check if required settings are complete
 function areRequiredSettingsComplete() {
     const db = window.localStorage;
@@ -33,6 +70,14 @@ window.addEventListener("DOMContentLoaded", (e) => {
     if (callsignInput) {
         callsignInput.addEventListener("input", (e) => {
             e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            updateRequiredFieldIndicators();
+        });
+    }
+
+    const operatorNameInput = document.getElementById("operatorName");
+    if (operatorNameInput) {
+        operatorNameInput.addEventListener("input", () => {
+            updateRequiredFieldIndicators();
         });
     }
 
@@ -44,10 +89,12 @@ window.addEventListener("DOMContentLoaded", (e) => {
             if (value.length > 6) value = value.substring(0, 6);
             e.target.value = value;
             updateGridsquareValidation(e.target);
+            updateRequiredFieldIndicators();
         });
         
         gridsquareInput.addEventListener("blur", (e) => {
             updateGridsquareValidation(e.target);
+            updateRequiredFieldIndicators();
         });
     }
 
@@ -58,49 +105,14 @@ window.addEventListener("DOMContentLoaded", (e) => {
     if (!areRequiredSettingsComplete()) {
         isInitialLoad = true;
         openSettings();
-        showSettingsRequiredMessage();
+        updateRequiredFieldIndicators();
+        focusFirstMissingRequired();
     } else {
         isInitialLoad = false;
         // Hide settings initially if all required fields are set
         closeSettings();
     }
 });
-
-function showSettingsRequiredMessage() {
-    const settings = document.getElementById("settings");
-    if (!settings) return;
-    
-    // Create or update required message
-    let message = document.getElementById("settings-required-message");
-    if (!message) {
-        message = document.createElement("div");
-        message.id = "settings-required-message";
-        message.className = "settings-required-message";
-        message.innerHTML = `
-            <div class="required-message-content">
-                <h2>Welcome to Ribbit!</h2>
-                <p>Please complete your profile to get started:</p>
-                <ul>
-                    <li>Enter your <strong>Operator Name</strong></li>
-                    <li>Enter your <strong>Callsign</strong></li>
-                    <li>Enter or enable GPS for your <strong>Grid Square</strong> (6 characters)</li>
-                </ul>
-            </div>
-        `;
-        const page = settings.querySelector(".page");
-        if (page) {
-            page.insertBefore(message, page.firstChild);
-        }
-    }
-    message.style.display = "block";
-}
-
-function hideSettingsRequiredMessage() {
-    const message = document.getElementById("settings-required-message");
-    if (message) {
-        message.style.display = "none";
-    }
-}
 
 function updateGridsquareValidation(input) {
     const value = input.value.trim();
@@ -152,6 +164,7 @@ function validateRequiredFields() {
     
     // Show validation errors
     showValidationErrors(errors);
+    updateRequiredFieldIndicators();
     
     return isValid;
 }
@@ -194,12 +207,16 @@ const toggleSettings = () => {
 };
 
 const openSettings = () => {
-    document.dispatchEvent(new CustomEvent("openSettings"));
+    // NOTE: Do not dispatch "openSettings" here: that's the *command* event that triggers
+    // this function (see listener below). Emitting it here causes infinite recursion.
+    // Use a separate event name for "settings has opened" notifications.
+    document.dispatchEvent(new CustomEvent("settingsOpened"));
     const elements = document.getElementsByName("close");
     elements.forEach((e) => e.beginElement());
     
     // Load saved values
     loadSettingsValues();
+    updateRequiredFieldIndicators();
     
     // Get number of messages in indexedDB
     if (window.indexedDB) {
@@ -277,7 +294,7 @@ const closeSettings = () => {
     if (settings) {
         settings.style.top = "-100svh";
     }
-    hideSettingsRequiredMessage();
+    updateRequiredFieldIndicators();
 };
 
 function loadSettingsValues() {
@@ -316,6 +333,7 @@ function loadSettingsValues() {
     if (savemessagesEl) savemessagesEl.checked = savemessages;
     if (useOptimizedDigestEl) useOptimizedDigestEl.checked = useOptimizedDigest;
     if (themeEl) themeEl.value = theme;
+    updateRequiredFieldIndicators();
 }
 
 function loadTheme() {
@@ -394,7 +412,7 @@ document.addEventListener('saveSettings', (e) => {
     
     // Hide validation errors
     showValidationErrors([]);
-    hideSettingsRequiredMessage();
+    updateRequiredFieldIndicators();
     
     // Close settings
     isInitialLoad = false;
