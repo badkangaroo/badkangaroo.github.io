@@ -105,7 +105,7 @@ Example: `KO6BVA...` → `4B4F36425641...`
 ### Type 1: Chat
 - General conversation
 - UTF-8 text with separators
-- Format: `Name|Callsign|Gridsquare|Phone&=Message`
+- Format: `Name|Callsign|Gridsquare&=Message`
 
 ### Type 2: Contest
 - Bitwise-packed for efficiency

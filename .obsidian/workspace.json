@@ -20,6 +20,18 @@
               "icon": "lucide-file",
               "title": "codec"
             }
+          },
+          {
+            "id": "933dfebbd26d97cd",
+            "type": "leaf",
+            "state": {
+              "type": "release-notes",
+              "state": {
+                "currentVersion": "1.11.4"
+              },
+              "icon": "lucide-book-up",
+              "title": "Release Notes 1.11.4"
+            }
           }
         ]
       }
@@ -182,7 +194,7 @@
       "bases:Create new base": false
     }
   },
-  "active": "a68d861a9b4a2c00",
+  "active": "6e97421dabb4c56d",
   "lastOpenFiles": [
     "web/scripts/message_codec_tests.js",
     "web/test/message-id.test.js",

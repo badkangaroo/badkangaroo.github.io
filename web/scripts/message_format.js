@@ -45,7 +45,7 @@ class RibbitMessageFormat {
 
     /**
      * Encode chat mode message (current format)
-     * Format: "Name|Callsign|Gridsquare|Phone&=Message"
+     * Format: "Name|Callsign|Gridsquare&=Message"
      */
     encodeChatMode(data) {
         const { name, callsign, gridsquare, message } = data;

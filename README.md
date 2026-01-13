@@ -20,7 +20,7 @@ A WebAssembly-based digital radio communication application supporting real-time
 
 - **WebAssembly Encoder/Decoder**: High-performance C++ signal processing compiled to WASM
 - **Dual-Mode Messaging**:
-  - **Chat Mode**: UTF-8 free-form messaging (`Name|Callsign|Gridsquare|Phone&=Message`)
+  - **Chat Mode**: UTF-8 free-form messaging (`Name|Callsign|Gridsquare&=Message`)
   - **Contest Mode**: Bitwise-packed structured format (40-60% smaller, includes timestamps)
 - **Real-time Audio Processing**: 8kHz sample rate, real-time encoding/decoding
 - **Web Audio API Integration**: Browser-based audio I/O
@@ -267,7 +267,7 @@ Ribbit now supports **dual-mode messaging**:
 
 ### Chat Mode (Type 1) 💬
 
-- Current UTF-8 format: `"Name|Callsign|Gridsquare|Phone&=Message"`
+- Current UTF-8 format: `"Name|Callsign|Gridsquare&=Message"`
 - Simple, flexible, any UTF-8 characters
 - Best for casual conversations
 
