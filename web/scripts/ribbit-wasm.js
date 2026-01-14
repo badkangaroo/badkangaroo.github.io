@@ -80,15 +80,29 @@ class MessageEncoder {
             messageType: opts.messageType
         };
 
+        // Create the bitstream using MessageCodec
         const packedMessage = this.codec.EncodeMessage(messageData);
 
-        // Convert to bytes and allocate in WASM memory
-        const messageBytes = this._stringToBytes(packedMessage);
-        const messagePtr = this._allocateBuffer(messageBytes);
+        // Convert bitstream string ("0101...") to actual bytes for WASM
+        const messageBytes = this.codec.BitStreamToBytes(packedMessage);
+
+        // Get the message buffer from WASM memory
+        const wasmMessagePtr = this.module._message_pointer();
+        const wasmMessageLength = this.module._message_length();
+
+        if (!wasmMessagePtr || wasmMessageLength === 0) {
+            throw new Error('WASM message buffer not available');
+        }
+
+        // Copy message bytes to WASM static buffer
+        const wasmMessageHeap = new Uint8Array(this.module.HEAPU8.buffer, wasmMessagePtr, wasmMessageLength);
+        wasmMessageHeap.fill(0); // Clear the buffer first
+        wasmMessageHeap.set(messageBytes.subarray(0, Math.min(messageBytes.length, wasmMessageLength)));
 
         try {
-            // Initialize encoder with the message
-            this.module._initEncoder(messagePtr, messageBytes.length);
+            // Initialize encoder with the static message buffer
+            // Note: In current WASM version, _initEncoder takes no arguments
+            this.module._initEncoder();
 
             // Read the encoded signal
             this.module._readEncoder();
@@ -97,12 +111,16 @@ class MessageEncoder {
             const signalPtr = this.module._signal_pointer();
             const signalLength = this.module._signal_length();
 
+            if (!signalPtr || signalLength === 0) {
+                throw new Error('Encoder produced no audio data');
+            }
+
             // Copy the signal data
             return this._copySignalBuffer(signalPtr, signalLength);
 
-        } finally {
-            // Always free the message buffer
-            this._freeBuffer(messagePtr);
+        } catch (error) {
+            console.error('WASM encoding error:', error);
+            throw error;
         }
     }
 
@@ -246,8 +264,12 @@ class MessageDecoder {
         const copyLength = Math.min(audioData.length, feedLength);
         feedView.set(audioData.subarray(0, copyLength));
 
-        // Feed to decoder
-        this.module._digestFeed();
+        // Feed to decoder using the optimized path if available
+        if (this.module._digestFeedOptimized) {
+            this.module._digestFeedOptimized();
+        } else {
+            this.module._digestFeed();
+        }
     }
 
     /**
@@ -349,14 +371,14 @@ export class RibbitWASM {
             // Set up required callback functions that the WASM module expects
             // These must be defined before the module initializes
             if (typeof window !== 'undefined') {
-                window.encoderCreated = window.encoderCreated || (() => {});
-                window.decoderCreated = window.decoderCreated || (() => {});
-                window.encoderDestroyed = window.encoderDestroyed || (() => {});
-                window.decoderDestroyed = window.decoderDestroyed || (() => {});
-                window.readEncoded = window.readEncoded || (() => {});
-                window.fetchDecoded = window.fetchDecoded || (() => {});
-                window.encoderCreatedError = window.encoderCreatedError || (() => {});
-                window.encoderReadError = window.encoderReadError || (() => {});
+                window.encoderCreated = window.encoderCreated || (() => console.log('WASM Encoder created'));
+                window.decoderCreated = window.decoderCreated || (() => console.log('WASM Decoder created'));
+                window.encoderDestroyed = window.encoderDestroyed || (() => console.log('WASM Encoder destroyed'));
+                window.decoderDestroyed = window.decoderDestroyed || (() => console.log('WASM Decoder destroyed'));
+                window.readEncoded = window.readEncoded || (() => console.debug('WASM Read encoded'));
+                window.fetchDecoded = window.fetchDecoded || (() => console.debug('WASM Fetch decoded'));
+                window.encoderCreatedError = window.encoderCreatedError || (() => console.error('WASM Encoder creation error'));
+                window.encoderReadError = window.encoderReadError || (() => console.error('WASM Encoder read error'));
             }
 
             // Check if Module is already available (loaded by main page script tag)
@@ -506,14 +528,14 @@ export class RibbitWASM {
             // Set up required callback functions that the WASM module expects
             // These are called from the WASM code via ASM_CONSTS
             if (typeof window !== 'undefined') {
-                window.encoderCreated = window.encoderCreated || (() => {});
-                window.decoderCreated = window.decoderCreated || (() => {});
-                window.encoderDestroyed = window.encoderDestroyed || (() => {});
-                window.decoderDestroyed = window.decoderDestroyed || (() => {});
-                window.readEncoded = window.readEncoded || (() => {});
-                window.fetchDecoded = window.fetchDecoded || (() => {});
-                window.encoderCreatedError = window.encoderCreatedError || (() => {});
-                window.encoderReadError = window.encoderReadError || (() => {});
+                window.encoderCreated = window.encoderCreated || (() => console.log('WASM Encoder created'));
+                window.decoderCreated = window.decoderCreated || (() => console.log('WASM Decoder created'));
+                window.encoderDestroyed = window.encoderDestroyed || (() => console.log('WASM Encoder destroyed'));
+                window.decoderDestroyed = window.decoderDestroyed || (() => console.log('WASM Decoder destroyed'));
+                window.readEncoded = window.readEncoded || (() => console.debug('WASM Read encoded'));
+                window.fetchDecoded = window.fetchDecoded || (() => console.debug('WASM Fetch decoded'));
+                window.encoderCreatedError = window.encoderCreatedError || (() => console.error('WASM Encoder creation error'));
+                window.encoderReadError = window.encoderReadError || (() => console.error('WASM Encoder read error'));
             }
 
             // Create encoder and decoder instances

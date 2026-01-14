@@ -114,7 +114,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
     request.onsuccess = (e) => {
         console.log("success", e);
         const { result } = e.target;
-        
+
         // Check if the "messages" object store exists
         if (!result.objectStoreNames.contains("messages")) {
             console.log("Messages object store not found. Database may need initialization.");
@@ -124,13 +124,13 @@ document.addEventListener("DOMContentLoaded", (e) => {
             }
             return;
         }
-        
+
         try {
             const transaction = result.transaction("messages", "readonly");
             const store = transaction.objectStore("messages");
             console.log("store:", store);
             console.log("store.indexNames", store.indexNames);
-            
+
             if (transaction.objectStoreNames.length < 1) {
                 console.log("No object stores found.");
                 const event = new CustomEvent("receivemessage", {
@@ -143,7 +143,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 document.dispatchEvent(event);
                 return;
             }
-            
+
             const request = store.getAll();
             request.onsuccess = (e) => {
                 const messages = e.target.result;
@@ -193,7 +193,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
         }
     };
     console.log("request:", request);
-    
+
     // Set up message display handler
     document.addEventListener("receivemessage", (e) => {
         const { detail } = e;
@@ -202,7 +202,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
 
         const messageDiv = document.createElement("div");
         messageDiv.className = "message";
-        
+
         if (detail.type === "decode-error") {
             // Special styling for decode errors
             messageDiv.classList.add("decode-error");
@@ -233,7 +233,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
             if (isTx) {
                 messageDiv.classList.add("tx");
             }
-            
+
             const senderParts = detail.sender ? detail.sender.split("|") : ["Unknown", "", ""];
             messageDiv.innerHTML = `
                 <div class="sender">
@@ -247,7 +247,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
         chat.appendChild(messageDiv);
         chat.scrollTop = chat.scrollHeight;
     });
-    
+
     // Initialize the Ribbit App with the new friendly WASM API
     class RibbitApp {
         constructor() {
@@ -279,7 +279,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
                     if (!appInstance.isInitialized || !appInstance.listen || !appInstance.ribbit) {
                         return;
                     }
-                    
+
                     // Process the decoded message asynchronously
                     appInstance.handleWasmDecodedMessage(payloadPtr).catch(error => {
                         console.warn('Error handling WASM decoded message:', error);
@@ -314,6 +314,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 this.showError('Failed to initialize: ' + error.message);
             }
         }
+
         setupEventHandlers() {
             // Message input
             const messagebox = document.getElementById("textarea");
@@ -387,9 +388,9 @@ document.addEventListener("DOMContentLoaded", (e) => {
 
             // Check if required settings are complete
             const settings = this.getSettings();
-            if (!settings.name || !settings.callsign || !settings.gridsquare || 
-                settings.name.trim().length === 0 || 
-                settings.callsign.trim().length === 0 || 
+            if (!settings.name || !settings.callsign || !settings.gridsquare ||
+                settings.name.trim().length === 0 ||
+                settings.callsign.trim().length === 0 ||
                 settings.gridsquare.trim().length < 6) {
                 this.showError('Please complete your settings (Name, Callsign, and Grid Square) before encoding messages.');
                 // Open settings if not already open
@@ -409,12 +410,9 @@ document.addEventListener("DOMContentLoaded", (e) => {
             try {
                 console.log('Encoding message:', message);
 
-                // Create the message format (same as before for compatibility)
-                const header = `${settings.name}|${settings.callsign}|${settings.gridsquare}|${settings.phone}`;
-                const fullMessage = `${header}&=${message}`;
-
-                // Use the new friendly API - this is so much simpler!
-                const audioBuffer = await this.ribbit.encodeMessage(fullMessage, {
+                // Use the new friendly API with just the message text
+                // The metadata (callsign, grid, etc.) is handled by the options
+                const audioBuffer = await this.ribbit.encodeMessage(message, {
                     callsign: settings.callsign,
                     gridsquare: settings.gridsquare,
                     name: settings.name,
@@ -423,8 +421,16 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 });
 
                 console.log('✓ Message encoded, audio length:', audioBuffer.length);
-
-                // Save to message history
+                console.log('✓ Message encoded, audio bit array 2 content:', audioBuffer);
+                // check if the audio buffer is valid by checking values in the buffer
+                // if all of the values are 0 then we had an encoding problem
+                if (audioBuffer.every(value => value === 0)) {
+                    this.showError('Failed to encode message: audio buffer is silent');
+                    return;
+                }
+                // Save to message history for display
+                const header = `${settings.name}|${settings.callsign}|${settings.gridsquare}`;
+                const fullMessage = `${header}&=${message}`;
                 this.saveMessage(fullMessage);
 
                 // Clear input
@@ -449,21 +455,55 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 // Resume audio context if needed
                 if (this.tx_context.state === 'suspended') {
                     await this.tx_context.resume();
+                    console.log('✓ Audio context resumed');
                 }
 
+                // Add a wake-up tone to ensure radio transmitters open the channel
+                // Tone: 300Hz for 200ms, then 100ms silence
+                const sampleRate = 8000;
+                const toneFreq = 300;
+                const toneDuration = 0.2; // 200ms
+                const silenceDuration = 0.1; // 100ms
+
+                const toneSamples = Math.floor(toneDuration * sampleRate);
+                const silenceSamples = Math.floor(silenceDuration * sampleRate);
+                const totalExtraSamples = toneSamples + silenceSamples;
+
+                const extendedBuffer = new Float32Array(totalExtraSamples + audioBuffer.length);
+
+                // Generate 300Hz wake-up tone
+                // 300Hz at 8000Hz SR for 1600 samples is exactly 60 cycles, ending at zero crossing.
+                for (let i = 0; i < toneSamples; i++) {
+                    extendedBuffer[i] = Math.sin(2 * Math.PI * toneFreq * i / sampleRate);
+                }
+
+                // Silence (next silenceSamples are already 0)
+
+                // Copy original encoded message audio
+                extendedBuffer.set(audioBuffer, totalExtraSamples);
+
                 // Create Web Audio buffer from the result
-                const audioBufferNode = this.tx_context.createBuffer(1, audioBuffer.length, 8000);
-                audioBufferNode.copyFromChannel(audioBuffer, 0);
+                console.log('✓ Creating Web Audio buffer from result', extendedBuffer);
+                const audioBufferNode = this.tx_context.createBuffer(1, extendedBuffer.length, sampleRate);
+                console.log('✓ Web Audio buffer created', audioBufferNode);
+                audioBufferNode.copyFromChannel(extendedBuffer, 0);
+                console.log('✓ Web Audio buffer copied');
 
                 // Play the audio
+                console.log('✓ Creating audio source');
                 const source = this.tx_context.createBufferSource();
+                console.log('✓ Audio source created', source);
                 source.buffer = audioBufferNode;
+                console.log('✓ Audio source buffer set', audioBufferNode);
                 source.connect(this.tx_context.destination);
+                console.log('✓ Audio source connected to destination', this.tx_context.destination);
 
                 // Set up end handler to resume listening after playback completes
                 source.onended = () => {
                     if (this.savewavfile) {
+                        console.log('✓ Saving audio to file');
                         this.saveWavFile(audioBufferNode, "ribbit.wav");
+                        console.log('✓ Audio saved to file');
                         this.savewavfile = false;
                     }
                     // Resume audio listening after playback completes
@@ -475,10 +515,11 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 source.onerror = (error) => {
                     console.error('Audio playback error:', error);
                     this.listen = true;
-                    console.log('Audio listening resumed after playback error');
+                    console.log('✓ Audio listening resumed after playback error');
                 };
 
                 source.start();
+                console.log('✓ Audio source started');
                 // Note: this.listen is already set to false in handleEncode() before encoding starts
 
                 console.log('✓ Audio playing through speakers');
@@ -487,7 +528,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 console.error('Audio playback failed:', error);
                 // Resume listening even if playback fails
                 this.listen = true;
-                console.log('Audio listening resumed after playback failure');
+                console.log('✓ Audio listening resumed after playback failure');
                 throw new Error('Audio playback failed: ' + error.message);
             }
         }
@@ -566,7 +607,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
                     payloadLength
                 );
                 const payloadBytes = new Uint8Array(payloadView);
-                
+
                 // Ignore empty or all-zero payloads (likely initialization artifacts)
                 const hasNonZero = payloadBytes.some(byte => byte !== 0);
                 if (!hasNonZero) {
@@ -614,22 +655,22 @@ document.addEventListener("DOMContentLoaded", (e) => {
                         const payloadHash = Array.from(payloadBytes.slice(0, Math.min(64, payloadBytes.length)))
                             .map(b => b.toString(16).padStart(2, '0'))
                             .join('');
-                        
+
                         const now = Date.now();
                         const lastErrorTime = this.decodeErrorTimes.get(payloadHash) || 0;
-                        
+
                         // Only show decode error if we haven't seen this exact payload recently
                         if (now - lastErrorTime > this.DECODE_ERROR_DEBOUNCE_MS) {
                             // Update tracking
                             this.decodeErrorTimes.set(payloadHash, now);
-                            
+
                             // Clean up old entries (keep only last 100)
                             if (this.decodeErrorTimes.size > 100) {
                                 const oldestHash = Array.from(this.decodeErrorTimes.entries())
                                     .sort((a, b) => a[1] - b[1])[0][0];
                                 this.decodeErrorTimes.delete(oldestHash);
                             }
-                            
+
                             // Only show decode error if we're actually listening (not during initialization)
                             if (this.listen && this.isInitialized) {
                                 // Show decode error in UI
@@ -690,11 +731,11 @@ document.addEventListener("DOMContentLoaded", (e) => {
             let lastDecodedHash = null;
             let lastDecodeTime = 0;
             const DEBOUNCE_MS = 2000; // Don't process same message within 2 seconds
-            
+
             // Track invalid message hashes to prevent repeated processing
             const invalidMessageHashes = new Set();
             const INVALID_MESSAGE_TTL = 5000; // Remember invalid messages for 5 seconds
-            
+
             // Track decode errors to prevent spam (shared with handleWasmDecodedMessage)
             const decodeErrorHashes = this.decodeErrorHashes;
             const decodeErrorTimes = this.decodeErrorTimes;
@@ -703,47 +744,47 @@ document.addEventListener("DOMContentLoaded", (e) => {
             // Helper function to validate decoded message
             const isValidDecodedMessage = (decoded) => {
                 if (!decoded) return false;
-                
+
                 // Check if required fields exist and are strings
                 if (typeof decoded.callsign !== 'string' || typeof decoded.text !== 'string') {
                     return false;
                 }
-                
+
                 // Check for null bytes or invalid characters
                 const hasNullBytes = (str) => str && str.includes('\u0000');
                 if (hasNullBytes(decoded.callsign) || hasNullBytes(decoded.text)) {
                     return false;
                 }
-                
+
                 // Check if callsign is reasonable (not empty, reasonable length)
                 if (!decoded.callsign || decoded.callsign.trim().length === 0 || decoded.callsign.length > 20) {
                     return false;
                 }
-                
+
                 // Validate callsign format - should only contain alphanumeric characters and common callsign separators
                 // Valid callsign format: letters/numbers, may contain / for portable/mobile designators
                 const callsignRegex = /^[A-Z0-9/]+$/i;
                 if (!callsignRegex.test(decoded.callsign.trim())) {
                     return false;
                 }
-                
+
                 // Check if text is reasonable (not empty, reasonable length)
                 if (!decoded.text || decoded.text.trim().length === 0 || decoded.text.length > 1000) {
                     return false;
                 }
-                
+
                 // Check for garbled text (too many non-printable characters or replacement characters)
                 const nonPrintableRegex = /[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F-\x9F\uFFFD]/g;
                 const nonPrintableCount = (decoded.text.match(nonPrintableRegex) || []).length;
                 if (nonPrintableCount > decoded.text.length * 0.1) { // More than 10% non-printable
                     return false;
                 }
-                
+
                 // Check for replacement characters (�) which indicate decoding errors
                 if (decoded.text.includes('\uFFFD') || decoded.callsign.includes('\uFFFD')) {
                     return false;
                 }
-                
+
                 return true;
             };
 
@@ -773,13 +814,13 @@ document.addEventListener("DOMContentLoaded", (e) => {
                             if (decoded) {
                                 // Create hash for duplicate/invalid checking
                                 const messageHash = createMessageHash(decoded);
-                                
+
                                 // Check if this is a known invalid message
                                 if (invalidMessageHashes.has(messageHash)) {
                                     // Skip known invalid messages
                                     return;
                                 }
-                                
+
                                 // Validate the decoded message BEFORE logging
                                 if (!isValidDecodedMessage(decoded)) {
                                     // Mark as invalid and skip
@@ -788,24 +829,24 @@ document.addEventListener("DOMContentLoaded", (e) => {
                                     setTimeout(() => {
                                         invalidMessageHashes.delete(messageHash);
                                     }, INVALID_MESSAGE_TTL);
-                                    
+
                                     // Create hash from decoded data to identify duplicate decode errors
                                     const errorHash = messageHash; // Reuse the message hash
                                     const now = Date.now();
                                     const lastErrorTime = decodeErrorTimes.get(errorHash) || 0;
-                                    
+
                                     // Only show decode error if we haven't seen this exact message recently
                                     if (now - lastErrorTime > DECODE_ERROR_DEBOUNCE_MS) {
                                         // Update tracking
                                         decodeErrorTimes.set(errorHash, now);
-                                        
+
                                         // Clean up old entries (keep only last 100)
                                         if (decodeErrorTimes.size > 100) {
                                             const oldestHash = Array.from(decodeErrorTimes.entries())
                                                 .sort((a, b) => a[1] - b[1])[0][0];
                                             decodeErrorTimes.delete(oldestHash);
                                         }
-                                        
+
                                         // Show UI notification that a message was received but failed to decode
                                         const failedDecodeEvent = new CustomEvent("receivemessage", {
                                             detail: {
@@ -819,14 +860,14 @@ document.addEventListener("DOMContentLoaded", (e) => {
                                     }
                                     return;
                                 }
-                                
+
                                 // Check for duplicate messages (debounce)
                                 const now = Date.now();
                                 if (messageHash === lastDecodedHash && (now - lastDecodeTime) < DEBOUNCE_MS) {
                                     // Same message within debounce period, skip it
                                     return;
                                 }
-                                
+
                                 // Update tracking
                                 lastDecodedHash = messageHash;
                                 lastDecodeTime = now;

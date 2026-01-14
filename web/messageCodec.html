@@ -12,7 +12,8 @@
         <h1>🐸 Ribbit Message Codec (WASM)</h1>
         <div class="intro">
             <p>Complete message encoding/decoding system for amateur radio data transmission.<br>
-            Watch data flow: <strong>Human-Readable → Binary → Bytes → Hex → Transmission → Hex → Binary → Human-Readable</strong></p>
+                Watch data flow: <strong>Human-Readable → Binary → Bytes → Hex → Transmission → Hex → Binary →
+                    Human-Readable</strong></p>
             <div id="wasmStatus" class="status loading">⏳ Loading WASM Module...</div>
         </div>
 
@@ -46,7 +47,8 @@
                 </div>
                 <div class="input-row">
                     <label for="gridsquare">Gridsquare (6 chars: AA00aa)</label>
-                    <input type="text" id="gridsquare" name="gridsquare" maxlength="6" placeholder="CM87uq" value="CM87uq">
+                    <input type="text" id="gridsquare" name="gridsquare" maxlength="6" placeholder="CM87uq"
+                        value="CM87uq">
                 </div>
             </div>
 
@@ -78,7 +80,8 @@
                     <input type="checkbox" id="emergency">
                     <label for="emergency">Emergency Message (Part of Message ID)</label>
                 </div>
-                <div style="background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 4px; margin: 10px 0; border: 1px solid rgba(239, 68, 68, 0.3);">
+                <div
+                    style="background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 4px; margin: 10px 0; border: 1px solid rgba(239, 68, 68, 0.3);">
                     <small style="color: #ef4444;">Message ID (80 bits) = Callsign + Timestamp + Emergency</small>
                 </div>
                 <div class="input-row">
@@ -126,7 +129,8 @@
                     </div>
                     <div class="timestamp-detail combined">
                         <label><strong>Combined Timestamp (31 bits)</strong></label>
-                        <div class="bit-output" id="timestampCombined" style="border: 2px solid #fbbf24;">0000000000000000000000000000000</div>
+                        <div class="bit-output" id="timestampCombined" style="border: 2px solid #fbbf24;">
+                            0000000000000000000000000000000</div>
                     </div>
                 </div>
                 <button id="btnRefreshTime" class="small-button">🔄 Refresh UTC Time</button>
@@ -143,59 +147,70 @@
 
             <div style="text-align: center; margin: 20px 0;">
                 <button id="btnEncode" class="big-button">🔒 Encode Message</button>
+                <button id="btnPlayEncoded" class="big-button" style="background: #a78bfa; color: white;">🔊 Play
+                    Audio</button>
                 <button id="btnCompare" class="big-button secondary">📊 Compare Both Modes</button>
             </div>
 
             <div id="encodedOutput" style="display:none;">
-                <div style="background: rgba(74, 222, 128, 0.1); padding: 20px; border-radius: 8px; border: 2px solid #4ade80;">
+                <div
+                    style="background: rgba(74, 222, 128, 0.1); padding: 20px; border-radius: 8px; border: 2px solid #4ade80;">
                     <h3>✅ Encoded Message</h3>
-                    
+
                     <div class="output-section">
                         <h4>Mode</h4>
                         <div class="output-value" id="outputMode">-</div>
                     </div>
-                    
+
                     <div class="output-section">
                         <h4>Size</h4>
                         <div class="output-value" id="outputSize">-</div>
                     </div>
-                    
+
                     <div class="output-section" id="timestampBinarySection" style="display:none;">
                         <h4><span class="highlight-timestamp">Timestamp Breakdown (31 bits)</span></h4>
-                        <div style="background: rgba(251, 191, 36, 0.1); padding: 10px; border-radius: 4px; border: 1px solid #fbbf24;">
+                        <div
+                            style="background: rgba(251, 191, 36, 0.1); padding: 10px; border-radius: 4px; border: 1px solid #fbbf24;">
                             <div style="font-size: 11px; margin: 5px 0;">
-                                <strong>Year/Month (10):</strong> <span id="outputYearMonthBits" class="highlight-timestamp">-</span>
+                                <strong>Year/Month (10):</strong> <span id="outputYearMonthBits"
+                                    class="highlight-timestamp">-</span>
                             </div>
                             <div style="font-size: 11px; margin: 5px 0;">
                                 <strong>Day (5):</strong> <span id="outputDayBits" class="highlight-timestamp">-</span>
                             </div>
                             <div style="font-size: 11px; margin: 5px 0;">
-                                <strong>Hour (5):</strong> <span id="outputHourBits" class="highlight-timestamp">-</span>
+                                <strong>Hour (5):</strong> <span id="outputHourBits"
+                                    class="highlight-timestamp">-</span>
                             </div>
                             <div style="font-size: 11px; margin: 5px 0;">
-                                <strong>Minute (6):</strong> <span id="outputMinuteBits" class="highlight-timestamp">-</span>
+                                <strong>Minute (6):</strong> <span id="outputMinuteBits"
+                                    class="highlight-timestamp">-</span>
                             </div>
                             <div style="font-size: 11px; margin: 5px 0;">
-                                <strong>Second (5):</strong> <span id="outputSecondBits" class="highlight-timestamp">-</span>
+                                <strong>Second (5):</strong> <span id="outputSecondBits"
+                                    class="highlight-timestamp">-</span>
                             </div>
-                            <div style="font-size: 11px; margin: 5px 0; padding-top: 5px; border-top: 1px solid rgba(251, 191, 36, 0.3);">
-                                <strong>Combined (31 bits):</strong> <span id="outputTimestampCombined" class="highlight-timestamp" style="font-family: 'Courier New', monospace;">-</span>
+                            <div
+                                style="font-size: 11px; margin: 5px 0; padding-top: 5px; border-top: 1px solid rgba(251, 191, 36, 0.3);">
+                                <strong>Combined (31 bits):</strong> <span id="outputTimestampCombined"
+                                    class="highlight-timestamp" style="font-family: 'Courier New', monospace;">-</span>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="output-section">
                         <h4>Binary Representation (bits)</h4>
-                        <div class="bit-output" id="outputBinary" style="font-size: 11px; word-break: break-all; max-height: 200px; overflow-y: auto;">
+                        <div class="bit-output" id="outputBinary"
+                            style="font-size: 11px; word-break: break-all; max-height: 200px; overflow-y: auto;">
                             -
                         </div>
                     </div>
-                    
+
                     <div class="output-section">
                         <h4>Hexadecimal (bytes)</h4>
                         <div class="output-value hex-output" id="outputHex">-</div>
                     </div>
-                    
+
                     <div class="output-section">
                         <h4>Byte Array</h4>
                         <div class="byte-array" id="outputByteArray">-</div>
@@ -228,7 +243,7 @@
         <div class="section decoder-section">
             <span class="flow-label">📥 Step 2: Decoding</span>
             <h2>Decode Binary → Human-Readable Data</h2>
-            
+
             <div class="field-group">
                 <h3>Input Encoded Data</h3>
                 <div class="input-row">
@@ -239,13 +254,16 @@
 
             <div style="text-align: center; margin: 20px 0;">
                 <button id="btnDecode" class="big-button">🔓 Decode Message</button>
+                <button id="btnPlayHex" class="big-button" style="background: #a78bfa; color: white;">🔊 Play
+                    Audio</button>
                 <button id="btnClear" class="big-button secondary">🗑️ Clear</button>
             </div>
 
             <div id="decodedOutput" style="display:none;">
                 <div class="field-group">
                     <h3>Reconstructed Bitstream</h3>
-                    <div class="bit-output" id="decodedBinary" style="font-size: 11px; word-break: break-all; max-height: 200px; overflow-y: auto;"></div>
+                    <div class="bit-output" id="decodedBinary"
+                        style="font-size: 11px; word-break: break-all; max-height: 200px; overflow-y: auto;"></div>
                 </div>
 
                 <div class="decoded-values">
@@ -373,7 +391,7 @@
             display: none;
         }
 
-        .mode-button input[type="radio"]:checked + span {
+        .mode-button input[type="radio"]:checked+span {
             color: #4ade80;
             font-weight: bold;
         }
@@ -546,13 +564,34 @@
             word-break: break-all;
         }
 
-        .highlight-emergency { color: #ef4444; font-weight: bold; }
-        .highlight-timestamp { color: #fbbf24; }
-        .highlight-callsign { color: #4ade80; }
-        .highlight-gridsquare { color: #60a5fa; }
-        .highlight-meta { color: #a78bfa; }
-        .highlight-name { color: #f472b6; }
-        .highlight-message { color: #fb923c; }
+        .highlight-emergency {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .highlight-timestamp {
+            color: #fbbf24;
+        }
+
+        .highlight-callsign {
+            color: #4ade80;
+        }
+
+        .highlight-gridsquare {
+            color: #60a5fa;
+        }
+
+        .highlight-meta {
+            color: #a78bfa;
+        }
+
+        .highlight-name {
+            color: #f472b6;
+        }
+
+        .highlight-message {
+            color: #fb923c;
+        }
 
         .transmission-arrow {
             text-align: center;
@@ -563,8 +602,15 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
 
         .decoded-values {
@@ -598,7 +644,8 @@
             margin: 20px 0;
         }
 
-        th, td {
+        th,
+        td {
             padding: 12px;
             text-align: left;
             border-bottom: 1px solid rgba(74, 222, 128, 0.2);
@@ -689,15 +736,17 @@
                 const moduleInstance = await Module();
                 messageFormatter = new RibbitMessageFormat(moduleInstance);
                 wasmReady = true;
-                
+
                 document.getElementById('wasmStatus').className = 'status success';
                 document.getElementById('wasmStatus').textContent = '✓ WASM Module Loaded & Ready';
-                
+
                 // Enable buttons
                 document.getElementById('btnEncode').disabled = false;
+                document.getElementById('btnPlayEncoded').disabled = false;
+                document.getElementById('btnPlayHex').disabled = false;
                 document.getElementById('btnCompare').disabled = false;
                 document.getElementById('btnDecode').disabled = false;
-                
+
                 console.log('Message formatter ready');
             } catch (error) {
                 document.getElementById('wasmStatus').className = 'status error';
@@ -716,7 +765,7 @@
                 document.getElementById('chatFields').style.display = mode === 1 ? 'block' : 'none';
                 document.getElementById('contestFields').style.display = mode === 2 ? 'block' : 'none';
                 document.getElementById('timestampFields').style.display = mode === 2 ? 'block' : 'none';
-                
+
                 // Update timestamp when switching to contest mode
                 if (mode === 2) {
                     updateTimestamp();
@@ -735,55 +784,55 @@
 
         function updateTimestamp() {
             const now = new Date();
-            
+
             // Calculate year/month (10 bits) - months since Jan 2026
             const year = now.getUTCFullYear() - 2026;
             const month = now.getUTCMonth(); // 0-11
             const yearMonth = year * 12 + month;
-            
+
             // Clamp to 0 if before Jan 2026 (epoch start)
             const clampedYearMonth = Math.max(0, yearMonth);
             const yearMonthBits = clampedYearMonth.toString(2).padStart(10, '0');
-            
+
             // Calculate day (5 bits) - 0-based (0-30)
             const day = now.getUTCDate() - 1; // 0-30
             const dayBits = day.toString(2).padStart(5, '0');
-            
+
             // Calculate hour (5 bits) - 0-23
             const hour = now.getUTCHours();
             const hourBits = hour.toString(2).padStart(5, '0');
-            
+
             // Calculate minute (6 bits) - 0-59
             const minute = now.getUTCMinutes();
             const minuteBits = minute.toString(2).padStart(6, '0');
-            
+
             // Calculate second (5 bits) - 2-second resolution (0-29)
             const second = Math.floor(now.getUTCSeconds() / 2);
             const secondBits = second.toString(2).padStart(5, '0');
-            
+
             // Update display
             const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             let displayTime = `${now.getUTCFullYear()}-${monthNames[month]}-${String(now.getUTCDate()).padStart(2, '0')} ` +
-                              `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(now.getUTCSeconds()).padStart(2, '0')} UTC`;
-            
+                `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(now.getUTCSeconds()).padStart(2, '0')} UTC`;
+
             // Add note if before epoch
             if (yearMonth < 0) {
                 displayTime += ' ⚠️ Before Jan 2026 (encoded as 0)';
             }
-            
+
             document.getElementById('timestampDisplay').value = displayTime;
-            
+
             // Update bit displays
             document.getElementById('yearMonthBits').textContent = yearMonthBits;
             document.getElementById('dayBits').textContent = dayBits;
             document.getElementById('hourBits').textContent = hourBits;
             document.getElementById('minuteBits').textContent = minuteBits;
             document.getElementById('secondBits').textContent = secondBits;
-            
+
             // Update combined timestamp
             const combinedBits = yearMonthBits + dayBits + hourBits + minuteBits + secondBits;
             document.getElementById('timestampCombined').textContent = combinedBits;
-            
+
             // Store for encoding
             currentTimestamp = {
                 yearMonth: clampedYearMonth,
@@ -792,7 +841,7 @@
                 minute: minute,
                 second: second
             };
-            
+
             return Date.now(); // Return epoch timestamp for message formatter
         }
 
@@ -837,7 +886,7 @@
         // Gather form data
         function gatherFormData() {
             const mode = parseInt(document.querySelector('input[name="messageMode"]:checked').value);
-            
+
             if (mode === 1) {
                 // Chat mode
                 return {
@@ -875,14 +924,14 @@
             try {
                 const data = gatherFormData();
                 const encoded = messageFormatter.encode(data.mode, data);
-                
+
                 // Store for comparison
                 if (data.mode === 1) {
                     lastEncodedChat = encoded;
                 } else {
                     lastEncodedContest = encoded;
                 }
-                
+
                 // Display results
                 document.getElementById('encodedOutput').style.display = 'block';
                 document.getElementById('outputMode').textContent = data.mode === 1 ? '💬 Chat Mode (UTF-8)' : '🏆 Contest Mode (Bitpacked)';
@@ -890,7 +939,7 @@
                 document.getElementById('outputBinary').textContent = bytesToBinary(encoded);
                 document.getElementById('outputHex').textContent = bytesToHex(encoded);
                 document.getElementById('outputByteArray').textContent = `[${Array.from(encoded).join(', ')}]`;
-                
+
                 // Show timestamp breakdown for Contest mode
                 if (data.mode === 2) {
                     document.getElementById('timestampBinarySection').style.display = 'block';
@@ -903,13 +952,13 @@
                 } else {
                     document.getElementById('timestampBinarySection').style.display = 'none';
                 }
-                
+
                 // Auto-fill decode field
                 document.getElementById('decodedHex').value = bytesToHex(encoded);
-                
+
                 // Scroll to output
                 document.getElementById('encodedOutput').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                
+
             } catch (error) {
                 alert('Encoding error: ' + error.message);
                 console.error('Encode error:', error);
@@ -1068,13 +1117,13 @@
                     // Contest mode
                     let timestampDisplay = 'N/A';
                     let timestampBitsDisplay = '';
-                    
+
                     if (decoded.timestamp) {
                         const ts = new Date(decoded.timestamp);
                         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                         timestampDisplay = `${ts.getUTCFullYear()}-${monthNames[ts.getUTCMonth()]}-${String(ts.getUTCDate()).padStart(2, '0')} ` +
-                                         `${String(ts.getUTCHours()).padStart(2, '0')}:${String(ts.getUTCMinutes()).padStart(2, '0')}:${String(ts.getUTCSeconds()).padStart(2, '0')} UTC`;
-                        
+                            `${String(ts.getUTCHours()).padStart(2, '0')}:${String(ts.getUTCMinutes()).padStart(2, '0')}:${String(ts.getUTCSeconds()).padStart(2, '0')} UTC`;
+
                         // Calculate timestamp bits for display
                         const year = ts.getUTCFullYear() - 2026;
                         const month = ts.getUTCMonth();
@@ -1083,14 +1132,14 @@
                         const hour = ts.getUTCHours();
                         const minute = ts.getUTCMinutes();
                         const second = Math.floor(ts.getUTCSeconds() / 2);
-                        
+
                         const yearMonthBits = yearMonth.toString(2).padStart(10, '0');
                         const dayBits = day.toString(2).padStart(5, '0');
                         const hourBits = hour.toString(2).padStart(5, '0');
                         const minuteBits = minute.toString(2).padStart(6, '0');
                         const secondBits = second.toString(2).padStart(5, '0');
                         const combinedBits = yearMonthBits + dayBits + hourBits + minuteBits + secondBits;
-                        
+
                         timestampBitsDisplay = `
                             <div style="background: rgba(251, 191, 36, 0.1); padding: 8px; border-radius: 4px; margin-top: 5px; font-size: 11px;">
                                 <div><strong>Year/Month:</strong> ${yearMonthBits}</div>
@@ -1104,7 +1153,7 @@
                             </div>
                         `;
                     }
-                    
+
                     contentDiv.innerHTML = `
                         <div class="decoded-field">
                             <div class="decoded-label">Mode</div>
@@ -1167,9 +1216,118 @@
 
         // Disable buttons until WASM loads
         document.getElementById('btnEncode').disabled = true;
+        document.getElementById('btnPlayEncoded').disabled = true;
+        document.getElementById('btnPlayHex').disabled = true;
         document.getElementById('btnCompare').disabled = true;
         document.getElementById('btnDecode').disabled = true;
+
+        // Audio Playback Logic
+        let audioContext = null;
+
+        async function playAudioFromBytes(bytes) {
+            if (!wasmReady) return;
+
+            try {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 8000 });
+                }
+
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+
+                const Module = messageFormatter.Module;
+
+                // Get the message buffer from WASM memory
+                const wasmMessagePtr = Module._message_pointer();
+                const wasmMessageLength = Module._message_length();
+
+                if (!wasmMessagePtr || wasmMessageLength === 0) {
+                    throw new Error('WASM message buffer not available');
+                }
+
+                // Copy message bytes to WASM static buffer
+                const wasmMessageHeap = new Uint8Array(Module.HEAPU8.buffer, wasmMessagePtr, wasmMessageLength);
+                wasmMessageHeap.fill(0); // Clear the buffer first
+                wasmMessageHeap.set(bytes.subarray(0, Math.min(bytes.length, wasmMessageLength)));
+
+                // Run encoder
+                Module._initEncoder();
+                Module._readEncoder();
+
+                // Get the signal buffer from WASM
+                const signalPtr = Module._signal_pointer();
+                const signalLength = Module._signal_length();
+
+                if (!signalPtr || signalLength === 0) {
+                    throw new Error('Encoder produced no audio data');
+                }
+
+                // Copy the signal data
+                const signalView = new Float32Array(Module.HEAPU8.buffer, signalPtr, signalLength);
+                const originalAudio = new Float32Array(signalView);
+
+                // Add wake-up tone (300Hz for 200ms, then 100ms silence)
+                const sampleRate = 8000;
+                const toneFreq = 300;
+                const toneDuration = 0.2; // 200ms
+                const silenceDuration = 0.1; // 100ms
+
+                const toneSamples = Math.floor(toneDuration * sampleRate);
+                const silenceSamples = Math.floor(silenceDuration * sampleRate);
+                const totalExtraSamples = toneSamples + silenceSamples;
+
+                const extendedBuffer = new Float32Array(totalExtraSamples + originalAudio.length);
+
+                // Generate wake-up tone
+                for (let i = 0; i < toneSamples; i++) {
+                    extendedBuffer[i] = Math.sin(2 * Math.PI * toneFreq * i / sampleRate);
+                }
+
+                // Copy original audio
+                extendedBuffer.set(originalAudio, totalExtraSamples);
+
+                // Play
+                const audioBufferNode = audioContext.createBuffer(1, extendedBuffer.length, sampleRate);
+                audioBufferNode.copyFromChannel(extendedBuffer, 0);
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBufferNode;
+                source.connect(audioContext.destination);
+                source.start();
+
+                console.log('Audio playback started including wake-up tone');
+            } catch (error) {
+                alert('Audio playback error: ' + error.message);
+                console.error(error);
+            }
+        }
+
+        // Play Encoded button handler
+        document.getElementById('btnPlayEncoded').addEventListener('click', () => {
+            const hex = document.getElementById('outputHex').textContent;
+            if (!hex || hex === '-') {
+                alert('Please encode a message first');
+                return;
+            }
+            const bytes = hexToBytes(hex);
+            playAudioFromBytes(bytes);
+        });
+
+        // Play Hex button handler
+        document.getElementById('btnPlayHex').addEventListener('click', () => {
+            const hexInput = document.getElementById('decodedHex').value;
+            if (!hexInput.trim()) {
+                alert('Please enter hex bytes to play');
+                return;
+            }
+            try {
+                const bytes = hexToBytes(hexInput);
+                playAudioFromBytes(bytes);
+            } catch (e) {
+                alert('Invalid hex format');
+            }
+        });
     </script>
 </body>
-</html>
 
+</html>

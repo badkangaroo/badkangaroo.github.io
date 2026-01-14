@@ -1,5 +1,6 @@
 "use strict";
 import { MessageCodec } from './messageCodec.js';
+import { RibbitWASM } from './ribbit-wasm.js';
 
 // Simple assertion function
 function assert(condition, message) {
@@ -122,4 +123,191 @@ document.addEventListener('DOMContentLoaded', () => {
     assert(true, "Verified Protocol: No phone field in MessageCodec API.");
 
     console.log("Encoder tests finished.");
+
+    // --- Audio Encoding and Spectrogram Logic ---
+    let ribbit = null;
+    let lastAudioBuffer = null;
+    let audioCtx = null;
+
+    async function initAudioTest() {
+        const audioStatus = document.getElementById('audioStatus');
+        const btnRun = document.getElementById('btnRunAudioTest');
+
+        try {
+            audioStatus.textContent = "⏳ Initializing Ribbit WASM...";
+            ribbit = await RibbitWASM.load();
+            audioStatus.textContent = "✅ Ribbit WASM Loaded. Ready for audio test.";
+            if (btnRun) btnRun.disabled = false;
+        } catch (e) {
+            audioStatus.textContent = "❌ Failed to load WASM: " + e.message;
+            console.error(e);
+        }
+    }
+
+    async function runAudioTest() {
+        const audioStatus = document.getElementById('audioStatus');
+        const btnPlay = document.getElementById('btnPlayAudio');
+
+        if (!ribbit) return;
+
+        try {
+            audioStatus.textContent = "🔄 Encoding message to audio...";
+
+            const testData = {
+                callsign: "KO6BVA",
+                gridsquare: "CM87uq",
+                message: "Ribbit Audio Test! 🐸 0123456789",
+                messageType: 1
+            };
+
+            // Encode to audio
+            // Note: encodeMessage expects (text, options)
+            const audioData = await ribbit.encodeMessage(testData.message, {
+                callsign: testData.callsign,
+                gridsquare: testData.gridsquare,
+                messageType: testData.messageType
+            });
+
+            lastAudioBuffer = audioData;
+            audioStatus.textContent = `✅ Encoded ${audioData.length} samples. Scroll down to see spectrogram.`;
+            if (btnPlay) btnPlay.disabled = false;
+
+            // Draw spectrogram
+            drawSpectrogram(audioData);
+
+        } catch (e) {
+            audioStatus.textContent = "❌ Encoding failed: " + e.message;
+            console.error(e);
+        }
+    }
+
+    function drawSpectrogram(audioData) {
+        const canvas = document.getElementById('spectrogramCanvas');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const width = 800;
+        const height = 128;
+        canvas.width = width;
+        canvas.height = height;
+
+        // Clear background
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, width, height);
+
+        const samplesPerPixel = 4;
+        const fftSize = 256; // Gives 128 bins
+        const bins = fftSize / 2;
+
+        // Windowing function (Hann)
+        const window = new Float32Array(fftSize);
+        for (let i = 0; i < fftSize; i++) {
+            window[i] = 0.5 * (1 - Math.cos(2 * Math.PI * i / (fftSize - 1)));
+        }
+
+        // Process each pixel column
+        for (let x = 0; x < width; x++) {
+            const startSample = x * samplesPerPixel;
+            if (startSample + fftSize > audioData.length) break;
+
+            const real = new Float32Array(fftSize);
+            const imag = new Float32Array(fftSize).fill(0);
+
+            // Copy and window
+            for (let i = 0; i < fftSize; i++) {
+                real[i] = audioData[startSample + i] * window[i];
+            }
+
+            // Simple iterative FFT
+            performFFT(real, imag);
+
+            // Draw magnitudes
+            for (let y = 0; y < bins; y++) {
+                const r = real[y];
+                const im = imag[y];
+                const mag = Math.sqrt(r * r + im * im);
+
+                // Logarithmic scaling for better visibility
+                const intensity = Math.min(255, Math.log10(1 + mag * 10) * 128);
+
+                // Pretty color mapping
+                if (intensity > 0) {
+                    ctx.fillStyle = getIntensityColor(intensity);
+                    ctx.fillRect(x, height - y - 1, 1, 1);
+                }
+            }
+        }
+    }
+
+    function getIntensityColor(v) {
+        if (v < 64) {
+            const t = v / 64;
+            return `rgb(${t * 30}, 0, ${t * 100})`;
+        } else if (v < 128) {
+            const t = (v - 64) / 64;
+            return `rgb(${30 + t * 50}, ${t * 100}, 100)`;
+        } else if (v < 192) {
+            const t = (v - 128) / 64;
+            return `rgb(${80 + t * 100}, 100, ${100 + t * 155})`;
+        } else {
+            const t = (v - 192) / 63;
+            return `rgb(${180 + t * 75}, ${100 + t * 155}, 255)`;
+        }
+    }
+
+    function performFFT(real, imag) {
+        const n = real.length;
+        for (let i = 0, j = 0; i < n; i++) {
+            if (i < j) {
+                [real[i], real[j]] = [real[j], real[i]];
+                [imag[i], imag[j]] = [imag[j], imag[i]];
+            }
+            let m = n >> 1;
+            while (m >= 1 && j >= m) {
+                j -= m;
+                m >>= 1;
+            }
+            j += m;
+        }
+        for (let len = 2; len <= n; len <<= 1) {
+            const ang = 2 * Math.PI / len;
+            const wlenReal = Math.cos(ang);
+            const wlenImag = -Math.sin(ang);
+            for (let i = 0; i < n; i += len) {
+                let wReal = 1;
+                let wImag = 0;
+                for (let j = 0; j < len / 2; j++) {
+                    const uReal = real[i + j];
+                    const uImag = imag[i + j];
+                    const vReal = real[i + j + len / 2] * wReal - imag[i + j + len / 2] * wImag;
+                    const vImag = real[i + j + len / 2] * wImag + imag[i + j + len / 2] * wReal;
+                    real[i + j] = uReal + vReal;
+                    imag[i + j] = uImag + vImag;
+                    real[i + j + len / 2] = uReal - vReal;
+                    imag[i + j + len / 2] = uImag - vImag;
+                    const nextWReal = wReal * wlenReal - wImag * wlenImag;
+                    wImag = wReal * wlenImag + wImag * wlenReal;
+                    wReal = nextWReal;
+                }
+            }
+        }
+    }
+
+    function playAudio() {
+        if (!lastAudioBuffer) return;
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 8000 });
+        const source = audioCtx.createBufferSource();
+        const buffer = audioCtx.createBuffer(1, lastAudioBuffer.length, 8000);
+        buffer.getChannelData(0).set(lastAudioBuffer);
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        source.start();
+    }
+
+    const btnRun = document.getElementById('btnRunAudioTest');
+    if (btnRun) btnRun.addEventListener('click', runAudioTest);
+    const btnPlay = document.getElementById('btnPlayAudio');
+    if (btnPlay) btnPlay.addEventListener('click', playAudio);
+
+    initAudioTest();
 });
