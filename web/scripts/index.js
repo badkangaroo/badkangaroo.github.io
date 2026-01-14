@@ -256,7 +256,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
             this.isInitialized = false;
             this.isTransmitting = false;
             this.listen = true;
-            this.tx_context = null;
+            this.audioContext = null;
             this.savewavfile = false;
             this.initializationError = null;
             // Track decode errors to prevent spam
@@ -290,11 +290,9 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 this.ribbit = await RibbitWASM.load();
                 console.log('✓ WASM loaded successfully');
 
-                // Initialize audio context
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
-                    sampleRate: 8000
-                });
-                console.log('✓ Audio context initialized');
+                // The audio context will be initialized on first user interaction (encode button click)
+                this.audioContext = null;
+                console.log('✓ App structure initialized');
 
                 // Set up UI event handlers
                 this.setupEventHandlers();
@@ -341,13 +339,13 @@ document.addEventListener("DOMContentLoaded", (e) => {
             // Encode button
             const encodebutton = document.getElementById("encodebutton");
             if (encodebutton) {
-                encodebutton.onclick = () => {
-                    // First click enables audio, second click encodes
-                    if (!this.tx_context) {
-                        this.enableAudioOutput();
-                    } else {
-                        this.handleEncode();
+                encodebutton.onclick = async () => {
+                    // First click enables audio if not already done
+                    if (!this.audioContext) {
+                        await this.enableAudioOutput();
                     }
+                    // Then handle the encoding
+                    this.handleEncode();
                 };
             }
 
@@ -358,16 +356,21 @@ document.addEventListener("DOMContentLoaded", (e) => {
             }
         }
 
-        enableAudioOutput() {
+        async enableAudioOutput() {
             try {
-                this.tx_context = this.tx_context || new AudioContext({ sampleRate: 8000 });
-                buttonPressSoundEffect.play();
-
-                // Now set up the actual encode handler
-                const encodebutton = document.getElementById("encodebutton");
-                if (encodebutton) {
-                    encodebutton.onclick = () => this.handleEncode();
+                // Initialize or resume the audio context
+                if (!this.audioContext) {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 8000 });
                 }
+
+                if (this.audioContext.state === 'suspended') {
+                    await this.audioContext.resume();
+                }
+
+                // Play a brief UI sound to confirm audio is active
+                buttonPressSoundEffect.play().catch(e => console.warn('Sound effect failed:', e));
+
+                console.log('✓ Audio output enabled');
             } catch (err) {
                 const errorMsg = "Failed to create AudioContext: " + err;
                 console.error(errorMsg);
@@ -450,87 +453,73 @@ document.addEventListener("DOMContentLoaded", (e) => {
             }
         }
 
-        async playAudio(audioBuffer) {
-            try {
-                // Resume audio context if needed
-                if (this.tx_context.state === 'suspended') {
-                    await this.tx_context.resume();
-                    console.log('✓ Audio context resumed');
-                }
-
-                // Add a wake-up tone to ensure radio transmitters open the channel
-                // Tone: 300Hz for 200ms, then 100ms silence
-                const sampleRate = 8000;
-                const toneFreq = 300;
-                const toneDuration = 0.2; // 200ms
-                const silenceDuration = 0.1; // 100ms
-
-                const toneSamples = Math.floor(toneDuration * sampleRate);
-                const silenceSamples = Math.floor(silenceDuration * sampleRate);
-                const totalExtraSamples = toneSamples + silenceSamples;
-
-                const extendedBuffer = new Float32Array(totalExtraSamples + audioBuffer.length);
-
-                // Generate 300Hz wake-up tone
-                // 300Hz at 8000Hz SR for 1600 samples is exactly 60 cycles, ending at zero crossing.
-                for (let i = 0; i < toneSamples; i++) {
-                    extendedBuffer[i] = Math.sin(2 * Math.PI * toneFreq * i / sampleRate);
-                }
-
-                // Silence (next silenceSamples are already 0)
-
-                // Copy original encoded message audio
-                extendedBuffer.set(audioBuffer, totalExtraSamples);
-
-                // Create Web Audio buffer from the result
-                console.log('✓ Creating Web Audio buffer from result', extendedBuffer);
-                const audioBufferNode = this.tx_context.createBuffer(1, extendedBuffer.length, sampleRate);
-                console.log('✓ Web Audio buffer created', audioBufferNode);
-                audioBufferNode.copyFromChannel(extendedBuffer, 0);
-                console.log('✓ Web Audio buffer copied');
-
-                // Play the audio
-                console.log('✓ Creating audio source');
-                const source = this.tx_context.createBufferSource();
-                console.log('✓ Audio source created', source);
-                source.buffer = audioBufferNode;
-                console.log('✓ Audio source buffer set', audioBufferNode);
-                source.connect(this.tx_context.destination);
-                console.log('✓ Audio source connected to destination', this.tx_context.destination);
-
-                // Set up end handler to resume listening after playback completes
-                source.onended = () => {
-                    if (this.savewavfile) {
-                        console.log('✓ Saving audio to file');
-                        this.saveWavFile(audioBufferNode, "ribbit.wav");
-                        console.log('✓ Audio saved to file');
-                        this.savewavfile = false;
+        playAudio(audioBuffer) {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    // Resume audio context if needed
+                    if (this.audioContext.state === 'suspended') {
+                        await this.audioContext.resume();
                     }
-                    // Resume audio listening after playback completes
+
+                    // Add a wake-up tone to ensure radio transmitters open the channel
+                    // Tone: 300Hz for 200ms, then 100ms silence
+                    const sampleRate = 8000;
+                    const toneFreq = 300;
+                    const toneDuration = 0.2; // 200ms
+                    const silenceDuration = 0.1; // 100ms
+
+                    const toneSamples = Math.floor(toneDuration * sampleRate);
+                    const silenceSamples = Math.floor(silenceDuration * sampleRate);
+                    const totalExtraSamples = toneSamples + silenceSamples;
+
+                    const extendedBuffer = new Float32Array(totalExtraSamples + audioBuffer.length);
+
+                    // Generate 300Hz wake-up tone
+                    // 300Hz at 8000Hz SR for 1600 samples is exactly 60 cycles, ending at zero crossing.
+                    for (let i = 0; i < toneSamples; i++) {
+                        extendedBuffer[i] = Math.sin(2 * Math.PI * toneFreq * i / sampleRate);
+                    }
+
+                    // Copy original encoded message audio
+                    extendedBuffer.set(audioBuffer, totalExtraSamples);
+
+                    // Create Web Audio buffer from the result
+                    const audioBufferNode = this.audioContext.createBuffer(1, extendedBuffer.length, sampleRate);
+                    audioBufferNode.copyToChannel(extendedBuffer, 0);
+
+                    // Play the audio
+                    const source = this.audioContext.createBufferSource();
+                    source.buffer = audioBufferNode;
+                    source.connect(this.audioContext.destination);
+
+                    // Set up end handler to resume listening after playback completes
+                    source.onended = () => {
+                        if (this.savewavfile) {
+                            this.saveWavFile(audioBufferNode, "ribbit.wav");
+                            this.savewavfile = false;
+                        }
+                        // Resume audio listening after playback completes
+                        this.listen = true;
+                        console.log('✓ Audio playback completed, listening resumed');
+                        resolve();
+                    };
+
+                    // Set up error handler to resume listening if playback fails
+                    source.onerror = (error) => {
+                        console.error('Audio playback error:', error);
+                        this.listen = true;
+                        reject(error);
+                    };
+
+                    source.start();
+                    console.log('✓ Audio playback started');
+
+                } catch (error) {
+                    console.error('Audio playback failed:', error);
                     this.listen = true;
-                    console.log('✓ Audio playback completed, listening resumed');
-                };
-
-                // Set up error handler to resume listening if playback fails
-                source.onerror = (error) => {
-                    console.error('Audio playback error:', error);
-                    this.listen = true;
-                    console.log('✓ Audio listening resumed after playback error');
-                };
-
-                source.start();
-                console.log('✓ Audio source started');
-                // Note: this.listen is already set to false in handleEncode() before encoding starts
-
-                console.log('✓ Audio playing through speakers');
-
-            } catch (error) {
-                console.error('Audio playback failed:', error);
-                // Resume listening even if playback fails
-                this.listen = true;
-                console.log('✓ Audio listening resumed after playback failure');
-                throw new Error('Audio playback failed: ' + error.message);
-            }
+                    reject(error);
+                }
+            });
         }
 
         saveToWav() {
