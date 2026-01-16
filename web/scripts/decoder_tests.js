@@ -665,6 +665,9 @@ class DecodingTester {
         this.log(`Testing: "${text.substring(0, 20)}..." de ${callsign} (Noise: ${Math.round(noiseLevel * 100)}%)`, 'info');
 
         try {
+            // Clear any leftover messages from previous tests
+            this.ribbit.decoder.messageQueue = [];
+
             // 1. Encode
             const audioBuffer = await this.ribbit.encodeMessage(text, {
                 callsign: callsign,
@@ -677,21 +680,27 @@ class DecodingTester {
                 testBuffer = this.addNoise(audioBuffer, noiseLevel);
             }
 
-            // 3. Decode
-            // We feed the whole buffer at once. RibbitWASM.decodeAudio handles feeding and attempting decode.
-            // However, real-time decoder works in chunks. 
-            // Here we want to see if it detects it.
+            // 3. Decode by feeding audio in chunks (simulating real-time streaming)
+            // The decoder accumulates state across multiple calls and may decode a message
+            // after receiving enough audio data
+            let decodedMessage = null;
+            const chunkSize = 2048; // Match the WASM feed buffer size
 
-            // First reset/clear decoder state if possible (though RibbitWASM doesn't expose a reset)
-            // For now, we just feed it.
+            for (let i = 0; i < testBuffer.length && !decodedMessage; i += chunkSize) {
+                const chunk = testBuffer.subarray(i, Math.min(i + chunkSize, testBuffer.length));
+                const chunkResult = await this.ribbit.decodeAudio(chunk);
 
-            const decoded = await this.ribbit.decodeAudio(testBuffer);
+                // If we got a decoded message from this chunk, use it
+                if (chunkResult) {
+                    decodedMessage = chunkResult;
+                }
+            }
 
             // Apply application-level validation logic
-            const isValid = this.isValidDecodedMessage(decoded);
-            const actualPass = decoded && isValid;
+            const isValid = this.isValidDecodedMessage(decodedMessage);
+            const actualPass = decodedMessage && isValid;
 
-            this.recordResult(text, callsign, gridsquare, decoded, expectPass, null, isValid);
+            this.recordResult(text, callsign, gridsquare, decodedMessage, expectPass, null, isValid);
 
         } catch (error) {
             this.log(`Error during test: ${error.message}`, 'error');
