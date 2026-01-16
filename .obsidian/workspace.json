@@ -198,6 +198,19 @@
   },
   "active": "6e97421dabb4c56d",
   "lastOpenFiles": [
+    "Docs/DECODER_TESTS.md",
+    "Docs/WAV_EXPORT_UI_GUIDE.md",
+    "Docs/WAV_EXPORT_SUMMARY.md",
+    "Docs/WAV_EXPORT_FEATURE.md",
+    "Docs/WAKEUP_TONE_UI_PREVIEW.md",
+    "Docs/WAKEUP_TONE_FEATURE.md",
+    "Docs/VISUAL_VERIFICATION.md",
+    "Docs/HTML_VERIFICATION_REPORT.md",
+    "Docs/DOCUMENTATION_UPDATE_SUMMARY.md",
+    "Docs/DECODER_TESTS_VERIFICATION.md",
+    "Docs/DECODER_TESTS_QUICKSTART.md",
+    "Docs/DECODER_TESTS_QUICK_REFERENCE.md",
+    "Docs/DECODER_TESTS_NEW_FEATURES.md",
     "DECODER_TESTS_QUICK_REFERENCE.md",
     "DOCUMENTATION_UPDATE_SUMMARY.md",
     "DECODER_TESTS_NEW_FEATURES.md",
@@ -216,7 +229,6 @@
     "web/decoding_tests.html",
     "Docs/codec.md",
     "web/scripts/message_codec_tests.js",
-    "web/test/message-id.test.js",
-    "Docs/ribbit_wasm.md"
+    "web/test/message-id.test.js"
   ]
 }
