@@ -198,6 +198,11 @@
   },
   "active": "6e97421dabb4c56d",
   "lastOpenFiles": [
+    "WAV_EXPORT_SUMMARY.md",
+    "WAV_EXPORT_UI_GUIDE.md",
+    "WAV_EXPORT_FEATURE.md",
+    "VISUAL_VERIFICATION.md",
+    "HTML_VERIFICATION_REPORT.md",
     "WAKEUP_TONE_UI_PREVIEW.md",
     "WAKEUP_TONE_FEATURE.md",
     "web/scripts/decoder_tests.js",

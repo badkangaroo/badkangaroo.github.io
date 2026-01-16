@@ -34,6 +34,27 @@ Click any of these buttons:
 - **Run Basic Tests** - Quick validation (3 messages, ~10 seconds)
 - **Run Stress Test** - Load testing (configurable count)
 - **Run Validation Tests** - Edge cases (6 tests, ~30 seconds)
+- **Run Advanced Tests** - Unicode, latency, and boundary tests (~2 minutes)
+
+## 🎤 Microphone Live Test
+
+Test real-time decoding from audio played through speakers:
+
+1. Click **Start Listening** (grant microphone permission if prompted)
+2. Play a Ribbit audio file or WAV file on another device
+3. Watch decoded messages appear in the "Decoded Messages" panel
+4. Click **Stop Listening** when done
+
+## 📁 WAV File Generator
+
+Create audio files for cross-device testing:
+
+1. Enter your test message in the text area
+2. Set the callsign (e.g., W1TEST) and gridsquare (e.g., FN31pr)
+3. Click **Generate & Download WAV** to create and download
+4. Click **Play Audio** to preview through speakers
+
+**Tip:** The WAV file includes a 300Hz wake-up tone for radio compatibility.
 
 ## 📊 What to Expect
 
@@ -54,6 +75,18 @@ Click any of these buttons:
 - **Tests**: 6 edge cases (empty, long callsigns, invalid chars, etc.)
 - **Expected Result**: Mix of pass/fail based on validation rules
 - **Purpose**: Verify error handling
+
+### Advanced Tests
+- **Duration**: ~2 minutes
+- **Tests**: 26 comprehensive scenarios including:
+  - Unicode messages (Chinese, Japanese, Korean, Russian, Arabic)
+  - Emoji support
+  - Special characters and newlines
+  - Message length boundaries (1, 50, 200, 240, 250 chars)
+  - Callsign variations (short, long, with slashes, numbers)
+  - Latency measurements
+- **Expected Result**: >85% pass rate
+- **Purpose**: Test international character support and edge cases
 
 ## 🎛️ Test Controls
 
@@ -205,6 +238,27 @@ Run this quick checklist to verify everything works:
    - Null Bytes
    - Non-Printable
 3. Verify "Garbage Data" PASSES (500 chars is valid)
+```
+
+### Scenario 5: Cross-Device Testing (5 minutes)
+```
+1. On Device A: Generate a WAV file with a custom message
+2. Transfer WAV file to Device B (email, cloud, USB)
+3. On Device A: Start Microphone listening
+4. On Device B: Play the WAV file through speakers
+5. On Device A: Verify the message is decoded correctly
+6. Compare decoded callsign, gridsquare, and message
+```
+
+### Scenario 6: Advanced International Test (3 minutes)
+```
+1. Click "Run Advanced Tests"
+2. Verify Unicode messages decode correctly:
+   - Chinese: 你好世界
+   - Japanese: こんにちは
+   - Emoji: 🐸 73! 👋
+3. Verify latency measurement is displayed
+4. Check message length boundary tests
 ```
 
 ## 🎯 Success Criteria

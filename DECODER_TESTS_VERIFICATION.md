@@ -25,9 +25,29 @@ The `decoder_tests.html` page is a comprehensive stress testing tool for the Rib
    - Null bytes
    - Non-printable characters
 
-4. **Noise Simulation** - Adds configurable noise (0-100% SNR) to test robustness
-5. **Real-time Results** - Shows pass/fail status, accuracy percentage, and detailed logs
-6. **Message Validation** - Implements application-level validation matching `index.js`:
+4. **Advanced Tests** - Extended test suite with:
+   - Unicode/International characters (Chinese, Japanese, Korean, Russian, Arabic)
+   - Emoji support
+   - Special characters
+   - Message length boundaries (1 char, 50, 200, 240, and 250 chars)
+   - Callsign edge cases (short, max length, with slash, numbers)
+   - Gridsquare variations
+   - Latency measurements
+
+5. **Microphone Live Test** - Real-time decoding from microphone input:
+   - Tests over-the-air signal reception
+   - Cross-device testing capability
+   - Live decoded message display
+
+6. **WAV File Generator** - Creates downloadable WAV files:
+   - Includes 300Hz wake-up tone for radio compatibility
+   - Configurable message, callsign, and gridsquare
+   - Audio playback preview
+   - Cross-device testing support
+
+7. **Noise Simulation** - Adds configurable noise (0-100% SNR) to test robustness
+8. **Real-time Results** - Shows pass/fail status, accuracy percentage, and detailed logs
+9. **Message Validation** - Implements application-level validation matching `index.js`:
    - Checks for null bytes
    - Validates callsign format (alphanumeric, max 20 chars)
    - Validates text length (max 1000 chars)
@@ -268,6 +288,42 @@ The decoder tests page is fully functional and ready for use. All dependencies a
 4. **Memory Monitoring**: Add real-time memory usage display
 5. **Export Results**: Add button to export test results as JSON/CSV
 6. **Automated CI**: Integrate with Playwright for automated regression testing
+
+## New Features (Added)
+
+### Microphone Live Test
+The microphone test allows real-time decoding of Ribbit signals received through the computer's microphone:
+
+1. Click "Start Listening" to begin
+2. Play a Ribbit audio file or transmit via radio
+3. Decoded messages appear in the "Decoded Messages" section
+4. Click "Stop Listening" when done
+
+**Use Cases:**
+- Testing over-the-air signal reception
+- Verifying radio transmission quality
+- Cross-device testing (play on one device, decode on another)
+
+### WAV File Generator
+Generate WAV files containing encoded Ribbit messages for cross-device testing:
+
+1. Enter your message in the text area
+2. Set the callsign and gridsquare
+3. Click "Generate & Download WAV" to create and download the file
+4. Click "Play Audio" to preview the audio through speakers
+
+**Features:**
+- Includes 300Hz wake-up tone (300ms) for radio VOX activation
+- 100ms silence before message for decoder synchronization
+- 500ms tail silence for clean transmission end
+- 8kHz sample rate, 16-bit mono WAV format
+
+**Cross-Device Testing Workflow:**
+1. Generate WAV file on Device A
+2. Transfer to Device B (email, USB, cloud)
+3. Play WAV file on Device B speakers
+4. Decode on Device A using microphone test
+5. Or: Transmit via radio on Device B, receive and decode on Device A
 
 ## Conclusion
 
