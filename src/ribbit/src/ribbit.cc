@@ -136,10 +136,16 @@ EXTERN EMSCRIPTEN_KEEPALIVE void feedDecoder()
     getpayload = decoder->feed(chunk, 160); // Feed the decoder with the chunk and 160
     if (getpayload)                         // If the getpayload is true
     {
-        printf("Message Incoming!\n");               // Print the message incoming message
+        // Clear payload buffer to prevent stale data if decoder fails to overwrite
+        std::fill(payload, payload + PAYLOAD_LENGTH, 0);
+        
         int outputresult = -1;                       // Define the outputresult for the audio input
         outputresult = decoder->fetch(payload);      // Fetch the decoder with the payload
-        EM_ASM({ fetchDecoded($0); }, outputresult); // Call the fetchDecoded function
+        
+        // Only notify JS if decode was successful
+        if (outputresult >= 0) {
+            EM_ASM({ fetchDecoded($0); }, outputresult); // Call the fetchDecoded function
+        }
     }
 }
 /* 

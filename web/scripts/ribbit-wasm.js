@@ -211,6 +211,33 @@ class MessageDecoder {
         this.module = module;
         this.codec = codec;
         this._allocatedBuffers = new Set();
+        this.messageQueue = [];
+    }
+
+    /**
+     * Capture a message notified by the WASM module
+     * @param {number} result - Result code from decoder fetch
+     * @private
+     */
+    _captureMessage(result) {
+        // If decoding failed (result < 0), ignore this message
+        if (result < 0) {
+            return;
+        }
+
+        const payloadPtr = this.module._payload_pointer();
+        const payloadLength = this.module._payload_length();
+
+        if (payloadLength > 0) {
+            // Copy payload data immediately as WASM memory is volatile
+            const payloadView = new Uint8Array(
+                this.module.HEAPU8.buffer,
+                payloadPtr,
+                payloadLength
+            );
+            const payloadCopy = new Uint8Array(payloadView);
+            this.messageQueue.push(payloadCopy);
+        }
     }
 
     /**
@@ -223,10 +250,18 @@ class MessageDecoder {
         const preparedData = this._prepareAudioData(audioData);
 
         // Feed audio data to decoder
+        // This process is synchronous in WASM and will trigger _captureMessage 
+        // via window.fetchDecoded if a message is found
         await this._feedAudioToDecoder(preparedData);
 
-        // Attempt to decode a message
-        return await this._attemptDecode();
+        // Check if we have any captured messages
+        if (this.messageQueue.length > 0) {
+            // Return the first message in the queue
+            const payload = this.messageQueue.shift();
+            return this._decodePayload(payload);
+        }
+
+        return null;
     }
 
     /**
@@ -273,27 +308,12 @@ class MessageDecoder {
     }
 
     /**
-     * Attempt to decode a message from current decoder state
+     * Decode a captured payload
+     * @param {Uint8Array} payloadBytes - The captured payload bytes
      * @returns {DecodeResult|null} Decoded message or null
      * @private
      */
-    async _attemptDecode() {
-        // Check if decoder has a message ready
-        const payloadPtr = this.module._payload_pointer();
-        const payloadLength = this.module._payload_length();
-
-        if (payloadLength === 0) {
-            return null;
-        }
-
-        // Copy payload data
-        const payloadView = new Uint8Array(
-            this.module.HEAPU8.buffer,
-            payloadPtr,
-            payloadLength
-        );
-        const payloadBytes = new Uint8Array(payloadView);
-
+    _decodePayload(payloadBytes) {
         // Decode the message using MessageCodec
         try {
             const decoded = this.codec.DecodeMessage(payloadBytes);
@@ -533,7 +553,14 @@ export class RibbitWASM {
                 window.encoderDestroyed = window.encoderDestroyed || (() => console.log('WASM Encoder destroyed'));
                 window.decoderDestroyed = window.decoderDestroyed || (() => console.log('WASM Decoder destroyed'));
                 window.readEncoded = window.readEncoded || (() => console.debug('WASM Read encoded'));
-                window.fetchDecoded = window.fetchDecoded || (() => console.debug('WASM Fetch decoded'));
+                
+                // Hook fetchDecoded to our instance to capture messages synchronously
+                window.fetchDecoded = (result) => {
+                    if (this.decoder) {
+                        this.decoder._captureMessage(result);
+                    }
+                };
+                
                 window.encoderCreatedError = window.encoderCreatedError || (() => console.error('WASM Encoder creation error'));
                 window.encoderReadError = window.encoderReadError || (() => console.error('WASM Encoder read error'));
             }
