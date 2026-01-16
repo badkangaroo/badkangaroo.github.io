@@ -28,7 +28,7 @@ A WebAssembly-based digital radio communication application supporting real-time
 - **Service Worker**: Offline support with caching
 - **PWA Support**: Installable web app with manifest
 - **Visual Codec Tools**: Interactive message encoding/decoding visualization
-- **Comprehensive Test Suite**: Automated testing with WAV file support
+- **Comprehensive Test Suite**: Automated testing with WAV file support, microphone live testing, and cross-device validation
 - **GPS Integration**: Automatic gridsquare calculation
 - **Theme Support**: Multiple color schemes
 - **Message Format Validation**: Input sanitization and error handling
@@ -208,7 +208,7 @@ The build script uses the following optimizations:
 
 ## Testing
 
-A comprehensive test suite is available to verify encoder/decoder functionality.
+A comprehensive test suite is available to verify encoder/decoder functionality, including automated tests, live microphone testing, and WAV file generation for cross-device validation.
 
 ### Quick Start
 
@@ -224,17 +224,36 @@ run_tests.bat
 ./run_tests.sh
 ```
 
-Then open your browser to: `http://localhost:8000/web/wasm_tests.html`
+Then open your browser to:
+- **WASM Tests**: `http://localhost:8000/web/wasm_tests.html`
+- **Decoder Tests**: `https://localhost:8443/decoder_tests.html` (requires HTTPS server)
 
 ### Test Features
 
+**Automated Testing:**
 - Manual encode/decode testing with custom messages
 - Automated test suite with multiple test cases
-- WAV file generation and verification
 - Stress testing with multiple iterations
 - Real-time result display with pass/fail indicators
+- Noise simulation for robustness testing
 
-See [Docs/testing_plan.md](Docs/testing_plan.md) for detailed testing documentation.
+**Live Testing (decoder_tests.html):**
+- **Microphone Live Test**: Real-time decoding from audio input
+  - Test over-the-air signal reception from radio
+  - Cross-device testing (play on Device B, decode on Device A)
+  - Automatic message validation
+  - Live message display with timestamps
+- **WAV File Generator**: Create audio files for testing
+  - Includes 300Hz wake-up tone for radio VOX activation
+  - Configurable message, callsign, and gridsquare
+  - Audio playback preview
+  - Cross-device and radio transmission testing
+
+**Documentation:**
+- [DECODER_TESTS_QUICKSTART.md](DECODER_TESTS_QUICKSTART.md) - Quick start guide for decoder tests
+- [DECODER_TESTS_VERIFICATION.md](DECODER_TESTS_VERIFICATION.md) - Detailed verification report
+- [DECODER_TESTS_NEW_FEATURES.md](DECODER_TESTS_NEW_FEATURES.md) - New features overview
+- [Docs/testing_plan.md](Docs/testing_plan.md) - Comprehensive testing documentation
 
 ## 🎨 Visual Tools & Demos
 

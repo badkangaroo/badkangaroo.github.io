@@ -38,23 +38,62 @@ Click any of these buttons:
 
 ## 🎤 Microphone Live Test
 
-Test real-time decoding from audio played through speakers:
+Test real-time decoding from audio played through speakers or transmitted over radio:
 
 1. Click **Start Listening** (grant microphone permission if prompted)
 2. Play a Ribbit audio file or WAV file on another device
-3. Watch decoded messages appear in the "Decoded Messages" panel
+3. Watch decoded messages appear in the "Decoded Messages" panel with:
+   - Callsign and gridsquare
+   - Message text
+   - Timestamp of reception
 4. Click **Stop Listening** when done
+
+**Features:**
+- Real-time audio processing at 8kHz sample rate
+- Automatic message validation (filters invalid/garbled messages)
+- Debouncing to prevent duplicate detections (2-second window)
+- Displays last 20 decoded messages
+- Echo cancellation and noise suppression disabled for better signal detection
+
+**Use Cases:**
+- Test over-the-air signal reception from radio
+- Verify cross-device decoding (play on Device B, decode on Device A)
+- Validate signal quality and decoder robustness
+- Test different audio sources (speakers, radio, phone)
 
 ## 📁 WAV File Generator
 
-Create audio files for cross-device testing:
+Create audio files for cross-device testing and radio transmission:
 
-1. Enter your test message in the text area
-2. Set the callsign (e.g., W1TEST) and gridsquare (e.g., FN31pr)
-3. Click **Generate & Download WAV** to create and download
-4. Click **Play Audio** to preview through speakers
+1. Enter your test message in the text area (up to 240 characters)
+2. Set the callsign (e.g., W1TEST, max 8 characters)
+3. Set the gridsquare (e.g., FN31pr, 6 characters)
+4. Click **Generate & Download WAV** to create and download
+5. Click **Play Audio** to preview through speakers
 
-**Tip:** The WAV file includes a 300Hz wake-up tone for radio compatibility.
+**WAV File Structure:**
+- 300ms wake-up tone at 300Hz (for radio VOX activation)
+- 100ms silence (decoder synchronization)
+- Encoded Ribbit message
+- 500ms tail silence (clean transmission end)
+- Format: 8kHz sample rate, 16-bit mono PCM
+
+**Filename Format:** `YYYYMMDD_HHMMSS-CALLSIGN-GRIDSQUARE.wav`
+
+**Cross-Device Testing Workflow:**
+1. Generate WAV file on Device A
+2. Transfer to Device B (email, USB, cloud storage, or Bluetooth)
+3. On Device A: Start microphone listening
+4. On Device B: Play WAV file through speakers at moderate volume
+5. On Device A: Verify message decodes correctly
+6. Compare callsign, gridsquare, and message text
+
+**Radio Testing Workflow:**
+1. Generate WAV file with your message
+2. Play WAV file into radio microphone or use audio interface
+3. Transmit on appropriate frequency
+4. Receive on another radio and decode using microphone test
+5. Verify signal quality and decoder performance
 
 ## 📊 What to Expect
 
@@ -201,6 +240,50 @@ Run this quick checklist to verify everything works:
    - Check browser console for validation errors
    - Compare validation logic with `index.js`
 
+### "Microphone test not working"
+**Possible causes**:
+1. Microphone permission denied
+   - Solution: Check browser address bar for permission icon
+   - Click and allow microphone access
+   - Reload page if needed
+
+2. Wrong audio device selected
+   - Solution: Check browser settings for default microphone
+   - Try different microphone if available
+
+3. Audio context suspended
+   - Solution: Click "Start Listening" again
+   - Browser may require user interaction first
+
+### "WAV file doesn't decode"
+**Possible causes**:
+1. Volume too low
+   - Solution: Increase speaker volume to 50-75%
+   - Move devices closer together
+
+2. Background noise interference
+   - Solution: Test in quieter environment
+   - Reduce distance between devices
+
+3. Audio quality issues
+   - Solution: Use better speakers/audio output
+   - Avoid Bluetooth speakers (latency issues)
+   - Use wired connection if possible
+
+### "No messages appearing in decoded list"
+**Possible causes**:
+1. Signal too weak
+   - Solution: Increase volume or move closer
+   - Check microphone is working (test with other apps)
+
+2. Message validation failing
+   - Solution: Check System Logs for validation errors
+   - Verify callsign and message format are valid
+
+3. Debouncing window active
+   - Solution: Wait 2 seconds between transmissions
+   - Messages within 2 seconds are filtered as duplicates
+
 ## 📝 Test Scenarios
 
 ### Scenario 1: Quick Smoke Test (1 minute)
@@ -243,11 +326,18 @@ Run this quick checklist to verify everything works:
 ### Scenario 5: Cross-Device Testing (5 minutes)
 ```
 1. On Device A: Generate a WAV file with a custom message
-2. Transfer WAV file to Device B (email, cloud, USB)
+   - Message: "Testing cross-device decoding 73!"
+   - Callsign: W1TEST
+   - Gridsquare: FN31pr
+2. Transfer WAV file to Device B (email, cloud, USB, Bluetooth)
 3. On Device A: Start Microphone listening
-4. On Device B: Play the WAV file through speakers
-5. On Device A: Verify the message is decoded correctly
-6. Compare decoded callsign, gridsquare, and message
+4. On Device B: Play the WAV file through speakers at 50-75% volume
+5. On Device A: Watch for decoded message in "Decoded Messages" panel
+6. Verify decoded message matches:
+   - Callsign: W1TEST
+   - Gridsquare: FN31pr
+   - Text: "Testing cross-device decoding 73!"
+7. Try different distances and volumes to test robustness
 ```
 
 ### Scenario 6: Advanced International Test (3 minutes)
@@ -271,6 +361,9 @@ The decoder tests are working correctly if:
 ✅ Accuracy degrades gracefully with increased noise
 ✅ No memory leaks during extended stress tests
 ✅ System logs show no errors or warnings
+✅ Microphone test successfully decodes WAV files played from another device
+✅ WAV file generator creates valid files that decode correctly
+✅ Cross-device testing works reliably at moderate speaker volumes
 
 ## 📚 Additional Resources
 
@@ -278,6 +371,41 @@ The decoder tests are working correctly if:
 - **Testing Documentation**: `Docs/testing_plan.md`
 - **WASM API Details**: `Docs/ribbit_wasm.md`
 - **Message Format Spec**: `Docs/codec.md`
+
+## 💡 Best Practices
+
+### For Microphone Testing:
+- Use a quiet environment to minimize background noise
+- Position devices 1-3 feet apart for initial testing
+- Set speaker volume to 50-75% for optimal signal strength
+- Avoid Bluetooth speakers (they introduce latency and compression)
+- Use wired speakers or built-in device speakers for best results
+- Wait 2 seconds between transmissions (debouncing window)
+
+### For WAV File Generation:
+- Keep messages under 200 characters for faster transmission
+- Use standard ASCII characters when possible (better compatibility)
+- Test Unicode messages separately to verify support
+- Include your actual callsign for radio testing
+- Use accurate gridsquare for location-based testing
+- Store WAV files in a dedicated folder for organization
+
+### For Cross-Device Testing:
+- Test on same device first (generate + play + decode)
+- Use cloud storage for easy file transfer (Dropbox, Google Drive)
+- Test with different device combinations (laptop ↔ phone, etc.)
+- Try various distances: 1 foot, 3 feet, 6 feet, 10 feet
+- Test in different environments (quiet room, office, outdoors)
+- Document successful configurations for future reference
+
+### For Radio Testing:
+- Ensure proper amateur radio licensing before transmitting
+- Start with low power and short transmissions
+- Use appropriate frequency for your license class
+- Monitor frequency before transmitting
+- Include your callsign in the message for identification
+- Test receive-only first before transmitting
+- Adjust audio levels to avoid overdriving radio input
 
 ## 🎉 You're Ready!
 

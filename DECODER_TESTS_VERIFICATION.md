@@ -37,13 +37,18 @@ The `decoder_tests.html` page is a comprehensive stress testing tool for the Rib
 5. **Microphone Live Test** - Real-time decoding from microphone input:
    - Tests over-the-air signal reception
    - Cross-device testing capability
-   - Live decoded message display
+   - Live decoded message display with timestamps
+   - Automatic message validation
+   - Debouncing to prevent duplicate detections
+   - Displays last 20 decoded messages
 
 6. **WAV File Generator** - Creates downloadable WAV files:
-   - Includes 300Hz wake-up tone for radio compatibility
+   - Includes 300Hz wake-up tone for radio VOX activation
    - Configurable message, callsign, and gridsquare
    - Audio playback preview
    - Cross-device testing support
+   - Descriptive filenames with timestamp and metadata
+   - 8kHz, 16-bit mono PCM format
 
 7. **Noise Simulation** - Adds configurable noise (0-100% SNR) to test robustness
 8. **Real-time Results** - Shows pass/fail status, accuracy percentage, and detailed logs
@@ -234,6 +239,27 @@ isValidDecodedMessage(decoded) {
 
 **Workaround**: Click "Clear Results" periodically or refresh page.
 
+### 5. ⚠️ Microphone Permissions
+**Issue**: Browser requires user permission to access microphone. Permission prompt may be blocked by browser settings.
+
+**Impact**: Microphone test cannot start without permission.
+
+**Workaround**: Ensure browser has microphone permissions enabled. Check browser settings if permission is denied.
+
+### 6. ⚠️ Audio Context Limitations
+**Issue**: Some browsers require user interaction before creating AudioContext (autoplay policy).
+
+**Impact**: Audio playback or microphone test may fail on first attempt.
+
+**Workaround**: Click the button again if it fails the first time. The second click will work after user interaction.
+
+### 7. ⚠️ WAV File Size
+**Issue**: WAV files can be large (typically 50-200 KB per message depending on length).
+
+**Impact**: May be slow to transfer or email for cross-device testing.
+
+**Note**: This is expected for uncompressed audio. Consider using cloud storage or USB transfer for large files.
+
 ## Performance Expectations
 
 ### Encoding Performance
@@ -288,42 +314,85 @@ The decoder tests page is fully functional and ready for use. All dependencies a
 4. **Memory Monitoring**: Add real-time memory usage display
 5. **Export Results**: Add button to export test results as JSON/CSV
 6. **Automated CI**: Integrate with Playwright for automated regression testing
+7. **Signal Strength Meter**: Add visual indicator of audio input level during microphone test
+8. **Waterfall Display**: Add frequency spectrum visualization for debugging
+9. **Recording Feature**: Allow recording of microphone input for later analysis
+10. **Batch WAV Generation**: Generate multiple WAV files with different messages at once
+11. **SNR Measurement**: Calculate and display actual signal-to-noise ratio during decoding
 
 ## New Features (Added)
 
 ### Microphone Live Test
 The microphone test allows real-time decoding of Ribbit signals received through the computer's microphone:
 
-1. Click "Start Listening" to begin
-2. Play a Ribbit audio file or transmit via radio
-3. Decoded messages appear in the "Decoded Messages" section
+**How It Works:**
+1. Click "Start Listening" to begin (grants microphone permission)
+2. Audio is processed in real-time at 8kHz sample rate
+3. Decoded messages appear in the "Decoded Messages" section with:
+   - Callsign (highlighted badge)
+   - Gridsquare
+   - Message text
+   - Timestamp of reception
 4. Click "Stop Listening" when done
 
+**Technical Details:**
+- Uses Web Audio API with ScriptProcessor (2048 sample buffer)
+- Audio settings optimized for signal detection:
+  - Echo cancellation: OFF
+  - Noise suppression: OFF
+  - Auto gain control: OFF
+  - Sample rate: 8kHz
+- Debouncing: 2-second window to prevent duplicate detections
+- Message validation: Filters invalid/garbled messages automatically
+- Display limit: Shows last 20 decoded messages
+
 **Use Cases:**
-- Testing over-the-air signal reception
-- Verifying radio transmission quality
-- Cross-device testing (play on one device, decode on another)
+- Testing over-the-air signal reception from radio
+- Verifying radio transmission quality and decoder robustness
+- Cross-device testing (play on Device B, decode on Device A)
+- Testing different audio sources (speakers, radio, phone)
+- Validating signal quality at various distances and volumes
 
 ### WAV File Generator
-Generate WAV files containing encoded Ribbit messages for cross-device testing:
+Generate WAV files containing encoded Ribbit messages for cross-device testing and radio transmission:
 
-1. Enter your message in the text area
-2. Set the callsign and gridsquare
-3. Click "Generate & Download WAV" to create and download the file
-4. Click "Play Audio" to preview the audio through speakers
+**How to Use:**
+1. Enter your message in the text area (max 240 characters)
+2. Set the callsign (max 8 characters, alphanumeric + /)
+3. Set the gridsquare (6 characters, e.g., FN31pr)
+4. Click "Generate & Download WAV" to create and download the file
+5. Click "Play Audio" to preview the audio through speakers
 
-**Features:**
-- Includes 300Hz wake-up tone (300ms) for radio VOX activation
-- 100ms silence before message for decoder synchronization
-- 500ms tail silence for clean transmission end
-- 8kHz sample rate, 16-bit mono WAV format
+**WAV File Structure:**
+- **300ms wake-up tone** at 300Hz (for radio VOX activation)
+- **100ms silence** (decoder synchronization)
+- **Encoded Ribbit message** (variable length based on message)
+- **500ms tail silence** (clean transmission end)
+- **Format:** 8kHz sample rate, 16-bit mono PCM WAV
+
+**Filename Format:**
+Files are automatically named with timestamp and metadata:
+```
+YYYYMMDD_HHMMSS-CALLSIGN-GRIDSQUARE.wav
+Example: 20260115_143022-W1TEST-FN31PR.wav
+```
 
 **Cross-Device Testing Workflow:**
 1. Generate WAV file on Device A
-2. Transfer to Device B (email, USB, cloud)
-3. Play WAV file on Device B speakers
-4. Decode on Device A using microphone test
-5. Or: Transmit via radio on Device B, receive and decode on Device A
+2. Transfer to Device B (email, USB, cloud storage, Bluetooth)
+3. On Device A: Start microphone listening
+4. On Device B: Play WAV file through speakers at 50-75% volume
+5. On Device A: Watch for decoded message in "Decoded Messages" panel
+6. Verify decoded message matches original (callsign, gridsquare, text)
+7. Test at different distances and volumes for robustness
+
+**Radio Testing Workflow:**
+1. Generate WAV file with your message
+2. Play WAV file into radio microphone or use audio interface
+3. Transmit on appropriate frequency (ensure proper licensing)
+4. Receive on another radio and decode using microphone test
+5. Verify signal quality and decoder performance
+6. Adjust audio levels and test at different signal strengths
 
 ## Conclusion
 
@@ -332,7 +401,17 @@ Generate WAV files containing encoded Ribbit messages for cross-device testing:
 - All dependencies are present
 - Server configuration is correct
 - Test logic matches production validation
-- Comprehensive test coverage (basic, stress, validation)
+- Comprehensive test coverage (basic, stress, validation, advanced)
+- Microphone live testing for real-world signal reception
+- WAV file generation for cross-device and radio testing
 - Easy to run with clear instructions
+
+**Key Features:**
+- **Automated Testing**: Basic, stress, validation, and advanced test suites
+- **Live Decoding**: Real-time microphone input processing
+- **Cross-Device Testing**: Generate WAV files for testing on multiple devices
+- **Radio Compatibility**: WAV files include wake-up tone for VOX activation
+- **Message Validation**: Application-level validation matching production code
+- **Noise Simulation**: Configurable noise levels for robustness testing
 
 **To get started**: Simply run `npm start` in the `web/` directory and navigate to `https://localhost:8443/decoder_tests.html`.
