@@ -13,7 +13,7 @@ A WebAssembly-based digital radio communication application supporting real-time
 
 ## Current Project Status
 
-**Version**: 0.1.2 (Development)  
+**Version**: 0.1.2 (Development)
 **Status**: Production-ready core functionality with active development on advanced features
 
 ### ✅ Completed Features
@@ -29,7 +29,7 @@ A WebAssembly-based digital radio communication application supporting real-time
 - **Service Worker**: Offline support with caching
 - **PWA Support**: Installable web app with manifest
 - **Visual Codec Tools**: Interactive message encoding/decoding visualization
-- **Comprehensive Test Suite**: 
+- **Comprehensive Test Suite**:
   - Automated testing with multiple test scenarios
   - **Microphone Live Test**: Real-time decoding from audio input
   - **WAV File Generator**: Create audio files for cross-device and radio testing
@@ -575,6 +575,14 @@ Saving and exporting contacts:
 - **Cabrillo logging support** - Contest logging format
 - **CSV export** - For spreadsheet compatibility
 - **Integration** - Direct export to popular logging software
+
+## AI Agent & Developer Guidance
+
+This project has specific constraints to ensure offline reliability and portability. Please read the **[AgentGuidance](AgentGuidance/README.md)** before writing code.
+
+- **[Code Style](AgentGuidance/CODE_STYLE.md)**: Keep changes minimal and focused.
+- **[Offline First](AgentGuidance/OFFLINE_FIRST.md)**: **NO external CDNs** or runtime dependencies allowed.
+- **[Documentation](AgentGuidance/DOCUMENTATION.md)**: Must be maintained for offline reading.
 
 ## Contributing
 

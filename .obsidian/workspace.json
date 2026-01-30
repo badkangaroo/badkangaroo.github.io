@@ -199,6 +199,9 @@
   "active": "6e97421dabb4c56d",
   "lastOpenFiles": [
     "Docs/DECODER_TESTS.md",
+    "package-lock.json",
+    "web/test_decoder_verification.html",
+    "README.md",
     "Docs/WAV_EXPORT_UI_GUIDE.md",
     "Docs/WAV_EXPORT_SUMMARY.md",
     "Docs/WAV_EXPORT_FEATURE.md",
@@ -223,11 +226,9 @@
     "WAKEUP_TONE_FEATURE.md",
     "web/scripts/decoder_tests.js",
     "DECODER_TESTS_QUICKSTART.md",
-    "DECODER_TESTS_VERIFICATION.md",
     "web/decoder_tests.html",
     "web/scripts/decoding_tests.js",
     "web/decoding_tests.html",
-    "Docs/codec.md",
     "web/scripts/message_codec_tests.js",
     "web/test/message-id.test.js"
   ]
