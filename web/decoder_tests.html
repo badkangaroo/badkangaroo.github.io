@@ -317,6 +317,58 @@
             50% { opacity: 0.7; }
         }
 
+        /* Audio Level Meter */
+        .level-meter-container {
+            display: inline-block;
+            width: 120px;
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-left: 12px;
+            vertical-align: middle;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .level-meter-container.active {
+            opacity: 1;
+        }
+
+        .level-meter-bar {
+            height: 100%;
+            width: 0%;
+            background: #10b981;
+            transition: width 0.05s linear, background-color 0.2s;
+        }
+
+        .level-meter-bar.clipping {
+            background: #ef4444;
+        }
+
+        /* Processing Spinner */
+        .processing-spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid #cbd5e1;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            margin-left: 12px;
+            vertical-align: middle;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .processing-spinner.active {
+            opacity: 1;
+            /* Animation handled by WASM callback */
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         /* Decoded Messages */
         .decoded-messages {
             max-height: 300px;
@@ -465,8 +517,12 @@
                 <button id="btnStartMic" class="success">Start Listening</button>
                 <button id="btnStopMic" class="danger" disabled>Stop Listening</button>
             </div>
-            <div>
+            <div style="display: flex; align-items: center;">
                 <span class="mic-status inactive" id="micStatus">Ready</span>
+                <div id="micLevelContainer" class="level-meter-container" title="Audio Input Level">
+                    <div id="micLevelBar" class="level-meter-bar"></div>
+                </div>
+                <div id="processingSpinner" class="processing-spinner" title="WASM Processing Active"></div>
             </div>
             <div class="section-separator">
                 <h3>Decoded Messages</h3>

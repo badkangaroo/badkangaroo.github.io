@@ -147,6 +147,8 @@ EXTERN EMSCRIPTEN_KEEPALIVE void feedDecoder()
             EM_ASM({ fetchDecoded($0); }, outputresult); // Call the fetchDecoded function
         }
     }
+    // Update the spinner rotation to show WASM activity
+    EM_ASM({ if (typeof rotateSpinner === 'function') rotateSpinner(); });
 }
 /* 
  * digestFeed: Processes audio data from Web Audio API into fixed-size chunks for decoder

@@ -397,6 +397,7 @@ export class RibbitWASM {
                 window.decoderDestroyed = window.decoderDestroyed || (() => console.log('WASM Decoder destroyed'));
                 window.readEncoded = window.readEncoded || (() => console.debug('WASM Read encoded'));
                 window.fetchDecoded = window.fetchDecoded || (() => console.debug('WASM Fetch decoded'));
+                window.rotateSpinner = window.rotateSpinner || (() => {}); // Default no-op for spinner rotation
                 window.encoderCreatedError = window.encoderCreatedError || (() => console.error('WASM Encoder creation error'));
                 window.encoderReadError = window.encoderReadError || (() => console.error('WASM Encoder read error'));
             }

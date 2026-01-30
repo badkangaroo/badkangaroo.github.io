@@ -18,6 +18,15 @@ class DecodingTester {
         this.isListening = false;
         this.lastGeneratedAudio = null;
         this.lastGeneratedMessage = null;
+        this.spinnerRotation = 0;
+
+        // Define global callback for WASM spinner rotation
+        window.rotateSpinner = () => {
+            if (this.isListening && this.elements.processingSpinner) {
+                this.spinnerRotation = (this.spinnerRotation + 1) % 360;
+                this.elements.processingSpinner.style.transform = `rotate(${this.spinnerRotation}deg)`;
+            }
+        };
 
         // UI Elements
         this.elements = {
@@ -31,6 +40,9 @@ class DecodingTester {
             btnStartMic: document.getElementById('btnStartMic'),
             btnStopMic: document.getElementById('btnStopMic'),
             micStatus: document.getElementById('micStatus'),
+            micLevelContainer: document.getElementById('micLevelContainer'),
+            micLevelBar: document.getElementById('micLevelBar'),
+            processingSpinner: document.getElementById('processingSpinner'),
             // WAV generation controls
             btnGenerateWav: document.getElementById('btnGenerateWav'),
             btnPlayAudio: document.getElementById('btnPlayAudio'),
@@ -363,6 +375,27 @@ class DecodingTester {
 
                 try {
                     const inputData = event.inputBuffer.getChannelData(0);
+                    
+                    // Update audio level meter
+                    if (this.elements.micLevelBar) {
+                        let sum = 0;
+                        for (let i = 0; i < inputData.length; i++) {
+                            sum += inputData[i] * inputData[i];
+                        }
+                        const rms = Math.sqrt(sum / inputData.length);
+                        // amplify low signals for better visibility, cap at 100%
+                        const percentage = Math.min(100, Math.round(rms * 500)); 
+                        
+                        this.elements.micLevelBar.style.width = `${percentage}%`;
+                        
+                        // Visual clipping indication if very loud
+                        if (percentage >= 95) {
+                            this.elements.micLevelBar.classList.add('clipping');
+                        } else {
+                            this.elements.micLevelBar.classList.remove('clipping');
+                        }
+                    }
+
                     const decoded = await this.ribbit.decodeAudio(inputData);
 
                     if (decoded) {
@@ -390,6 +423,11 @@ class DecodingTester {
             this.isListening = true;
             this.setControlsEnabled(true);
             this.updateMicStatus('Listening...', 'active');
+            
+            // Activate UI indicators
+            if (this.elements.micLevelContainer) this.elements.micLevelContainer.classList.add('active');
+            if (this.elements.processingSpinner) this.elements.processingSpinner.classList.add('active');
+            
             this.log('🎤 Microphone listening started - play a Ribbit signal to decode', 'success');
 
         } catch (error) {
