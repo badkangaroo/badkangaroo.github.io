@@ -24,3 +24,4 @@ web/playwright-report/
 web/test-results/
 .cursor/
 Docs/.obsidian/
+.DS_Store
