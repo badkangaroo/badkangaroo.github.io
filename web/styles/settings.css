@@ -9,7 +9,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: var(--transition);
+    transition: top 0.4s ease;
     box-shadow: 0 0 2rem var(--shadow-lg);
 }
 
@@ -102,12 +102,15 @@
 
 #settings .tabs {
     width: 100%;
-    /* Keep tabs on a single row (no wrapping) */
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.5rem;
-    padding: 0.5rem 0;
-    background: var(--background);
+    gap: 0.35rem;
+    padding: 0.5rem;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-radius: var(--border-radius);
+    border: 1px solid var(--glass-border);
     flex: 0 0 auto;
 }
 
@@ -115,36 +118,36 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.65rem 0.75rem;
+    padding: 0.6rem 0.75rem;
     text-align: center;
-    font-weight: bold;
+    font-weight: 600;
     cursor: pointer;
-    border-radius: var(--border-radius);
-    background: var(--surface);
+    border-radius: calc(var(--border-radius) - 2px);
+    background: transparent;
     color: var(--text-secondary);
     transition: var(--transition);
-    border: 2px solid transparent;
+    border: 1px solid transparent;
     min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 0.9rem;
 }
 
 #settings .tabs > label:hover {
-    background: var(--primary-light);
-    color: var(--background);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px var(--shadow);
+    background: var(--surface-hover);
+    color: var(--text-primary);
 }
 
 /* Active tab styling without :has() */
 #settings-1:checked ~ .tabs label[for="settings-1"],
 #settings-2:checked ~ .tabs label[for="settings-2"],
 #settings-3:checked ~ .tabs label[for="settings-3"] {
-    background: var(--primary);
-    color: var(--background);
-    border-color: var(--primary-dark);
-    box-shadow: 0 4px 12px var(--shadow-lg);
+    background: var(--surface-solid);
+    color: var(--accent-dark);
+    border-color: var(--border);
+    box-shadow: 0 2px 8px var(--shadow);
+    font-weight: 700;
 }
 
 /* Page Content */
@@ -162,7 +165,9 @@
 }
 
 #settings .page-content {
-    background: var(--surface);
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
     display: none;
     flex-direction: column;
     width: 100%;
@@ -170,7 +175,8 @@
     margin: 0.5rem auto;
     padding: 1rem 1.5rem;
     border-radius: var(--border-radius);
-    box-shadow: 0 4px 6px var(--shadow);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 4px 16px var(--shadow);
     gap: 1rem;
 }
 
@@ -193,7 +199,7 @@
     flex-direction: column;
     gap: 0.5rem;
     padding: 0.75rem;
-    background: var(--background);
+    background: var(--surface);
     border-radius: var(--border-radius);
     border: 1px solid var(--border);
     transition: var(--transition);
@@ -201,8 +207,9 @@
 }
 
 .setting:hover {
-    border-color: var(--primary);
-    box-shadow: 0 2px 4px var(--shadow);
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px var(--shadow);
+    background: var(--surface-hover);
 }
 
 .setting > label {
@@ -221,9 +228,9 @@
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.02em;
-    background: rgba(16, 108, 47, 0.12);
-    color: var(--primary-dark);
-    border: 1px solid rgba(16, 108, 47, 0.25);
+    background: rgba(46, 204, 64, 0.12);
+    color: var(--accent-dark);
+    border: 1px solid rgba(46, 204, 64, 0.25);
     vertical-align: middle;
 }
 
@@ -254,8 +261,8 @@
 .setting > input:focus,
 .setting > select:focus {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(16, 108, 47, 0.1);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(46, 204, 64, 0.12);
 }
 
 .setting > input.valid {
@@ -276,11 +283,11 @@
 
 .setting > button {
     padding: 0.6rem 1.25rem;
-    background: var(--primary);
-    color: var(--background);
-    border: 2px solid var(--primary-dark);
+    background: var(--accent);
+    color: #fff;
+    border: none;
     border-radius: var(--border-radius);
-    font-weight: bold;
+    font-weight: 600;
     cursor: pointer;
     transition: var(--transition);
     font-size: 0.95rem;
@@ -291,9 +298,9 @@
 }
 
 .setting > button:hover {
-    background: var(--primary-dark);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px var(--shadow);
+    background: var(--accent-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--shadow);
 }
 
 .setting > button:active {
@@ -306,41 +313,42 @@
 }
 
 .setting > #cancel {
-    background: var(--text-secondary);
-    color: var(--background);
-    border-color: var(--text-secondary);
+    background: var(--surface);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
 }
 
 .setting > #cancel:hover {
-    background: var(--text-primary);
+    background: var(--surface-hover);
+    color: var(--text-primary);
 }
 
 .setting > #close {
-    background: var(--success);
-    color: var(--background);
-    border-color: var(--primary-dark);
+    background: var(--accent);
+    color: #fff;
+    border: none;
 }
 
 .setting > #close:hover {
-    background: var(--primary-dark);
+    background: var(--accent-dark);
 }
 
 .setting > input[type="checkbox"] {
     width: 1.5rem;
     height: 1.5rem;
     cursor: pointer;
-    accent-color: var(--primary);
+    accent-color: var(--accent);
 }
 
 /* Info Tooltips */
 .setting > .info {
     display: none;
     position: absolute;
-    background: var(--background);
-    border: 2px solid var(--primary);
+    background: var(--surface-solid);
+    border: 1px solid var(--border);
     border-radius: var(--border-radius);
     padding: 1rem;
-    box-shadow: 0 4px 12px var(--shadow-lg);
+    box-shadow: 0 4px 16px var(--shadow-lg);
     z-index: 10;
     max-width: 320px;
     margin-top: 0.5rem;
@@ -532,30 +540,15 @@
 }
 
 /* Dark theme adjustments */
-[data-theme="ribbit-dark"] #settings {
-    background: var(--background);
-}
-
-[data-theme="ribbit-dark"] .settings-required-message {
-    background: var(--surface);
-    border-color: var(--primary);
-}
-
-[data-theme="ribbit-dark"] .setting {
+[data-theme="ribbit-dark"] .setting,
+[data-theme="auto"] .setting {
     background: var(--surface);
 }
 
 [data-theme="ribbit-dark"] .setting > input,
-[data-theme="ribbit-dark"] .setting > select {
-    background: var(--background);
+[data-theme="ribbit-dark"] .setting > select,
+[data-theme="auto"] .setting > input,
+[data-theme="auto"] .setting > select {
+    background: var(--background-solid);
     color: var(--text-primary);
-}
-
-/* World Radio League theme adjustments */
-[data-theme="world-radio-league"] #settings {
-    background: var(--background);
-}
-
-[data-theme="world-radio-league"] .settings-required-message {
-    border-color: var(--primary);
 }

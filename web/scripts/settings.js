@@ -311,7 +311,7 @@ function loadSettingsValues() {
     const speaker = db.getItem("speaker") || "Default";
     const savemessages = db.getItem("saveMessages") === "true";
     const useOptimizedDigest = db.getItem("useOptimizedDigest") === "true";
-    const theme = db.getItem("theme") || "ribbit-light";
+    const theme = db.getItem("theme") || "auto";
 
     const operatorNameEl = document.getElementById("operatorName");
     const callsignEl = document.getElementById("callsign");
@@ -340,23 +340,27 @@ function loadTheme() {
     const db = window.localStorage;
     if (!db) return;
     
-    const theme = db.getItem("theme") || "ribbit-light";
+    const theme = db.getItem("theme") || "auto";
     applyTheme(theme);
 }
 
 function applyTheme(themeName) {
     const html = document.documentElement;
     const themeMap = {
+        "Ribbit Light": "ribbit-light",
+        "Ribbit Dark": "ribbit-dark",
+        "Auto (System)": "auto",
+        "World Radio League": "world-radio-league",
+        // Legacy mappings
         "Ribbit": "ribbit-light",
         "Ribbit (Default)": "ribbit-light",
-        "World Radio League": "world-radio-league",
         "Muted Light": "ribbit-light",
         "Muted Dark": "ribbit-dark"
     };
     
-    const actualTheme = themeMap[themeName] || themeName || "ribbit-light";
+    const actualTheme = themeMap[themeName] || themeName || "auto";
     html.setAttribute("data-theme", actualTheme);
-    html.classList.remove("ribbit-light", "ribbit-dark", "world-radio-league");
+    html.classList.remove("ribbit-light", "ribbit-dark", "world-radio-league", "auto");
     html.classList.add(actualTheme);
 }
 

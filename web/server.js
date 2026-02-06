@@ -164,7 +164,7 @@ if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
     key: fs.readFileSync(keyPath)
   };
 
-  https.createServer(options, app).listen(PORT, wifiIP, () => {
+  https.createServer(options, app).listen(PORT, '0.0.0.0', () => {
     console.log(`HTTPS server running on https://${wifiIP}:${PORT}`);
     console.log(`Also available at https://localhost:${PORT}`);
     console.log(`Serving files from: ${__dirname}`);

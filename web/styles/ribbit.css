@@ -3,69 +3,115 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     padding: 0;
     margin: 0;
-    --border-radius: 0.5rem;
+    --border-radius: 0.75rem;
     --transition: all 0.3s ease;
 }
 
-/* Ribbit Light Theme (Default) */
+/* ── Ribbit Light Theme (Default) ── */
 :root {
-    --primary: #106c2f;
-    --primary-light: #7fcf21;
-    --primary-dark: #0a4d20;
-    --background: #ffffff;
-    --surface: #e8eee0;
-    --text-primary: #212121;
-    --text-secondary: #666666;
-    --border: #d0d0d0;
-    --success: #7fcf21;
-    --error: #d32f2f;
-    --warning: #ff9800;
-    --shadow: rgba(0, 0, 0, 0.1);
-    --shadow-lg: rgba(0, 0, 0, 0.2);
+    /* Ribbit green as accent */
+    --accent: #2ecc40;
+    --accent-light: #7fcf21;
+    --accent-dark: #1a9e2c;
+
+    /* Neutral palette */
+    --primary: #334155;
+    --primary-light: #64748b;
+    --primary-dark: #1e293b;
+    --background: #f0f2f5;
+    --background-solid: #f0f2f5;
+    --surface: rgba(255, 255, 255, 0.60);
+    --surface-solid: #ffffff;
+    --surface-hover: rgba(255, 255, 255, 0.80);
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border: rgba(148, 163, 184, 0.30);
+    --success: #2ecc40;
+    --error: #ef4444;
+    --warning: #f59e0b;
+    --shadow: rgba(0, 0, 0, 0.06);
+    --shadow-lg: rgba(0, 0, 0, 0.12);
+
+    /* Glassmorphism */
+    --glass-bg: rgba(255, 255, 255, 0.55);
+    --glass-border: rgba(255, 255, 255, 0.35);
+    --glass-blur: 16px;
+
+    /* Titlebar / input bar */
+    --bar-bg: rgba(255, 255, 255, 0.70);
+    --bar-text: var(--text-primary);
 }
 
-/* Ribbit Dark Theme */
+/* ── Ribbit Dark Theme ── */
 [data-theme="ribbit-dark"] {
-    --primary: #7fcf21;
-    --primary-light: #9fef41;
-    --primary-dark: #106c2f;
-    --background: #121212;
-    --surface: #1e1e1e;
-    --text-primary: #e8eee0;
-    --text-secondary: #afafaf;
-    --border: #333333;
+    --accent: #7fcf21;
+    --accent-light: #a3e635;
+    --accent-dark: #4ade80;
+
+    --primary: #cbd5e1;
+    --primary-light: #e2e8f0;
+    --primary-dark: #94a3b8;
+    --background: #0f172a;
+    --background-solid: #0f172a;
+    --surface: rgba(30, 41, 59, 0.65);
+    --surface-solid: #1e293b;
+    --surface-hover: rgba(30, 41, 59, 0.85);
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border: rgba(148, 163, 184, 0.18);
     --success: #7fcf21;
-    --error: #ef5350;
-    --warning: #ffb74d;
-    --shadow: rgba(0, 0, 0, 0.3);
-    --shadow-lg: rgba(0, 0, 0, 0.5);
+    --error: #f87171;
+    --warning: #fbbf24;
+    --shadow: rgba(0, 0, 0, 0.25);
+    --shadow-lg: rgba(0, 0, 0, 0.45);
+
+    --glass-bg: rgba(15, 23, 42, 0.60);
+    --glass-border: rgba(148, 163, 184, 0.12);
+    --glass-blur: 20px;
+
+    --bar-bg: rgba(15, 23, 42, 0.75);
+    --bar-text: var(--text-primary);
 }
 
-/* World Radio League Theme */
+/* ── World Radio League Theme ── */
 [data-theme="world-radio-league"] {
+    --accent: #3b82f6;
+    --accent-light: #60a5fa;
+    --accent-dark: #2563eb;
+
     --primary: #1976d2;
     --primary-light: #42a5f5;
     --primary-dark: #1565c0;
-    --background: #ffffff;
-    --surface: #f5f5f5;
-    --text-primary: #212121;
-    --text-secondary: #757575;
-    --border: #e0e0e0;
-    --success: #4caf50;
-    --error: #f44336;
-    --warning: #ff9800;
-    --shadow: rgba(25, 118, 210, 0.1);
-    --shadow-lg: rgba(25, 118, 210, 0.2);
+    --background: #f8fafc;
+    --background-solid: #f8fafc;
+    --surface: rgba(255, 255, 255, 0.65);
+    --surface-solid: #ffffff;
+    --surface-hover: rgba(255, 255, 255, 0.85);
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border: rgba(148, 163, 184, 0.25);
+    --success: #22c55e;
+    --error: #ef4444;
+    --warning: #f59e0b;
+    --shadow: rgba(59, 130, 246, 0.08);
+    --shadow-lg: rgba(59, 130, 246, 0.16);
+
+    --glass-bg: rgba(255, 255, 255, 0.55);
+    --glass-border: rgba(255, 255, 255, 0.35);
+    --glass-blur: 16px;
+
+    --bar-bg: rgba(255, 255, 255, 0.70);
+    --bar-text: var(--text-primary);
 }
 
 /* Legacy color variables for backward compatibility */
 :root {
-    --dark-green: var(--primary);
-    --light-green: var(--primary-light);
+    --dark-green: var(--accent-dark);
+    --light-green: var(--accent);
     --white-green: var(--surface);
     --dark-gray: var(--background);
     --light-gray: var(--text-secondary);
-    --middle-green: var(--primary-dark);
+    --middle-green: var(--accent-dark);
 }
 
 body {
@@ -74,7 +120,40 @@ body {
     height: 100svh;
     width: 100svw;
     overflow: hidden;
-    transition: var(--transition);
+    transition: background 0.4s ease, color 0.4s ease;
+}
+
+/* ── Auto (system) theme ── */
+@media (prefers-color-scheme: dark) {
+    [data-theme="auto"] {
+        --accent: #7fcf21;
+        --accent-light: #a3e635;
+        --accent-dark: #4ade80;
+
+        --primary: #cbd5e1;
+        --primary-light: #e2e8f0;
+        --primary-dark: #94a3b8;
+        --background: #0f172a;
+        --background-solid: #0f172a;
+        --surface: rgba(30, 41, 59, 0.65);
+        --surface-solid: #1e293b;
+        --surface-hover: rgba(30, 41, 59, 0.85);
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --border: rgba(148, 163, 184, 0.18);
+        --success: #7fcf21;
+        --error: #f87171;
+        --warning: #fbbf24;
+        --shadow: rgba(0, 0, 0, 0.25);
+        --shadow-lg: rgba(0, 0, 0, 0.45);
+
+        --glass-bg: rgba(15, 23, 42, 0.60);
+        --glass-border: rgba(148, 163, 184, 0.12);
+        --glass-blur: 20px;
+
+        --bar-bg: rgba(15, 23, 42, 0.75);
+        --bar-text: var(--text-primary);
+    }
 }
 
 /* Responsive breakpoints */
