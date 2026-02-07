@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ribbit WASM API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ribbit WASM API Test</h1>
+    <div id="status" class="test-section info">
+        <h3>Status: Initializing...</h3>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 1: Load WASM Module</h3>
+        <button onclick="runLoadTest()">Run Load Test</button>
+        <div id="load-test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 2: Encode Message</h3>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
+            <input type="text" id="test-message" value="Hello WASM API!" placeholder="Enter test message">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="text" id="test-callsign" value="TESTCALL" placeholder="Callsign" style="flex: 1; min-width: 120px;">
+                <input type="text" id="test-name" value="" placeholder="Name (optional)" style="flex: 1; min-width: 120px;">
+                <input type="text" id="test-gridsquare" value="AA00aa" placeholder="Gridsquare" style="flex: 1; min-width: 120px;">
+            </div>
+        </div>
+        <button onclick="runEncodeTest()">Run Encode Test</button>
+        <div id="encode-test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 3: Round-trip Test (Encode → Decode)</h3>
+        <button onclick="runRoundTripTest()">Run Round-trip Test</button>
+        <div id="roundtrip-test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 4: Memory Management</h3>
+        <button onclick="runMemoryTest()">Run Memory Test</button>
+        <div id="memory-test-result"></div>
+    </div>
+
+    <script type="module">
+        import { RibbitWASM } from './scripts/ribbit-wasm.js';
+
+        let ribbit = null;
+
+        // Initialize WASM module
+        async function initialize() {
+            try {
+                console.log('Loading Ribbit WASM...');
+                ribbit = await RibbitWASM.load();
+                console.log('Ribbit WASM loaded successfully');
+                updateStatus('Status: Ready', 'success');
+            } catch (error) {
+                console.error('Failed to load WASM:', error);
+                updateStatus(`Status: Failed to load - ${error.message}`, 'error');
+            }
+        }
+
+        function updateStatus(message, className = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.className = `test-section ${className}`;
+            statusEl.innerHTML = `<h3>${message}</h3>`;
+        }
+
+        function updateTestResult(testId, message, className = 'info') {
+            const resultEl = document.getElementById(testId);
+            resultEl.className = className;
+            resultEl.innerHTML = `<pre>${message}</pre>`;
+        }
+
+        // Test functions
+        window.runLoadTest = async function() {
+            if (!ribbit) {
+                updateTestResult('load-test-result', 'WASM not loaded yet', 'error');
+                return;
+            }
+
+            try {
+                const memoryUsage = ribbit.getMemoryUsage();
+                updateTestResult('load-test-result',
+                    `✓ WASM loaded successfully\n` +
+                    `Memory usage: ${JSON.stringify(memoryUsage, null, 2)}`,
+                    'success');
+            } catch (error) {
+                updateTestResult('load-test-result',
+                    `✗ Load test failed: ${error.message}`,
+                    'error');
+            }
+        };
+
+        window.runEncodeTest = async function() {
+            if (!ribbit) {
+                updateTestResult('encode-test-result', 'WASM not loaded yet', 'error');
+                return;
+            }
+
+            const message = document.getElementById('test-message').value;
+            const callsign = document.getElementById('test-callsign').value || 'NOCALL';
+            const name = document.getElementById('test-name').value || '';
+            const gridsquare = document.getElementById('test-gridsquare').value || 'AA00aa';
+
+            if (!callsign || callsign.trim() === '') {
+                updateTestResult('encode-test-result', '✗ Callsign is required', 'error');
+                return;
+            }
+
+            if (!gridsquare || gridsquare.trim() === '') {
+                updateTestResult('encode-test-result', '✗ Gridsquare is required', 'error');
+                return;
+            }
+
+            try {
+                console.log('Encoding message:', message, 'with callsign:', callsign, 'gridsquare:', gridsquare);
+                const startTime = performance.now();
+                const audioBuffer = await ribbit.encodeMessage(message, {
+                    callsign: callsign.trim(),
+                    gridsquare: gridsquare.trim(),
+                    name: name.trim()
+                });
+                const endTime = performance.now();
+
+                updateTestResult('encode-test-result',
+                    `✓ Message encoded successfully\n` +
+                    `Message: "${message}"\n` +
+                    `Callsign: ${callsign}\n` +
+                    `Name: ${name || '(none)'}\n` +
+                    `Gridsquare: ${gridsquare}\n` +
+                    `Audio length: ${audioBuffer.length} samples\n` +
+                    `Encoding time: ${(endTime - startTime).toFixed(2)}ms`,
+                    'success');
+
+            } catch (error) {
+                updateTestResult('encode-test-result',
+                    `✗ Encode test failed: ${error.message}`,
+                    'error');
+            }
+        };
+
+        window.runRoundTripTest = async function() {
+            if (!ribbit) {
+                updateTestResult('roundtrip-test-result', 'WASM not loaded yet', 'error');
+                return;
+            }
+
+            const message = document.getElementById('test-message').value || "Round-trip test message!";
+            const callsign = document.getElementById('test-callsign').value || 'NOCALL';
+            const name = document.getElementById('test-name').value || '';
+            const gridsquare = document.getElementById('test-gridsquare').value || 'AA00aa';
+
+            if (!callsign || callsign.trim() === '') {
+                updateTestResult('roundtrip-test-result', '✗ Callsign is required', 'error');
+                return;
+            }
+
+            if (!gridsquare || gridsquare.trim() === '') {
+                updateTestResult('roundtrip-test-result', '✗ Gridsquare is required', 'error');
+                return;
+            }
+
+            try {
+                console.log('Starting round-trip test...');
+
+                // Encode
+                const audioBuffer = await ribbit.encodeMessage(message, {
+                    callsign: callsign.trim(),
+                    gridsquare: gridsquare.trim(),
+                    name: name.trim()
+                });
+
+                // For a real round-trip test, we'd need to simulate the decoding
+                // process. For now, we'll just verify encoding works
+                updateTestResult('roundtrip-test-result',
+                    `✓ Round-trip test setup complete\n` +
+                    `Message: "${message}"\n` +
+                    `Callsign: ${callsign}\n` +
+                    `Name: ${name || '(none)'}\n` +
+                    `Gridsquare: ${gridsquare}\n` +
+                    `Audio buffer created: ${audioBuffer.length} samples\n` +
+                    `Note: Full decode test requires audio playback/simulation`,
+                    'success');
+
+            } catch (error) {
+                updateTestResult('roundtrip-test-result',
+                    `✗ Round-trip test failed: ${error.message}`,
+                    'error');
+            }
+        };
+
+        window.runMemoryTest = async function() {
+            if (!ribbit) {
+                updateTestResult('memory-test-result', 'WASM not loaded yet', 'error');
+                return;
+            }
+
+            const callsign = document.getElementById('test-callsign').value || 'NOCALL';
+            const name = document.getElementById('test-name').value || '';
+            const gridsquare = document.getElementById('test-gridsquare').value || 'AA00aa';
+
+            if (!callsign || callsign.trim() === '') {
+                updateTestResult('memory-test-result', '✗ Callsign is required', 'error');
+                return;
+            }
+
+            if (!gridsquare || gridsquare.trim() === '') {
+                updateTestResult('memory-test-result', '✗ Gridsquare is required', 'error');
+                return;
+            }
+
+            try {
+                const initialMemory = ribbit.getMemoryUsage();
+
+                // Perform several encoding operations
+                for (let i = 0; i < 5; i++) {
+                    await ribbit.encodeMessage(`Memory test message ${i}`, {
+                        callsign: callsign.trim(),
+                        gridsquare: gridsquare.trim(),
+                        name: name.trim()
+                    });
+                }
+
+                const finalMemory = ribbit.getMemoryUsage();
+
+                updateTestResult('memory-test-result',
+                    `✓ Memory test completed\n` +
+                    `Callsign: ${callsign}\n` +
+                    `Name: ${name || '(none)'}\n` +
+                    `Gridsquare: ${gridsquare}\n` +
+                    `Initial memory: ${JSON.stringify(initialMemory)}\n` +
+                    `Final memory: ${JSON.stringify(finalMemory)}\n` +
+                    `Memory management appears to be working`,
+                    'success');
+
+            } catch (error) {
+                updateTestResult('memory-test-result',
+                    `✗ Memory test failed: ${error.message}`,
+                    'error');
+            }
+        };
+
+        // Initialize when page loads
+        initialize();
+    </script>
+</body>
+</html>

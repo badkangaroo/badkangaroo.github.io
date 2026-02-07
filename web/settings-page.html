@@ -4,6 +4,7 @@
 <head>
     <title>Ribbit - Development</title>
     <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./styles/ribbit.css">
     <link rel="stylesheet" href="./styles/settings.css">
     <!-- <script src="./scripts/gps.js"></script> -->
@@ -13,9 +14,18 @@
 <body>
     <div id="settings">
         <div class="page">
-            <label for="settings-1">User Settings</label>
             <input type="radio" name="settings" id="settings-1" checked>
-            <div class="page-content">
+            <input type="radio" name="settings" id="settings-2">
+            <input type="radio" name="settings" id="settings-3">
+
+            <div class="tabs" role="tablist" aria-label="Settings Tabs">
+                <label for="settings-1">User</label>
+                <label for="settings-2">Application</label>
+                <label for="settings-3">System</label>
+            </div>
+
+            <div class="contents">
+            <div class="page-content" id="settings-content-1">
                 <div class="setting">
                     <label for="mode">Mode:</label>
                     <div class="info">
@@ -31,22 +41,20 @@
                         <option option="QSO">QSO (Coming Soon...)</option>
                     </select>
                 </div>
-                <div class="setting">
+                <div class="setting required">
                     <label for="name">Operator Name:</label>
                     <div class="info">
                         <p>
-                            The name of the operator. This will be displayed to
-                            other users. Character limit is 32 characters.
+                            Shown to other users. Max 32 characters.
                         </p>
                     </div>
                     <input id="name" type="text" required placeholder="John Doe">
                 </div>
-                <div class="setting">
+                <div class="setting required">
                     <label for="callsign">Callsign:</label>
                     <div class="info">
                         <p>
-                            The callsign of the operator. This will be displayed
-                            to other users. Character limit is 8 characters.
+                            Shown to other users. Max 8 characters.
                         </p>
                     </div>
                     <!-- force callsign to be all uppercase -->
@@ -54,36 +62,24 @@
                     <script type="text/javascript">
                     </script>
                 </div>
-                <h2>GPS:</h2>
-                <div class="setting">
-                    <button id="updateGPS" onclick="UpdateGPSPosition();">
-                        Update GPS
-                    </button>
-                    <div class="info">
-                        <p>
-                            The current latitude and longitude of the operator.
-                            This will be displayed to other users. Click the
-                            button to update the GPS position, and to update the
-                            grid square.
-                        </p>
-                    </div>
-                    <input id="latitude" type="number" readonly placeholder="Latitude">
-                    <input id="longitude" type="number" readonly placeholder="Longitude">
-                </div>
-                <div class="setting">
+                <div class="setting required">
                     <label for="gridsquare">Grid Square:</label>
                     <div class="info">
                         <p>
-                            The grid square of the operator. This will be displayed
-                            to other users.
+                            6-char Maidenhead (AA00aa).
                         </p>
                     </div>
                     <input id="gridsquare" type="text" required placeholder="FN42">
+                    <div class="gps-row">
+                        <button id="updateGPS" onclick="UpdateGPSPosition();" type="button" style="white-space: nowrap;">
+                            Get GPS
+                        </button>
+                        <input id="latitude" class="gps-coord" type="text" readonly placeholder="Lat" aria-label="Latitude">
+                        <input id="longitude" class="gps-coord" type="text" readonly placeholder="Lon" aria-label="Longitude">
+                    </div>
                 </div>
             </div>
-            <label for="settings-2">Application Settings</label>
-            <input type="radio" name="settings" id="settings-2">
-            <div class="page-content">
+            <div class="page-content" id="settings-content-2"> 
                 <div class="setting">
                     <label for="Theme">Theme:</label>
                     <div class="info">
@@ -162,9 +158,7 @@
                     </div>
                 </div>
             </div>
-            <label for="settings-3">System Settings</label>
-            <input type="radio" name="settings" id="settings-3">
-            <div class="page-content">
+            <div class="page-content" id="settings-content-3">
                 <h2>Updates:</h2>
                 <div class="setting">
                     <button id="checkForUpdates">Check for Updates</button>
@@ -233,8 +227,9 @@
                     </div>
                 </div>
             </div>
-            <div class="setting">
-                <button id="cancel" onclick="closeSettings();">CONTINUE WITHOUT SAVING</span></button>
+            </div>
+            <div class="setting settings-actions">
+                <button id="cancel" onclick="closeSettings();">CONTINUE WITHOUT SAVING</button>
                 <button id="close" onclick="saveSettings();">SAVE & CONTINUE</button>
             </div>
         </div>

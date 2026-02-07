@@ -1,36 +1,48 @@
 #titlebar {
-    background: var(--dark-green);
-    padding: 0 0.25rem 0 1rem;
+    background: var(--bar-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-bottom: 1px solid var(--glass-border);
+    padding: 0px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 0 1rem black;
-    font-family: "NotoSansDisplay-Bold";
-    font-size: 1.75rem;
-    color: var(--light-green);
-    z-index: 3;
-    height: 35px;
+    box-shadow: 0 1px 8px var(--shadow);
+    font-family: "NotoSansDisplay-Bold", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 2svh;
+    color: var(--bar-text);
+    z-index: 200;
+    height: 4svh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100svw;
+    transition: background 0.4s ease, color 0.4s ease;
 }
-
-#titlebar > #modeTitle {
-    font-size: 0.75rem;
+#titlebar>*{
+    font-size: 2svh;
+    padding: 0 1svw;
+}
+#titlebar>#modeTitle {
     display: flex;
     justify-content: flex-end;
     align-items: center;
     gap: 1rem;
 }
 
-#titleBar > #modeTitle > svg {
+#titlebar>#modeTitle>svg {
+    height: 4svh;
+    width: 4svh;
     cursor: pointer;
-    height: 3rem;
+    transition: var(--transition);
+    fill: var(--accent);
 }
 
-#titlebar > #modeTitle > svg {
-    height: 2rem;
+#titlebar>#modeTitle>svg:hover {
+    transform: scale(1.1);
+    opacity: 0.8;
 }
 
-@media screen and (orientation: landscape) {
-    #titlebar {
-        height: 3rem;
-    }
+#titlebar>#modeTitle>svg:active {
+    transform: scale(0.95);
 }

@@ -1,80 +1,339 @@
 #input {
-    background: var(--dark-green);
+    background: var(--bar-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-top: 1px solid var(--glass-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 0.5rem;
     position: fixed;
     bottom: 0;
+    left: 0;
     width: 100svw;
-    height: 5rem;
-    box-shadow: 0 0 1rem black;
+    min-height: 4rem;
+    padding: 0px;
+    box-shadow: 0 -1px 8px var(--shadow);
+    z-index: 100;
+    transition: background 0.4s ease;
 }
 
-#input > textarea {
-    width: calc(100svw - 4rem);
+#input>textarea {
+    flex: 1;
     overflow: hidden;
     resize: none;
-    background: var(--light-green);
-    padding: 10px;
-    height: -webkit-fill-available;
-    border-radius: var(--radius);
-    font-family: "NotoSansDisplay-Regular";
+    background: var(--glass-bg);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--text-primary);
+    padding: 0.75rem;
+    min-height: 2.5rem;
+    max-height: 8rem;
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    font-family: "NotoSansDisplay-Regular", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 1rem;
+    transition: var(--transition);
+    margin: 7px;
 }
 
-#input > svg {
+#input>textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(46, 204, 64, 0.18);
+    background: var(--surface-hover);
+}
+
+#input>svg {
+    margin: 7px;
 }
 
 #chat {
-    height: -webkit-fill-available;
-    overflow-y: scroll;
+    height: calc(100svh - 35px - 4rem);
+    overflow-y: auto;
     overflow-x: hidden;
-    background: white;
-    scrollbar-color: var(--light-green) var(--dark-green);
+    background: var(--background);
+    scrollbar-color: var(--accent) transparent;
     scrollbar-width: thin;
-    height: 90svh;
     position: fixed;
     top: 35px;
+    left: 0;
     width: 100%;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+#chat::-webkit-scrollbar {
+    width: 6px;
+}
+
+#chat::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#chat::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 3px;
+    opacity: 0.6;
+}
+
+#chat::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark);
 }
 
 .message {
-    margin: 0.5rem 0.25rem;
-    font-size: 1.1rem;
+    margin: 1rem 0;
+    font-size: 1rem;
+    max-width: 80%;
+    animation: fadeIn 0.3s ease-in;
 }
 
-.message > .sender {
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message>.sender {
     display: flex;
     justify-content: space-between;
+    align-items: center;
 }
 
-.message.tx > .sender {
+.message.tx>.sender {
     flex-direction: row-reverse;
 }
 
-.message > .sender > .name {
-    padding: 0.25rem 1rem;
-    border-radius: 0.25rem 0.25rem 0 0;
-    font-family: "NotoSansDisplay-Medium";
+.message.tx {
+    margin-left: auto;
 }
 
-.message > .sender > .time {
+.message>.sender>.name,
+.message>.sender>.sender-line {
+    padding: 0.4rem 0.9rem;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    font-family: "NotoSansDisplay-Medium", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 0.01em;
+}
+
+.message.tx>.sender>.name,
+.message.tx>.sender>.sender-line {
+    background: var(--accent-dark);
+}
+
+.message-tappable {
+    cursor: pointer;
+}
+
+.message>.sender>.time {
     background: none;
-    font-size: 0.8rem;
-    font-family: "NotoSansDisplay-Italic";
+    font-size: 0.75rem;
+    font-family: "NotoSansDisplay-Italic", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--text-secondary);
 }
 
-p {
-    background: var(--light-green);
-    padding: 0.25rem;
+.message>p {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--text-primary);
+    padding: 0.75rem 1rem;
+    margin: 0;
+    border-radius: 0 var(--border-radius) var(--border-radius) var(--border-radius);
+    border: 1px solid var(--glass-border);
+    word-wrap: break-word;
+    line-height: 1.5;
+}
+
+.message.tx>p {
+    background: rgba(46, 204, 64, 0.12);
+    border-color: rgba(46, 204, 64, 0.25);
+    color: var(--text-primary);
+    border-radius: var(--border-radius) 0 var(--border-radius) var(--border-radius);
+}
+
+[data-theme="ribbit-dark"] .message.tx>p,
+[data-theme="auto"] .message.tx>p {
+    background: rgba(127, 207, 33, 0.12);
+    border-color: rgba(127, 207, 33, 0.20);
+}
+
+.message.decode-error>.sender>.name {
+    background: var(--warning, #ff9800);
+    color: var(--background);
+}
+
+.message.decode-error>p {
+    background: rgba(255, 152, 0, 0.1);
+    border-color: var(--warning, #ff9800);
+    border-width: 2px;
+    border-style: solid;
+}
+
+.message.alert>.sender>.name {
+    background: var(--error, #d32f2f);
+    color: var(--background);
+}
+
+.message.alert>p {
+    background: rgba(211, 47, 47, 0.1);
+    border-color: var(--error, #d32f2f);
+    border-width: 2px;
+    border-style: solid;
 }
 
 
-@media screen and (orientation: landscape) {
+@media screen and (max-width: 768px) {
+    #chat {
+        height: calc(100svh - 35px - 3.5rem);
+        padding: 0.5rem;
+    }
+
+    .message {
+        max-width: 90%;
+        font-size: 0.9rem;
+    }
+
     #input {
-        height: 5rem;
+        min-height: 3.5rem;
+        padding: 0.5rem;
     }
 
-    #input > svg {
-        height: 4rem;
+    #input>textarea {
+        font-size: 0.9rem;
+        padding: 0.5rem;
     }
+}
+
+@media screen and (max-width: 480px) {
+    #chat {
+        padding: 0.25rem;
+    }
+
+    .message {
+        max-width: 95%;
+        margin: 0.5rem 0;
+    }
+
+    .message>.sender>.name {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .message>p {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media screen and (orientation: landscape) and (max-height: 500px) {
+    #input {
+        min-height: 3rem;
+    }
+
+    #chat {
+        height: calc(100svh - 35px - 3rem);
+    }
+}
+
+/* Message detail popup (tap message to open) */
+#message-detail-popup.popup-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+#message-detail-popup.popup-backdrop.popup-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+#message-detail-popup .popup-card {
+    position: relative;
+    width: 100%;
+    max-width: 22rem;
+    max-height: 85vh;
+    overflow: auto;
+    background: var(--bar-bg, #fff);
+    border-radius: var(--border-radius, 12px);
+    border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.1));
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    padding: 1.25rem 1.5rem;
+}
+
+#message-detail-popup .popup-close {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: var(--border-radius);
+}
+
+#message-detail-popup .popup-close:hover {
+    background: var(--surface-hover, rgba(0, 0, 0, 0.06));
+    color: var(--text-primary);
+}
+
+#message-detail-popup .popup-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+#message-detail-popup .popup-details {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.35rem 1.25rem;
+    align-items: baseline;
+}
+
+#message-detail-popup .popup-details dt {
+    grid-column: 1;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+#message-detail-popup .popup-details dd {
+    grid-column: 2;
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    word-break: break-word;
+}
+
+#message-detail-popup .popup-details .popup-message {
+    white-space: pre-wrap;
 }

@@ -1,0 +1,5 @@
+# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+/web/node_modules/*
+/web/node_modules/.*
+/web/test-results/*
+/web/test-results/.*
