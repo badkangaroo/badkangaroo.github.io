@@ -318,15 +318,25 @@ class MessageDecoder {
         try {
             const decoded = this.codec.DecodeMessage(payloadBytes);
 
+            // #region agent log
+            fetch('http://127.0.0.1:7244/ingest/72840c39-5c82-466c-94df-8fd66ae40cac',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ribbit-wasm.js:_decodePayload',message:'codec result',data:{callsign:decoded.callsign,firstName:decoded.firstName,lastName:decoded.lastName,name:decoded.name},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
+
+            // MessageCodec returns firstName/lastName but not name; derive display name
+            const displayName = (decoded.firstName || decoded.lastName)
+                ? [decoded.firstName, decoded.lastName].filter(Boolean).join(' ').trim()
+                : (decoded.name || '');
+
             return {
                 text: decoded.message,
                 callsign: decoded.callsign,
                 gridsquare: decoded.gridsquare,
-                name: decoded.name || '',
+                name: displayName,
                 timestamp: decoded.timestamp,
                 emergency: decoded.emergency,
                 ntp: decoded.ntp,
                 gps: decoded.gps,
+                messageType: decoded.messageType,
                 confidence: decoded.confidence || 1.0
             };
         } catch (error) {

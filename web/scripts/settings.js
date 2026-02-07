@@ -90,6 +90,10 @@ window.addEventListener("DOMContentLoaded", (e) => {
             e.target.value = value;
             updateGridsquareValidation(e.target);
             updateRequiredFieldIndicators();
+            // User manually edited gridsquare, so clear GPS flag for encoding
+            if (window.localStorage) {
+                window.localStorage.setItem('gpsUsedForGridsquare', 'false');
+            }
         });
         
         gridsquareInput.addEventListener("blur", (e) => {

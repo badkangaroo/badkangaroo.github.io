@@ -321,11 +321,39 @@
     <div id="input">
         <textarea id="textarea" placeholder="Enter Message Here."></textarea>
         <svg id="encodebutton" viewBox="0 0 10 10" height="30" style="cursor: pointer; transition: transform 0.2s;">
-            <path d="m 1 4 l 1 0 l -1 -3 l 8 4 l -8 4 l 1 -3 l -1 0 z" fill="var(--background)" />
+            <path d="m 1 4 l 1 0 l -1 -3 l 8 4 l -8 4 l 1 -3 l -1 0 z" fill="var(--accent)" />
         </svg>
         <svg id="savewav" viewBox="0 0 10 10" height="30" style="display: none; cursor: pointer;">
             <rect width="10" height="10" rx="2" fill="var(--background)" />
         </svg>
+    </div>
+
+    <!-- Message detail popup (tap a message to open) -->
+    <div id="message-detail-popup" class="popup-backdrop" role="dialog" aria-label="Message details">
+        <div class="popup-card">
+            <button type="button" class="popup-close" aria-label="Close">×</button>
+            <h3 class="popup-title">Message details</h3>
+            <dl class="popup-details">
+                <dt>Callsign</dt>
+                <dd class="popup-callsign">—</dd>
+                <dt>Grid square</dt>
+                <dd class="popup-gridsquare">—</dd>
+                <dt>Name</dt>
+                <dd class="popup-name">—</dd>
+                <dt>Message</dt>
+                <dd class="popup-message">—</dd>
+                <dt>Timestamp</dt>
+                <dd class="popup-timestamp">—</dd>
+                <dt>Emergency</dt>
+                <dd class="popup-emergency">—</dd>
+                <dt>NTP</dt>
+                <dd class="popup-ntp">—</dd>
+                <dt>GPS</dt>
+                <dd class="popup-gps">—</dd>
+                <dt>Message type</dt>
+                <dd class="popup-message-type">—</dd>
+            </dl>
+        </div>
     </div>
 </body>
 

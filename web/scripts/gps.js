@@ -137,12 +137,15 @@ const UpdateGPSPosition = () => {
             return;
         }
         
-        // Update gridsquare input
+        // Update gridsquare input and set flag so encode uses gps: true
         if (gridsquareInput) {
             gridsquareInput.value = result.qth.toUpperCase();
-            // Trigger validation
+            // Trigger validation first, then set flag so manual-edit handler doesn't clear it
             if (gridsquareInput.dispatchEvent) {
                 gridsquareInput.dispatchEvent(new Event('input'));
+            }
+            if (window.localStorage) {
+                window.localStorage.setItem('gpsUsedForGridsquare', 'true');
             }
         }
         

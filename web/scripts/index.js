@@ -228,24 +228,93 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 </p>
             `;
         } else if (detail.type === "text") {
-            // Regular text messages
+            // Regular text messages: show only callsign and grid square in the row
             const isTx = detail.sender && detail.sender.includes(window.localStorage?.getItem("callsign") || "");
             if (isTx) {
                 messageDiv.classList.add("tx");
             }
 
-            const senderParts = detail.sender ? detail.sender.split("|") : ["Unknown", "", ""];
+            const senderParts = detail.sender ? detail.sender.split("|") : ["", "", ""];
+            const callsign = (detail.metadata && detail.metadata.callsign) ? detail.metadata.callsign : (senderParts[1] || "Unknown");
+            const gridsquare = (detail.metadata && detail.metadata.gridsquare) ? detail.metadata.gridsquare : (senderParts[2] || "");
+            const senderLine = gridsquare ? `${callsign} @${gridsquare}` : callsign;
+
+            if (detail.metadata) {
+                messageDiv.dataset.metadata = JSON.stringify(detail.metadata);
+            }
+            messageDiv.dataset.sender = detail.sender || "";
+            messageDiv.dataset.message = detail.message || "";
+            messageDiv.dataset.timestamp = detail.timestamp || "";
+            messageDiv.classList.add("message-tappable");
+
+            // #region agent log
+            fetch('http://127.0.0.1:7244/ingest/72840c39-5c82-466c-94df-8fd66ae40cac',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.js:receivemessage',message:'display text',data:{detailSender:detail.sender,senderParts,callsign,gridsquare},timestamp:Date.now(),hypothesisId:'D'})}).catch(()=>{});
+            // #endregion
+
             messageDiv.innerHTML = `
                 <div class="sender">
-                    <span class="name">${senderParts[0] || "Unknown"} ${senderParts[1] ? `[${senderParts[1]}]` : ""} ${senderParts[2] ? `@${senderParts[2]}` : ""}</span>
+                    <span class="sender-line">${senderLine}</span>
                     <span class="time">${new Date(detail.timestamp || Date.now()).toLocaleTimeString()}</span>
                 </div>
-                <p>${detail.message || ""}</p>
+                <p class="message-body">${detail.message || ""}</p>
             `;
         }
 
         chat.appendChild(messageDiv);
         chat.scrollTop = chat.scrollHeight;
+    });
+
+    // Message detail popup: open when user taps a text message
+    function openMessageDetailPopup(messageDiv) {
+        const metadataStr = messageDiv.dataset.metadata;
+        const senderStr = messageDiv.dataset.sender || "";
+        const message = messageDiv.dataset.message || "";
+        const timestamp = messageDiv.dataset.timestamp || "";
+        let meta = metadataStr ? (() => { try { return JSON.parse(metadataStr); } catch { return {}; } })() : {};
+        if (!meta.callsign && senderStr) {
+            const parts = senderStr.split("|");
+            meta = { name: parts[0] || "", callsign: parts[1] || "", gridsquare: parts[2] || "", messageTimestamp: timestamp };
+        }
+        const popup = document.getElementById("message-detail-popup");
+        if (!popup) return;
+        const formatTs = (ts) => {
+            if (!ts) return "—";
+            try { return new Date(ts).toLocaleString(); } catch { return ts; }
+        };
+        const messageTypeLabels = { 0: "Unknown", 1: "Chat", 2: "QSO", 3: "Other" };
+        popup.querySelector(".popup-callsign")?.replaceChildren(meta.callsign || "—");
+        popup.querySelector(".popup-gridsquare")?.replaceChildren(meta.gridsquare || "—");
+        popup.querySelector(".popup-name")?.replaceChildren(meta.name ? meta.name : "—");
+        popup.querySelector(".popup-message")?.replaceChildren(message || "—");
+        popup.querySelector(".popup-timestamp")?.replaceChildren(formatTs(meta.messageTimestamp || timestamp));
+        popup.querySelector(".popup-emergency")?.replaceChildren(meta.emergency ? "Yes" : "No");
+        popup.querySelector(".popup-ntp")?.replaceChildren(meta.ntp ? "Yes" : "No");
+        popup.querySelector(".popup-gps")?.replaceChildren(meta.gps ? "Yes" : "No");
+        popup.querySelector(".popup-message-type")?.replaceChildren(messageTypeLabels[meta.messageType] ?? "—");
+        popup.classList.add("popup-visible");
+    }
+
+    function closeMessageDetailPopup() {
+        document.getElementById("message-detail-popup")?.classList.remove("popup-visible");
+    }
+
+    document.addEventListener("click", (e) => {
+        const msg = e.target.closest(".message-tappable");
+        if (msg) {
+            e.preventDefault();
+            openMessageDetailPopup(msg);
+            return;
+        }
+        if (e.target.id === "message-detail-popup") {
+            closeMessageDetailPopup();
+        }
+        if (e.target.classList.contains("popup-close") || e.target.closest(".popup-close")) {
+            closeMessageDetailPopup();
+        }
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeMessageDetailPopup();
     });
 
     // Initialize the Ribbit App with the new friendly WASM API
@@ -275,6 +344,9 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 // Store reference to 'this' for use in callback
                 const appInstance = this;
                 window.fetchDecoded = (payloadPtr) => {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7244/ingest/72840c39-5c82-466c-94df-8fd66ae40cac',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.js:fetchDecoded',message:'WASM callback invoked',data:{payloadPtr,isInitialized:appInstance.isInitialized,listen:appInstance.listen},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+                    // #endregion
                     // Don't process decode errors until app is fully initialized and listening
                     if (!appInstance.isInitialized || !appInstance.listen || !appInstance.ribbit) {
                         return;
@@ -420,6 +492,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
                     gridsquare: settings.gridsquare,
                     name: settings.name,
                     emergency: false,
+                    gps: settings.gps === true,
                     messageType: 1
                 });
 
@@ -577,6 +650,9 @@ document.addEventListener("DOMContentLoaded", (e) => {
 
         async handleWasmDecodedMessage(payloadPtr) {
             // This is called by the WASM module when it detects a decoded message via fetchDecoded callback
+            // #region agent log
+            fetch('http://127.0.0.1:7244/ingest/72840c39-5c82-466c-94df-8fd66ae40cac',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.js:handleWasmDecodedMessage',message:'entry',data:{payloadPtr},timestamp:Date.now(),hypothesisId:'B'})}).catch(()=>{});
+            // #endregion
             // Don't process if app isn't initialized or not listening
             if (!this.isInitialized || !this.ribbit || !this.listen) {
                 return;
@@ -605,6 +681,10 @@ document.addEventListener("DOMContentLoaded", (e) => {
 
                 // Decode using MessageCodec
                 const decoded = this.ribbit.codec.DecodeMessage(payloadBytes);
+
+                // #region agent log
+                fetch('http://127.0.0.1:7244/ingest/72840c39-5c82-466c-94df-8fd66ae40cac',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.js:handleWasmDecodedMessage',message:'DecodeMessage result',data:{hasDecoded:!!decoded,keys:decoded?Object.keys(decoded):[],callsign:decoded?.callsign,name:decoded?.name,firstName:decoded?.firstName,lastName:decoded?.lastName,payloadLen:payloadBytes?.length},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
 
                 if (decoded) {
                     // Use the same validation logic as setupRealTimeDecoding
@@ -677,26 +757,48 @@ document.addEventListener("DOMContentLoaded", (e) => {
                         return;
                     }
 
-                    // Valid message - process it
+                    // Valid message - process it (codec returns firstName/lastName, not name)
+                    const displayName = (decoded.firstName || decoded.lastName)
+                        ? [decoded.firstName, decoded.lastName].filter(Boolean).join(' ').trim()
+                        : (decoded.name || '');
                     const decodedResult = {
                         text: decoded.message,
                         callsign: decoded.callsign,
                         gridsquare: decoded.gridsquare,
-                        name: decoded.name || '',
-                        timestamp: decoded.timestamp
+                        name: displayName,
+                        timestamp: decoded.timestamp,
+                        emergency: decoded.emergency,
+                        ntp: decoded.ntp,
+                        gps: decoded.gps,
+                        messageType: decoded.messageType,
                     };
+
+                    // #region agent log
+                    const senderStr = `${decodedResult.name || ''}|${decodedResult.callsign}|${decodedResult.gridsquare || ''}`;
+                    fetch('http://127.0.0.1:7244/ingest/72840c39-5c82-466c-94df-8fd66ae40cac',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.js:handleWasmDecodedMessage',message:'sender built',data:{decodedResult, sender: senderStr, path:'callback'},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+                    // #endregion
 
                     console.log("Received (from WASM fetchDecoded callback):", decodedResult.callsign, decodedResult.text);
 
-                    const fullMessage = `${decodedResult.name || ''}|${decodedResult.callsign}|${decodedResult.gridsquare || ''}&=${decodedResult.text}`;
+                    const metadata = {
+                        callsign: decodedResult.callsign,
+                        gridsquare: decodedResult.gridsquare,
+                        name: decodedResult.name,
+                        emergency: decodedResult.emergency,
+                        ntp: decodedResult.ntp,
+                        gps: decodedResult.gps,
+                        messageType: decodedResult.messageType,
+                        messageTimestamp: decodedResult.timestamp,
+                    };
 
                     const event = new CustomEvent("receivemessage", {
                         detail: {
                             save: true,
                             type: "text",
-                            sender: `${decodedResult.name || ''}|${decodedResult.callsign}|${decodedResult.gridsquare || ''}`,
+                            sender: senderStr,
                             message: decodedResult.text,
                             timestamp: new Date().toISOString(),
+                            metadata,
                         },
                     });
                     document.dispatchEvent(event);
@@ -864,16 +966,30 @@ document.addEventListener("DOMContentLoaded", (e) => {
                                 // Only log valid, unique messages
                                 console.log("Received:", decoded.callsign, decoded.text);
 
-                                // Validate message format (same as before)
-                                const fullMessage = `${decoded.name || ''}|${decoded.callsign}|${decoded.gridsquare || ''}&=${decoded.text}`;
+                                // #region agent log
+                                const rtSender = `${decoded.name || ''}|${decoded.callsign}|${decoded.gridsquare || ''}`;
+                                fetch('http://127.0.0.1:7244/ingest/72840c39-5c82-466c-94df-8fd66ae40cac',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.js:setupRealTimeDecoding',message:'sender built',data:{decodedKeys:Object.keys(decoded),callsign:decoded.callsign,name:decoded.name,firstName:decoded.firstName,lastName:decoded.lastName,sender:rtSender,path:'realtime'},timestamp:Date.now(),hypothesisId:'A'})}).catch(()=>{});
+                                // #endregion
+
+                                const metadata = {
+                                    callsign: decoded.callsign,
+                                    gridsquare: decoded.gridsquare,
+                                    name: decoded.name,
+                                    emergency: decoded.emergency,
+                                    ntp: decoded.ntp,
+                                    gps: decoded.gps,
+                                    messageType: decoded.messageType,
+                                    messageTimestamp: decoded.timestamp,
+                                };
 
                                 const event = new CustomEvent("receivemessage", {
                                     detail: {
                                         save: true,
                                         type: "text",
-                                        sender: `${decoded.name || ''}|${decoded.callsign}|${decoded.gridsquare || ''}`,
+                                        sender: rtSender,
                                         message: decoded.text,
                                         timestamp: new Date().toISOString(),
+                                        metadata,
                                     },
                                 });
                                 document.dispatchEvent(event);
@@ -898,10 +1014,12 @@ document.addEventListener("DOMContentLoaded", (e) => {
             const name = db.getItem("name") || db.getItem("operatorName") || '';
             const callsign = db.getItem("callsign") || '';
             const gridsquare = db.getItem("gridsquare") || '';
+            const gpsUsedForGridsquare = db.getItem("gpsUsedForGridsquare") === "true";
             return {
                 name: name,
                 callsign: callsign,
                 gridsquare: gridsquare,
+                gps: gpsUsedForGridsquare,
                 phone: db.getItem("phone") || ''
             };
         }
