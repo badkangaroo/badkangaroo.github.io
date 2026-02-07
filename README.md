@@ -215,6 +215,29 @@ The build script uses the following optimizations:
 - **ASSERTIONS=0**: Removes runtime assertions for smaller size
 - **MALLOC=emmalloc**: Lightweight malloc implementation
 
+## Setup and running locally
+
+1. **Serve the app** (WASM requires a real origin; `file://` will not work):
+   - **Windows:** `run_tests.bat`
+   - **Linux/Mac:** `./run_tests.sh`
+   - Or from repo root: `python3 -m http.server 8000` and open `http://localhost:8000/web/` (HTTPS needed for microphone: use the scripts or `https://localhost:8443` if configured).
+
+2. **Main app:** [web/index.html](web/index.html) — chat, encode/decode, settings. Use **Settings → Application → Install App** to add to home screen for offline use.
+
+3. **WASM and tests:**
+   - [web/wasm_tests.html](web/wasm_tests.html) — WASM API tests (encode/decode, stress, manual).
+   - [web/test/ribbit-wasm.test.js](web/test/ribbit-wasm.test.js) — Jest unit tests for the WASM wrapper.
+   - [Docs/README_WASM_API.md](Docs/README_WASM_API.md) — WASM API usage and reference.
+
+4. **Decoder and encoder:**
+   - [web/decoder_tests.html](web/decoder_tests.html) — Decoder tests: live microphone, WAV generator, automated runs. See [Docs/DECODER_TESTS.md](Docs/DECODER_TESTS.md).
+   - [web/messageCodec.html](web/messageCodec.html) — Visual message encoder/decoder (binary, hex, round-trip).
+
+5. **Message format and header codec:**
+   - [Docs/codec.md](Docs/codec.md) — Message format and codec architecture.
+   - [web/message_format_demo.html](web/message_format_demo.html) — Message format demo with WASM (IDs, contest mode).
+   - [web/headerCodec.html](web/headerCodec.html) — Header field codec (bit types and encoding).
+
 ## Development
 
 - Web assets are served from the `web` directory
@@ -604,3 +627,11 @@ When reporting bugs or implementing optimizations:
 - **New Features**: [Docs/DECODER_TESTS_NEW_FEATURES.md](Docs/DECODER_TESTS_NEW_FEATURES.md) - Latest additions
 - **Build Guide**: [Docs/build.md](Docs/build.md) - Compilation and build process
 - **Release Plan**: [Docs/RELEASE_PLAN.md](Docs/RELEASE_PLAN.md) - Future development roadmap
+
+## Deployment (GitHub Pages)
+
+This repo is set up as a GitHub Pages site (e.g. `https://<user>.github.io/badkangaroo.github.io/` or your custom domain). A GitHub Action deploys the `web` folder when you push to the **release** branch or when you push a **release tag** (e.g. `v0.1.2`).
+
+- **Branch:** Push to `release` to update the live site from the current `web/` contents.
+- **Tag:** Create and push a tag (e.g. `git tag v0.1.2 && git push origin v0.1.2`) to trigger a deploy and record a specific version.
+- Configure **Settings → Pages** to use the GitHub Action (or the `gh-pages` branch if the workflow publishes there). See [.github/workflows/deploy.yml](.github/workflows/deploy.yml) for the workflow.

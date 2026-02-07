@@ -69,6 +69,65 @@ if ("serviceWorker" in navigator) {
             });
     });
 }
+
+// PWA install prompt: show "Install App" and trigger add-to-homescreen when supported
+let deferredInstallPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    const btn = document.getElementById("InstallApp");
+    if (btn) {
+        btn.style.display = "";
+        btn.disabled = false;
+        btn.textContent = "Install App";
+    }
+});
+window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    const btn = document.getElementById("InstallApp");
+    if (btn) {
+        btn.textContent = "Installed";
+        btn.disabled = true;
+    }
+});
+document.addEventListener("DOMContentLoaded", () => {
+    const installBtn = document.getElementById("InstallApp");
+    if (!installBtn) return;
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
+    if (isStandalone) {
+        installBtn.textContent = "Installed";
+        installBtn.disabled = true;
+        return;
+    }
+    if (!deferredInstallPrompt) {
+        installBtn.style.display = ""; // show so user can try or see instructions
+    }
+    installBtn.addEventListener("click", () => {
+        if (deferredInstallPrompt) {
+            deferredInstallPrompt.prompt();
+            deferredInstallPrompt.userChoice.then((choice) => {
+                if (choice.outcome === "accepted") {
+                    const e = new CustomEvent("receivemessage", {
+                        detail: { save: false, type: "alert", message: "Ribbit added. You can use it offline.", timestamp: Date.now() },
+                    });
+                    document.dispatchEvent(e);
+                }
+                deferredInstallPrompt = null;
+            });
+        } else {
+            const e = new CustomEvent("receivemessage", {
+                detail: {
+                    save: false,
+                    type: "alert",
+                    message: "Use your browser menu: Add to Home Screen (mobile) or Install (desktop).",
+                    timestamp: Date.now(),
+                },
+            });
+            document.dispatchEvent(e);
+        }
+    });
+});
 const buttonPressSoundEffect = new Audio();
 buttonPressSoundEffect.autoplay = true;
 buttonPressSoundEffect.src =

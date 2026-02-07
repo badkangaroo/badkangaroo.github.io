@@ -1,0 +1,34 @@
+# Deploy web app to GitHub Pages on push to release branch or on release tag.
+# In repo Settings → Pages, set "Source" to "GitHub Actions".
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [release]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: token
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: github-pages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  # Deployment is handled by GitHub when the artifact is uploaded to the github-pages environment.
