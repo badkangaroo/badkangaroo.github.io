@@ -479,18 +479,18 @@ The simulation tracks progress toward the mission goal: **every operator has bee
 | 80-bit Message ID | ✅ Complete |
 | Queue algorithm design | ✅ Specified |
 | Queue simulator (basic) | ✅ Complete |
-| Geographic map visualization | 📋 Planned |
-| Operator tile grid | 📋 Planned |
-| Tile backoff bar + next-TX countdown | 📋 Planned |
-| Contact list popup + map lines (heard / ACKed) | 📋 Planned |
-| Dynamic user rotation | 📋 Planned |
-| TX Power / TX footprint modeling | 📋 Planned |
-| RX Gain (+1…+10 dB) / asymmetric listen & carrier sense | 📋 Planned |
-| QRP vs full-power modes | 📋 Planned |
-| ACK flow in simulator | 📋 Planned |
-| Statistics dashboard | 📋 Planned |
-| Carrier sense integration | 🚧 In progress |
-| ACK array packing | 📋 Planned |
+| Simulator: Maidenhead grid-square map | ✅ Complete |
+| Simulator: operator tile grid | ✅ Complete |
+| Simulator: tile backoff bar + next-TX countdown | ✅ Complete |
+| Simulator: contact list popup + map lines (heard / ACKed) | ✅ Complete |
+| Simulator: dynamic user rotation | ✅ Complete |
+| Simulator: TX Power / TX footprint modeling | ✅ Complete |
+| Simulator: RX Gain (+1…+10 dB) / asymmetric listen & carrier sense | ✅ Complete |
+| Simulator: QRP vs Regular contest presets | ✅ Complete |
+| Simulator: ACK flow (piggyback on next TX) | ✅ Complete |
+| Simulator: statistics dashboard | ✅ Complete |
+| Live carrier sense integration (production app) | 🚧 In progress |
+| ACK array packing (wire format) | 📋 Planned |
 | Contest UI in main app | 📋 Planned |
 | ADIF/Cabrillo export | 📋 Planned |
 
