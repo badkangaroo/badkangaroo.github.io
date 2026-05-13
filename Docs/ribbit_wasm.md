@@ -33,6 +33,10 @@ The Ribbit protocol caches a unique 80-bit Message ID for each transmission to h
 
 This 80-bit structure is critical for the "Contest Mode" and general message handling, ensuring that repeat transmissions of the same message are identified correctly.
 
+### Operator names (contest / packed header)
+
+After the fixed header fields, first and last names are length-prefixed (4 bits + 4 bits) and each character is **5-bit alphabit** (32 symbols: space, `A`–`Z`, and `@` `.` `:` `/` `-`), matching `MessageCodec` in `web/scripts/messageCodec.js` and `ALPHABIT_*` in `src/ribbit/include/message_format.hh`. Letters are case-insensitive on the wire; the JS decoder applies title case. Details and examples: [codec.md](codec.md) (section *Alphabit Encoding*).
+
 ### Hex Visualization
 In the Web UI, this ID is presented as a **20-character Hexadecimal string** (e.g., `4B4F36...`). This allows operators to easily visually verify message uniqueness and trace specific transmissions in logs.
 

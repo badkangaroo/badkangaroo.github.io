@@ -26,7 +26,7 @@ All messages follow a 128+ bit structure with the following components:
 | Gridsquare     | 28       | maidenhead | Location (6 chars: AA00aa)                           |
 | NTP            | 1        | boolean    | NTP time sync flag                                   |
 | GPS            | 1        | boolean    | GPS location flag                                    |
-| Name Length    | 8        | nibbles    | FirstName(4) + LastName(4) (0-15 each)               |
+| Name Length    | 8        | metadata   | Two 4-bit counts: first name length, then last name length (0–15 chars each) |
 | Message Length | 8        | number     | Length in bytes (0-240)                              |
 | Message Type   | 2        | number     | 0=Emergency, 1=Chat, 2=Contest, 3=Other              |
 | First Name     | variable | alphabit   | 5 bits per char (0-15 chars)                         |
@@ -45,13 +45,15 @@ All messages follow a 128+ bit structure with the following components:
 
 **Example:** "KO6BVA" → 48 bits
 
-### Alphabit Encoding (Names)
+### Alphabit Encoding (Names and Gridsquare Letters)
 
-5 bits per character, supporting A-Z only:
-- A=1, B=2, ..., Z=26
-- Displayed as: First char uppercase, rest lowercase
+**5 bits per character** (32 code points), same alphabet as Maidenhead letter fields in `web/scripts/headerBitTypes.js` / `message_format.hh`:
 
-**Example:** "Alex" → 20 bits (A=1, l=12, e=5, x=24)
+- Space, `A`–`Z`, and punctuation `@` `.` `:` `/` `-` (values 0–31; letters use 1–26).
+- On encode, ASCII letters are folded to **uppercase**; other characters not in the table become **`-`** (`0b11111`).
+- On decode, `MessageCodec.BitStreamToName` trims spaces and applies **title case** (first letter upper, rest lower). Original mixed-case spellings (for example `McMaster`) are **not** preserved on the wire.
+
+**Example:** `"Alex"` is encoded as `ALEX` → 20 bits (5 bits × 4).
 
 ### Maidenhead Gridsquare
 
@@ -65,11 +67,11 @@ All messages follow a 128+ bit structure with the following components:
 ### Timestamp Encoding
 
 31 bits with 2-second resolution:
-- Year/Month: 10 bits (2026-2111)
-- Day: 5 bits (1-31)
-- Hour: 5 bits (0-23)
-- Minute: 6 bits (0-59, even numbers only)
-- Second: 5 bits (0-29, ×2 for 0-58 range)
+- Year/Month: 10 bits (months since January 2026; see `GetTimestampBitStream` in `messageCodec.js`)
+- Day: 5 bits (**0–30**, zero-based day-of-month; decodes to calendar days **1–31**)
+- Hour: 5 bits (0–23 UTC)
+- Minute: 6 bits (0–59)
+- Second: 5 bits (0–29, each unit represents **2** seconds of the minute, i.e. 0–58 even seconds)
 
 **Resolution:** 2 seconds (to align with ~1.6s transmission time)
 
@@ -188,16 +190,16 @@ const callsignBits = codec.GetCallsignBitStream("KO6BVA");
 const gridsquareBits = codec.GetGridsquareBitStream("CM87uq");
 const emergencyBit = codec.GetEmergencyBit(false);
 
-// Encode names (alphabit: A-Z only, auto-capitalized)
+// Encode names (5-bit alphabit per character; see "Alphabit Encoding" above)
 const firstNameBits = codec.GetNameBitStream("Alex");    // 4 chars → 20 bits
 const lastNameBits = codec.GetNameBitStream("Okita");    // 5 chars → 25 bits
 
 // Encode message content (UTF-8)
 const messageBits = codec.GetMessageBitStream("Hello World! 🌍");
 
-// Combine into complete bitstream (manual approach)
-let bitstream = callsignBits + timestampBits + emergencyBits + gridsquareBits +
-                firstNameBits + lastNameBits + messageBits;
+// Prefer EncodeMessage() for the full header: fixed fields must appear in wire order
+// (callsign, timestamp, emergency, gridsquare, ntp, gps, name lengths, message length,
+// message type, then optional first/last name bits and UTF-8 message bits).
 ```
 
 **Complete Message Encoding** (Recommended):
@@ -214,8 +216,8 @@ const bitstream = codec.EncodeMessage({
     ntp: true,                    // Optional: NTP time sync flag
     gps: true,                    // Optional: GPS location flag
     messageType: 1,               // Optional: 0=Emergency, 1=Chat, 2=Contest, 3=Other
-    firstName: "Alex",            // Optional: 15 char max, A-Z only
-    lastName: "Okita",            // Optional: 15 char max, A-Z only
+    firstName: "Alex",            // Optional: max 15 chars, alphabit set (letters + @ . : / -)
+    lastName: "Okita",            // Optional: max 15 chars, same encoding
     message: "Testing Ribbit! 📡" // Optional: 240 bytes max UTF-8
 });
 
@@ -689,7 +691,7 @@ Contest mode supports message acknowledgements:
 
 - **Callsign**: 8 characters max
 - **Gridsquare**: Valid Maidenhead format only
-- **Names**: 15 letters max each (A-Z only)
+- **Names**: 15 characters max per field (first / last); **5-bit alphabit** (space, `A`–`Z`, `@` `.` `:` `/` `-`); unknown characters encode as `-`
 - **Message**: 240 bytes max (UTF-8)
 - **Timestamp**: 2026-2111 range, 2-second resolution
 
@@ -704,7 +706,7 @@ Contest mode supports message acknowledgements:
 ### Character Encoding
 
 - **Callsign**: Alphanum (A-Z, 0-9)
-- **Names**: Alphabit (A-Z only, cased on display)
+- **Names**: Alphabit (5 bits per character; letters case-folded on encode, title case on decode in JS)
 - **Message**: Full UTF-8 support
 - **Gridsquare**: Maidenhead standard (AA00aa)
 

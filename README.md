@@ -61,7 +61,6 @@ A WebAssembly-based digital radio communication application supporting real-time
 ├── run_tests.sh           # Linux/Mac test server launcher
 ├── README.md              # This file
 ├── Docs/                  # Comprehensive documentation
-├── Docs/                  # Comprehensive documentation
 │   ├── codec.md             # Codec & Message Architecture
 │   ├── quick_start.md       # Quick Start Guide
 │   ├── ribbit_wasm.md       # WASM Implementation Details
@@ -388,6 +387,7 @@ Ribbit now supports **dual-mode messaging**:
 
 - Bitwise-packed efficient format
 - **40-60% smaller** than chat mode
+- **Operator names** as separate first/last fields: **5 bits per character** (alphabit: letters plus `@` `.` `:` `/` `-`; casing not stored, see [Docs/codec.md](Docs/codec.md))
 - **Includes UTC timestamp** (31 bits, 2-sec resolution, auto-updated)
 - **Timestamp visualization** - See Year/Month, Day, Hour, Minute, Second bits
 - **Unique Message ID (80-bit Hex)** - Callsign + Timestamp + Emergency flag for deduplication

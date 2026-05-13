@@ -10,6 +10,22 @@ intended as a design specification for discussion before implementation.
 
 ---
 
+## Ribbit application context
+
+This algorithm targets the **Ribbit** stack: browser-based clients using **WebAssembly** (`web/scripts/ribbit.js`, `ribbit.wasm`) for DSP, **`MessageCodec`** / **`RibbitWASM`** (`web/scripts/messageCodec.js`, `ribbit-wasm.js`) for packed contest payloads, and the **Web Audio API** at **8000 Hz** mono (see `Docs/codec.md`, Audio Transmission). Contest traffic uses **message type 2** (Contest) in the codec; the main web UI’s type labels may still say “QSO” in places — the wire format follows `codec.md`.
+
+**Current behaviour (pre-queue):** In `web/scripts/index.js`, `RibbitApp.handleEncode()` encodes one user message and calls `playAudio()` immediately. A single `isTransmitting` guard prevents overlapping sends; there is **no outbound queue** yet. Before playback, the app sets **`listen = false`**, which stops feeding the real-time decoder (`handleWasmDecodedMessage` returns early when `!this.listen`). Any contest scheduler must define how **carrier sense** obtains audio while decode is paused (see `[REVIEW]` in Open Questions).
+
+**On-air timing (important for slot math):** The codec describes the Ribbit waveform as **~2.0 seconds** (16384 samples at 8 kHz, i.e. **2.048 s**). The production app’s `playAudio()` **prepends a VOX wake-up**: **300 Hz for 200 ms**, then **100 ms silence**, then the encoded message. Budget **~2.35 s** from the start of that composite buffer until the end of the Ribbit audio unless contest mode omits the preamble by design.
+
+**Half-duplex:** Typical HF operation cannot receive a distant station on the same passband while transmitting. Even with a separate carrier-sense tap, **local sidetone** or acoustic coupling from speakers to the mic can falsely assert “channel busy.” The scheduler should treat energy during **local playback** as **not** evidence of a remote occupant (gate CS on `isTransmitting` / playback state).
+
+**Time alignment:** Message headers use a **31-bit UTC timestamp with 2-second resolution** (`Docs/codec.md`, Timestamp Encoding). Slot boundaries in this document are chosen to match that resolution. The **GPS** bit and browser geolocation are used for gridsquare and metadata; **slot scheduling should use the same UTC clock** used when building the message (e.g. GPS-disciplined time if available, else NTP/browser time with known error — see GPS fallback `[REVIEW]`).
+
+**Persistence:** The app persists **received** history via IndexedDB; an outbound contest queue is **not** yet persisted. Implementers should decide whether queued entries survive reloads and whether **`in_flight`** state is recovered after a tab crash mid-transmission.
+
+---
+
 ## Problem Statement
 
 Multiple Ribbit nodes are transmitting on the same SSB frequency. There is no
@@ -33,8 +49,22 @@ shared, synchronized clock without any network infrastructure.
 
 The key property: all nodes agree on when a **slot boundary** occurs. A slot
 is a 2-second interval aligned to even UTC seconds (00:00:00, 00:00:02,
-00:00:04, ...). Every Ribbit message transmission takes approximately one full
-slot to complete.
+00:00:04, ...), consistent with the **2-second timestamp quantization** in the
+Ribbit header (`Docs/codec.md`).
+
+**Scheduling vs. channel occupation:** A **decision** (queue check, backoff,
+draw of `listen_duration`) is anchored at slot boundaries, but the **occupied
+time on the channel** is the listen window plus the **full transmitted audio**
+(including any VOX preamble the implementation adds). That total is **typically
+longer than 2 seconds** in the current web app (~2.35 s airtime after
+contention, see Ribbit application context). Competing nodes should assume the
+channel may remain busy **across the next slot boundary** while a Ribbit burst
+is in progress; they must not start a new transmission until their carrier sense
+confirms the end of the remote burst.
+
+`[REVIEW]` — Should implementations standardize a **contest-mode preamble** (on,
+off, or shortened) so all stations occupy a predictable window for analysis
+and simulation?
 
 ```
 UTC time:  ...│ :00 │ :02 │ :04 │ :06 │ :08 │...
@@ -74,11 +104,12 @@ messages waiting to be transmitted.
 
 ```
 MessageQueueEntry {
-  message_id:      uint80    // unique ID (callsign + timestamp + emergency)
-  payload:         bytes     // encoded message ready to transmit
-  enqueue_time:    uint32    // GPS slot number when enqueued
+  message_id:      uint80    // unique ID: Callsign[48] + Timestamp[31] + Emergency[1] (same as on-air Message ID; often shown as 20 hex chars in tools — `Docs/codec.md`)
+  payload:         bytes     // packed message bytes for WASM encoder / audio playback (not raw text)
+  enqueue_time:    uint32    // slot index when enqueued (aligned to same slot grid as UTC)
   attempts:        uint8     // number of failed transmission attempts
   backoff_until:   uint32    // slot number before which this entry must not transmit
+  in_flight:       bool      // optional: true while audio is actively playing (for crash / UI state)
 }
 ```
 
@@ -143,13 +174,13 @@ Nodes that draw a short value start transmitting early and win the slot. Nodes
 that draw longer values detect the winner's signal and defer.
 
 ```
-Timeline within one slot:
+Timeline (elapsed from one UTC slot boundary t=0; Ribbit airtime crosses the next even-second tick):
 
-  :00.000  slot boundary — all nodes evaluate queue
-  :00.050  node A finishes listen (T=50ms) → channel quiet → begins TX
-  :00.120  node B finishes listen (T=120ms) → detects A's signal → defers
-  :00.310  node C finishes listen (T=310ms) → detects A's signal → defers
-  :02.000  slot boundary — A's transmission complete
+  t=0      slot boundary — all nodes evaluate queue
+  t=50 ms  node A finishes listen (T=50 ms) → channel quiet → begins TX (VOX preamble + Ribbit ≈ 2.35 s in current web app)
+  t=120 ms node B finishes listen → detects A's signal → defers
+  t=310 ms node C finishes listen → detects A's signal → defers
+  t≈2.4 s  A's on-air audio ends (listen offset + 200 ms tone + 100 ms silence + 16384 samples @ 8 kHz — see `Docs/codec.md`, `playAudio` in `index.js`)
 ```
 
 `[REVIEW]` — What constitutes `channel_is_active()` on SSB? The energy
@@ -260,7 +291,7 @@ The existing 80-bit Message ID (`Callsign[48] + Timestamp[31] + Emergency[1]`)
 provides deduplication across nodes. When a node successfully receives a
 transmission from another node during its LISTENING state, it:
 
-1. Extracts the Message ID from the decoded payload
+1. Extracts the Message ID from the decoded payload (via `MessageCodec.DecodeMessage` / contest unpack — same 80-bit identity as in `codec.md`)
 2. Checks its own queue for any matching Message ID
 3. If found, removes it — the network has already delivered equivalent
    information
@@ -268,6 +299,11 @@ transmission from another node during its LISTENING state, it:
 This is relevant when multiple nodes may be carrying the same contest exchange
 (relaying). It prevents the same logical message from being re-transmitted by
 a relay node after the originator has already transmitted it.
+
+**Ribbit receive path:** In the web app, duplicates are also relevant to **UI
+and IndexedDB history**; the queue layer should subscribe to successful decodes
+only when `listen === true` (or an explicit “monitoring” path), so local
+playback does not strip queue entries via sidetone pickup.
 
 ---
 
@@ -303,7 +339,11 @@ loop at every slot boundary (even UTC second):
 1. **`[REVIEW]` Carrier detection threshold** — How should the existing audio
    pipeline expose a "channel busy" signal to the queue scheduler? A lightweight
    energy gate on the raw PCM buffer, or should it hook into the decoder's signal
-   detection logic?
+   detection logic? **Ribbit-specific:** Today `listen = false` disables the
+   WASM decode callback path during local TX; carrier sense almost certainly
+   needs a **parallel tap** (AnalyserNode or worklet RMS) on the **mic input**
+   that stays active when decoding is paused, with **sidetone rejection** during
+   local playback.
 
 2. **`[REVIEW]` Message expiry** — Should contest queue entries expire after a
    fixed number of slots? A contest exchange that is 30 seconds old is likely
@@ -333,7 +373,9 @@ loop at every slot boundary (even UTC second):
 
 ## Related Documents
 
-- `Docs/codec.md` — Message format, timestamp encoding, Message ID structure
-- `Docs/RELEASE_PLAN.md` — Contest Mode UI integration plans
+- `Docs/codec.md` — Message format, timestamp encoding, Message ID structure, contest ACK layout (variable, trades with message space)
+- `Docs/RELEASE_PLAN.md` — Product direction; contest UI still evolving relative to this transport spec
+- `README.md` — Ribbit feature list (contest mode, ACK planned)
 - `web/scripts/messageCodec.js` — Message encoding/decoding implementation
-- `web/scripts/index.js` — Audio I/O and app state machine (RibbitApp class)
+- `web/scripts/ribbit-wasm.js` — WASM encode/decode wrapper used by the app
+- `web/scripts/index.js` — `RibbitApp`: `handleEncode`, `playAudio` (wake-up tone), `listen` / `isTransmitting` gating

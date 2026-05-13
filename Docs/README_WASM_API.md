@@ -62,13 +62,15 @@ Cleans up resources and frees memory.
 interface EncodeOptions {
     callsign?: string;    // Default: "NOCALL"
     gridsquare?: string;  // Default: "AA00aa"
-    name?: string;        // Default: ""
+    name?: string;        // Default: "" — for contest mode (type 2), split on whitespace into first / last segment for the packed header (5-bit alphabit each); see Docs/codec.md
     emergency?: boolean;  // Default: false
     ntp?: boolean;        // Default: false
     gps?: boolean;        // Default: false
-    messageType?: number; // Default: 1 (chat)
+    messageType?: number; // Default: 1 (chat); use 2 for contest / packed payload
 }
 ```
+
+For the low-level bit layout (callsign 6-bit alphanum vs names 5-bit alphabit, field order), see **[codec.md](codec.md)**.
 
 ### DecodeResult
 

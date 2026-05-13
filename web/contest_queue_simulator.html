@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ribbit — Contest queue simulator</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a222d;
+      --border: #2d3a4d;
+      --text: #e7ecf3;
+      --muted: #8b9cb3;
+      --tx: #22c55e;
+      --tx-dim: rgba(34, 197, 94, 0.35);
+      --hear: #86efac;
+      --hear-bg: rgba(134, 239, 172, 0.2);
+      --black-dot: #111827;
+      --green-dot: #22c55e;
+      --accent: #38bdf8;
+      --warn: #fbbf24;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.45;
+    }
+    header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+    header h1 {
+      margin: 0 0 0.35rem;
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+    header p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      max-width: 72ch;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      align-items: flex-end;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .field label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    input[type="number"] {
+      width: 5rem;
+      padding: 0.45rem 0.5rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+    }
+    button {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 500;
+    }
+    button:hover { border-color: var(--accent); color: var(--accent); }
+    button.primary {
+      background: #0d3d52;
+      border-color: var(--accent);
+      color: #e0f2fe;
+    }
+    button.primary:hover { filter: brightness(1.08); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem 2rem;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .stats strong { color: var(--accent); }
+    .stats .done { color: var(--tx); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+      padding: 1rem 1.25rem 2rem;
+    }
+    .op {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+      overflow: hidden;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .op.transmitting {
+      border-color: var(--tx);
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+    }
+    .op.hearing {
+      border-color: rgba(134, 239, 172, 0.5);
+      background: linear-gradient(180deg, var(--hear-bg) 0%, var(--panel) 40%);
+    }
+    .op-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      padding: 0.75rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .status-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 0.15rem;
+      border: 2px solid var(--border);
+    }
+    .status-dot.unheard { background: var(--black-dot); }
+    .status-dot.heard { background: var(--green-dot); border-color: #166534; }
+    .op-id { flex: 1; min-width: 0; }
+    .op-id .call { font-weight: 700; font-size: 1rem; letter-spacing: 0.02em; }
+    .op-id .name { font-size: 0.8rem; color: var(--muted); }
+    .op-body { padding: 0.65rem 0.85rem 0.85rem; }
+    .op-body h3 {
+      margin: 0 0 0.35rem;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+    .heard-list {
+      min-height: 4.5rem;
+      max-height: 8rem;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      padding: 0.35rem 0.4rem;
+      background: rgba(0,0,0,0.2);
+      border-radius: 6px;
+    }
+    .heard-list:empty::before {
+      content: "No signals decoded yet.";
+      color: var(--muted);
+      font-style: italic;
+    }
+    .heard-list div { padding: 0.1rem 0; }
+    .legend {
+      padding: 0.5rem 1.25rem 1rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem 1.5rem;
+    }
+    .legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Contest queue simulator</h1>
+    <p>
+      Discrete-time model of GPS-slotted p-persistent CSMA from
+      <code>Docs/contest_queue_algorithm.md</code>: 2 s slots, 50–400 ms random listen,
+      ~2.4 s on-air burst, binary exponential backoff, silence floor (3 slots).
+      Each operator keeps sending until at least one peer decodes them; the mission clock stops when everyone has a green confirmation dot.
+    </p>
+  </header>
+
+  <div class="toolbar">
+    <div class="field">
+      <label for="numOps">Operators</label>
+      <input id="numOps" type="number" min="2" max="24" value="6" />
+    </div>
+    <div class="field">
+      <label for="speed">Speed (×)</label>
+      <input id="speed" type="number" min="0.25" max="20" step="0.25" value="4" />
+    </div>
+    <button type="button" id="btnReset" class="primary">Reset &amp; run</button>
+    <button type="button" id="btnPause">Pause</button>
+    <button type="button" id="btnStep" title="Advance one 50 ms tick while paused">Step</button>
+  </div>
+
+  <div class="stats">
+    <div>Sim time: <strong id="simTime">0.0 s</strong></div>
+    <div>Slot: <strong id="slotIdx">0</strong></div>
+    <div>Mission timer: <strong id="missionTime">—</strong> <span class="done" id="missionDone" hidden>All confirmed!</span></div>
+    <div>Successful TX: <strong id="txCount">0</strong></div>
+    <div>Collisions / deferrals: <strong id="deferCount">0</strong></div>
+  </div>
+
+  <div class="legend">
+    <span><span class="swatch" style="background:var(--tx)"></span> Transmitting</span>
+    <span><span class="swatch" style="background:var(--hear-bg); border:1px solid var(--hear)"></span> Hearing (receiving)</span>
+    <span><span class="swatch" style="background:var(--black-dot)"></span> Not yet heard by anyone</span>
+    <span><span class="swatch" style="background:var(--green-dot)"></span> Heard by ≥1 peer</span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <script>
+(function () {
+  const SLOT_MS = 2000;
+  const TX_MS = 2400;
+  const T_MIN = 50;
+  const T_MAX = 400;
+  const MAX_BACKOFF_EXP = 4;
+  const SILENCE_SLOTS = 3;
+  const TICK_MS = 50;
+
+  const FIRST_NAMES = [
+    "Alex", "Jordan", "Riley", "Casey", "Morgan", "Quinn", "Reese", "Skyler",
+    "Jamie", "Dakota", "Avery", "Rowan", "Sage", "River", "Phoenix", "Blair"
+  ];
+  const LAST_NAMES = [
+    "Okada", "Chen", "Reyes", "Patel", "Nielsen", "Kowalski", "Bishop", "Grant",
+    "Hayes", "Vega", "Morales", "Frost", "Ellis", "Brooks", "Lane", "Wright"
+  ];
+
+  function randPick(arr) {
+    return arr[(Math.random() * arr.length) | 0];
+  }
+
+  function randomCallsign() {
+    const p = randPick(["K", "W", "N"]);
+    const n = 1 + ((Math.random() * 3) | 0);
+    let suf = "";
+    for (let i = 0; i < n; i++) suf += String((Math.random() * 10) | 0);
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let l = "";
+    for (let i = 0; i < 2; i++) l += letters[(Math.random() * 26) | 0];
+    return p + suf + l;
+  }
+
+  function randomOperator() {
+    return {
+      name: randPick(FIRST_NAMES) + " " + randPick(LAST_NAMES),
+      callsign: randomCallsign()
+    };
+  }
+
+  function makeOperators(n) {
+    const used = new Set();
+    const ops = [];
+    for (let i = 0; i < n; i++) {
+      let c;
+      do { c = randomCallsign(); } while (used.has(c));
+      used.add(c);
+      const o = randomOperator();
+      o.callsign = c;
+      o.id = i;
+      o.heardSenders = [];
+      o.heardSet = new Set();
+      o.heardByIds = new Set();
+      o.backoffUntilSlot = 0;
+      o.attempts = 0;
+      o.needsSend = true;
+      o.isTransmitting = false;
+      o.isHearing = false;
+      ops.push(o);
+    }
+    return ops;
+  }
+
+  /** @type {ReturnType<typeof makeOperators>} */
+  let operators = [];
+  let simMs = 0;
+  let channel = null;
+  let consecutiveSilentSlots = 0;
+  let lastSlotResolved = -1;
+  let missionStartMs = 0;
+  let missionEndMs = null;
+  let successfulTx = 0;
+  let deferEvents = 0;
+  let running = false;
+  let rafId = 0;
+  let lastReal = 0;
+  let speedMul = 4;
+
+  const elGrid = document.getElementById("grid");
+  const elSimTime = document.getElementById("simTime");
+  const elSlot = document.getElementById("slotIdx");
+  const elMission = document.getElementById("missionTime");
+  const elMissionDone = document.getElementById("missionDone");
+  const elTxCount = document.getElementById("txCount");
+  const elDefer = document.getElementById("deferCount");
+  const elNumOps = document.getElementById("numOps");
+  const elSpeed = document.getElementById("speed");
+  const btnReset = document.getElementById("btnReset");
+  const btnPause = document.getElementById("btnPause");
+  const btnStep = document.getElementById("btnStep");
+
+  function allHeard() {
+    return operators.every((o) => o.heardByIds.size >= 1);
+  }
+
+  function missionComplete() {
+    return operators.length > 0 && allHeard();
+  }
+
+  function render() {
+    elSimTime.textContent = (simMs / 1000).toFixed(1) + " s";
+    elSlot.textContent = String(Math.floor(simMs / SLOT_MS));
+    elTxCount.textContent = String(successfulTx);
+    elDefer.textContent = String(deferEvents);
+
+    if (missionEndMs != null) {
+      elMission.textContent = ((missionEndMs - missionStartMs) / 1000).toFixed(2) + " s";
+      elMissionDone.hidden = false;
+    } else {
+      elMission.textContent = ((simMs - missionStartMs) / 1000).toFixed(2) + " s";
+      elMissionDone.hidden = true;
+    }
+
+    for (const op of operators) {
+      const card = elGrid.children[op.id];
+      if (!card) continue;
+      card.classList.toggle("transmitting", op.isTransmitting);
+      card.classList.toggle("hearing", op.isHearing);
+      const dot = card.querySelector(".status-dot");
+      dot.classList.toggle("heard", op.heardByIds.size >= 1);
+      dot.classList.toggle("unheard", op.heardByIds.size === 0);
+      const list = card.querySelector(".heard-list");
+      list.replaceChildren();
+      for (const h of op.heardSenders) {
+        const d = document.createElement("div");
+        d.textContent = h;
+        list.appendChild(d);
+      }
+    }
+  }
+
+  function buildGrid() {
+    elGrid.replaceChildren();
+    for (const op of operators) {
+      const card = document.createElement("article");
+      card.className = "op";
+      card.dataset.id = String(op.id);
+      card.innerHTML = `
+        <div class="op-head">
+          <div class="status-dot unheard" title="Heard by peers"></div>
+          <div class="op-id">
+            <div class="call"></div>
+            <div class="name"></div>
+          </div>
+        </div>
+        <div class="op-body">
+          <h3>Confirmed senders (decoded)</h3>
+          <div class="heard-list"></div>
+        </div>
+      `;
+      card.querySelector(".call").textContent = op.callsign;
+      card.querySelector(".name").textContent = op.name;
+      elGrid.appendChild(card);
+    }
+    render();
+  }
+
+  function applyBackoff(op, currentSlot) {
+    op.attempts += 1;
+    const exp = Math.min(op.attempts, MAX_BACKOFF_EXP);
+    const maxSlots = 2 ** exp;
+    const slots = 1 + ((Math.random() * maxSlots) | 0);
+    op.backoffUntilSlot = currentSlot + slots;
+    deferEvents++;
+  }
+
+  function channelBusyAt(t) {
+    return channel != null && channel.startMs <= t && t < channel.endMs;
+  }
+
+  function resolveSlotBoundary(slotIndex) {
+    const slotStartMs = slotIndex * SLOT_MS;
+
+    if (channelBusyAt(slotStartMs)) {
+      return;
+    }
+
+    const wants = operators.filter(
+      (o) => o.needsSend && o.backoffUntilSlot <= slotIndex
+    );
+
+    if (wants.length === 0) {
+      consecutiveSilentSlots++;
+      if (consecutiveSilentSlots >= SILENCE_SLOTS) {
+        for (const o of operators) {
+          if (o.needsSend) o.backoffUntilSlot = slotIndex;
+        }
+        consecutiveSilentSlots = 0;
+      }
+      return;
+    }
+
+    consecutiveSilentSlots = 0;
+
+    const draws = wants.map((o) => ({
+      op: o,
+      listenMs: T_MIN + Math.random() * (T_MAX - T_MIN)
+    }));
+    draws.sort((a, b) => a.listenMs - b.listenMs || a.op.id - b.op.id);
+
+    const winnerDraw = draws[0];
+    const winner = winnerDraw.op;
+    const plannedStart = slotStartMs + winnerDraw.listenMs;
+    const winStart = Math.max(plannedStart, simMs);
+
+    for (let i = 1; i < draws.length; i++) {
+      applyBackoff(draws[i].op, slotIndex);
+    }
+
+    channel = { occupantId: winner.id, startMs: winStart, endMs: winStart + TX_MS };
+    for (const o of operators) {
+      o.isTransmitting = o.id === winner.id;
+      o.isHearing = o.id !== winner.id;
+    }
+  }
+
+  function onChannelEnd() {
+    if (!channel) return;
+    const occ = operators[channel.occupantId];
+    successfulTx++;
+    for (const o of operators) {
+      o.isTransmitting = false;
+      o.isHearing = false;
+      if (o.id === occ.id) {
+        occ.needsSend = false;
+        occ.attempts = 0;
+        continue;
+      }
+      const label = occ.callsign + " — " + occ.name;
+      if (!o.heardSet.has(occ.id)) {
+        o.heardSet.add(occ.id);
+        o.heardSenders.push(label);
+        occ.heardByIds.add(o.id);
+      }
+    }
+    if (missionComplete() && missionEndMs == null) {
+      missionEndMs = simMs;
+      running = false;
+      btnPause.textContent = "Pause";
+    }
+    channel = null;
+  }
+
+  function tick(dtMs) {
+    simMs += dtMs;
+
+    if (channel && simMs >= channel.endMs) {
+      onChannelEnd();
+    }
+
+    while (true) {
+      if (!operators.some((o) => o.needsSend)) {
+        break;
+      }
+      const s = lastSlotResolved + 1;
+      const boundary = s * SLOT_MS;
+      if (boundary > simMs) {
+        break;
+      }
+      if (channelBusyAt(boundary)) {
+        break;
+      }
+      resolveSlotBoundary(s);
+      lastSlotResolved = s;
+    }
+
+    if (channel) {
+      for (const o of operators) {
+        o.isTransmitting = o.id === channel.occupantId;
+        o.isHearing = o.id !== channel.occupantId;
+      }
+    } else {
+      for (const o of operators) {
+        o.isTransmitting = false;
+        o.isHearing = false;
+      }
+    }
+
+    render();
+  }
+
+  function loop(now) {
+    if (!running) return;
+    if (!lastReal) lastReal = now;
+    const realDt = now - lastReal;
+    lastReal = now;
+    const simDt = Math.min(realDt * speedMul, 500);
+    tick(simDt);
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function startLoop() {
+    cancelAnimationFrame(rafId);
+    lastReal = 0;
+    if (running) rafId = requestAnimationFrame(loop);
+  }
+
+  function reset() {
+    cancelAnimationFrame(rafId);
+    running = false;
+    const n = Math.max(2, Math.min(24, parseInt(elNumOps.value, 10) || 6));
+    elNumOps.value = String(n);
+    speedMul = Math.max(0.25, Math.min(20, parseFloat(elSpeed.value) || 4));
+    elSpeed.value = String(speedMul);
+
+    operators = makeOperators(n);
+    simMs = 0;
+    channel = null;
+    consecutiveSilentSlots = 0;
+    lastSlotResolved = -1;
+    missionStartMs = 0;
+    missionEndMs = null;
+    successfulTx = 0;
+    deferEvents = 0;
+
+    buildGrid();
+    btnPause.textContent = "Pause";
+    running = true;
+    startLoop();
+  }
+
+  function pauseToggle() {
+    if (missionEndMs != null) return;
+    running = !running;
+    btnPause.textContent = running ? "Pause" : "Resume";
+    lastReal = 0;
+    if (running) startLoop();
+    else cancelAnimationFrame(rafId);
+  }
+
+  function stepOnce() {
+    if (running || missionEndMs != null) return;
+    tick(TICK_MS);
+  }
+
+  btnReset.addEventListener("click", reset);
+  btnPause.addEventListener("click", pauseToggle);
+  btnStep.addEventListener("click", stepOnce);
+
+  reset();
+})();
+  </script>
+</body>
+</html>
