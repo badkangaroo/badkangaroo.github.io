@@ -11,6 +11,7 @@ Contesting Mode is Ribbit's high-efficiency operating mode designed for amateur 
 - **Compact messages** — Structured fields packed into minimal bits, not UTF-8 strings
 - **Automatic collision avoidance** — GPS-synchronized scheduling prevents stations from talking over each other
 - **Fair channel access** — Every station gets airtime, even in crowded pileups
+- **Asymmetric RX vs TX** — **PWR** sets who hears *you*; **Gain (+1…+10 dB)** extends who *you* hear and what counts as “channel busy,” so you often copy more stations than copy you (hidden-node realism)
 - **Acknowledgment tracking** — Know who received your transmission (ACK arrays)
 - **Timestamps** — 31-bit UTC timestamp (2-second resolution) embedded in every message
 
@@ -271,7 +272,8 @@ Each operator is assigned:
 - A **random Maidenhead grid square** location (format: `AA00aa`, e.g., `FN31pr`)
 - A **unique color** for their map dot (randomly assigned at simulation start)
 - A **callsign** displayed on their tile
-- A **TX Power level** (1–10) that determines transmission range
+- A **TX Power level** (1–10) that determines **transmit footprint** — how far *others* can decode this station when it transmits
+- A **Gain** value **+1 dB … +10 dB** that increases **listening range only** — how far away this station can *decode* (and treat as “channel busy” for carrier sense) compared to the baseline implied by the other station’s TX power
 
 The map displays operators as colored dots at their geographic positions, providing a visual representation of a real-world contest scenario.
 
@@ -281,42 +283,91 @@ The map displays operators as colored dots at their geographic positions, provid
 |-------|---------------|-------------|
 | **Idle** | Colored dot (no outline) | Station is listening or has empty queue |
 | **Transmitting** | **Red outline** | Station is actively transmitting |
-| **Receiving** | **Green outline** | Station is within range and decoding the transmission |
+| **Green outline** | **Receiving** — This listener decodes the transmission (distance, **transmitter PWR**, and **listener Gain**); not everyone at the same geographic distance sees green |
 
 When an operator transmits:
 1. Their dot gains a **red outline** for the duration of the transmission (~2.4s)
-2. All operators **within propagation range** gain a **green outline** indicating they can hear the signal
-3. Operators outside range remain unchanged (simulating skip zones or distance limits)
+2. Each other operator gets a **green outline** only if they are **within their own receive range** of that transmission — i.e. distance and the **listener’s Gain** (and the **transmitter’s PWR**) together determine decode / “I hear you,” not a single symmetric circle
+3. Operators who are **too far to detect the carrier** (for that listener’s RX chain) do **not** get a green outline and, in the full queue model, **do not** treat the channel as busy when picking a slot — they behave like a **hidden node** relative to that transmitter
+
+That last point is deliberate: on a real band, a big antenna and quiet location (**higher Gain**) let you **hear** more stations than will reliably **hear you** at your **PWR**. Distant stations often **do not know** someone else is occupying the channel when they decide to transmit.
+
+#### Contact graph (operator selected)
+
+When an operator is **selected**—by **clicking their tile** or by **choosing them in the operator list** (same data as the tiles)—the map draws **lines** from that operator’s dot to each contact’s dot:
+
+| Line style | Meaning |
+|------------|---------|
+| **Grey dotted** | **Heard** — this operator decoded the other station’s transmission (copy in the log), but the contact is **not** yet ACK-confirmed in the simulator’s sense |
+| **Solid white** | **ACKed** — mutual confirmation: the relationship counts as **acked** (e.g. your Message ID was acknowledged by them, or the pair meets the simulator’s two-way ACK rule) |
+
+Lines are drawn in the **grid-square map** coordinate space (great-circle or projected segment between the two locators). Clearing the selection or choosing another operator updates or removes the overlay.
 
 ### Operator Tiles
 
-Below the grid-square map, each operator is displayed as a **tile** in a flex container. The tile's background color matches the operator's dot color on the map.
+Below the grid-square map, each operator is displayed as a **tile** in a flex container (and may also appear in a **scrollable operator list**). The tile’s background color matches the operator’s dot color on the map. **Selecting an operator** (tile click or list row) opens the **contacts popup** (see next subsection) and draws the **contact graph** on the map (see above).
 
 #### Tile Layout
 
 ```
 ┌─────────────────────────────────────┐
-│ W1AW            FN31pr    PWR: 5    │  ← Callsign, Grid, TX Power
+│ W1AW   FN31pr   PWR: 5   Gain: +7 dB │  ← Callsign, Grid, TX Power, RX gain
+│─────────────────────────────────────│
+│ Backoff  [████████░░░░░░░░] 62%     │  ← Progress through current backoff window
+│ Next TX  0:06                       │  ← Countdown until next transmit attempt
 │─────────────────────────────────────│
 │ TX: 12    RX: 8     ACK: 6          │  ← Transmit count, Receive count, Confirmed ACKs
-│ Time: 00:04:24      Contacts: 6     │  ← Time since first TX, Total confirmed contacts
+│ Made: 14   Time: 00:04:24           │  ← Contacts made (distinct), time since first TX
 └─────────────────────────────────────┘
 ```
 
-#### Tile Fields
+#### Backoff progress bar
+
+Each tile includes a **small horizontal progress bar** for **backoff**:
+
+- **Meaning** — How far through the current **backoff** period the operator is (from last deferral / collision until `backoff_until` is satisfied and they may contend again). Empty or minimal fill = backoff just applied; full = backoff complete and the station is **eligible** at the next slot boundary (subject to carrier sense).
+- **Visual** — Compact bar (e.g. 100–120px) with a fill ratio matching **elapsed / total** backoff time, or **(current_slot − backoff_start) / (backoff_until − backoff_start)** in slot units. Optional numeric label (`62%`) or slot count remaining.
+
+When the operator is **not** in backoff (queue empty, or `backoff_until ≤ current_slot`), the bar can sit at **100%** (ready), **0%** with a “Ready” label, or hide — pick one convention in the implementation and keep it consistent.
+
+#### Next transmit countdown
+
+Each tile shows a **countdown** for when this operator is **planning to transmit** (their next **contention attempt**, not a guarantee they will win the channel):
+
+- **Typical definition** — Time until the **next slot boundary** at which this station evaluates the queue **and** is no longer blocked by backoff (e.g. “in 6 seconds” / `0:06`). If they are still in backoff, the countdown should reflect **backoff end** first, then the following slot boundary if those differ.
+- **During active TX** — Show `—` or `On air` until the burst ends, then resume countdown to the next attempt.
+- **Idle / empty queue** — Show `—`, `Idle`, or no countdown so the UI does not imply a transmission is queued.
+
+Format: **`M:SS`** (e.g. `0:06`, `1:24`) or total seconds, aligned with the simulator’s **2 s** slot grid and backoff rules in `contest_queue_algorithm.md`.
+
+#### Tile fields
 
 | Field | Description | Example |
 |-------|-------------|---------|
 | **Callsign** | Operator's call sign | `W1AW` |
 | **Gridsquare** | Maidenhead locator (6-char) | `FN31pr` |
-| **PWR** | TX Power level (1–10) | `5` |
+| **PWR** | TX Power level (1–10); sets **transmit** decode range for others | `5` |
+| **Gain** | RX gain **+1 dB … +10 dB**; extends **listening** / decode-of-others and **carrier-sense** range, not transmit footprint | `+7 dB` |
+| **Backoff bar** | Progress through current **backoff** window (queue algorithm) | `62%` fill |
+| **Next TX** | Countdown to next **planned transmit attempt** (slot + backoff alignment) | `0:06` |
 | **TX** | Number of transmissions sent | `12` |
 | **RX** | Number of transmissions received | `8` |
-| **ACK** | Number of ACKs received (confirmed receipts) | `6` |
+| **ACK** | ACKs received / confirmed receipts (per simulator rules) | `6` |
+| **Made** | **Contacts made** — count of **distinct** other operators in this station’s contact list (anyone they have copied or worked; same cardinality as rows in the contacts popup) | `14` |
 | **Time** | Time since first transmission | `00:04:24` |
-| **Contacts** | Total two-way confirmed contacts | `6` |
 
-#### Tile Visual States
+The **Made** count is always visible on the tile so you can see how large each operator’s footprint is without opening the popup. Subset breakdown (**heard** vs **acked**) appears in the popup and on the map lines.
+
+#### Contacts popup (selected operator)
+
+Selecting an operator opens a **popup** (modal or side panel) that lists **contacts** for that operator:
+
+- Each row: other callsign, gridsquare, and status (**Heard** vs **ACKed**)
+- Optional columns: last seen time, number of decodes, pending ACK
+
+The same list drives the **map overlay**: one line per contact from the selected operator’s dot to the peer’s dot, using the line styles in the table above.
+
+#### Tile visual states
 
 | State | Tile Indicator |
 |-------|----------------|
@@ -326,20 +377,36 @@ Below the grid-square map, each operator is displayed as a **tile** in a flex co
 
 The tile outlines mirror the map dot outlines, making it easy to track activity in both views.
 
-### TX Power and Propagation Range
+### TX Power, RX Gain, and propagation range
 
-TX Power affects how far a signal can travel. The simulator models this as a multiplier on the base propagation range.
+**Transmit footprint** is driven only by **PWR**: how far from the transmitter another station can still decode *that* transmission (subject to skip/min distance rules). **PWR does not** increase how well you hear others.
 
-#### Power Levels
+**Listening footprint** is asymmetric: when station **A** transmits, whether station **B** decodes (green outline, log copy, ACK opportunity) depends on **distance**, **A’s PWR**, and **B’s Gain** (+1 dB … +10 dB). Each step of Gain stretches the maximum distance at which **B** can copy **A** (implementation may use a dB-per-km curve, a multiplier on the PWR-implied radius, or equivalent).
 
-| Power Level | Description | Effective Range |
-|-------------|-------------|-----------------|
+Typical outcome: **you hear more stations than can hear you** — big **Gain**, modest **PWR** matches “loud signals in the headphones, they still ask for repeats.”
+
+#### Carrier sense and hidden nodes
+
+For slot picking / **carrier sense**, a station should treat the channel as **busy** only if it **detects** the ongoing transmission — i.e. the same (or stricter) criterion as “would I decode or at least see energy,” keyed off **its own Gain** and the **other station’s PWR**. Operators in **distant** grid squares who are **outside** that detection range **do not** know a transmission is in progress and may still contend for the slot, which is more realistic than a single global “everyone hears everyone” disk.
+
+#### Power levels (transmit footprint reference)
+
+| Power Level | Description | Typical TX footprint (order of magnitude) |
+|-------------|-------------|---------------------------------------------|
 | 1 | QRP minimum | ~400 km |
 | 5 | QRP typical | ~2000 km |
 | 10 | QRP maximum | ~4000 km |
 | — | *Full power (1500W PEP)* | *~8000+ km* |
 
-The relationship between power and range follows an approximate inverse-square model scaled for HF propagation characteristics.
+The relationship between **PWR** and **TX footprint** follows an approximate power–distance model (e.g. inverse-square scaled for HF). **Gain** applies on the **receive** side only.
+
+#### RX Gain levels (listen / CS extension)
+
+| Gain | Meaning |
+|------|--------|
+| **+1 dB … +10 dB** | Each step increases **maximum decode / busy-detect distance** toward other stations’ signals; **does not** extend how far **your** signal reaches |
+
+Exact mapping from dB step to extra km is an implementation detail; the important behavior is **asymmetry** and **hidden-node** effects for distant contenders.
 
 #### Contest Types
 
@@ -360,26 +427,27 @@ The simulator models HF propagation constraints:
 
 | Parameter | Description |
 |-----------|-------------|
-| **Base range** | ~400 km per power unit |
-| **Maximum range** | Power level × base range |
+| **Base TX footprint** | ~400 km per **PWR** unit (order of magnitude; tune per contest type) |
+| **TX footprint** | From **transmitter PWR** only — who can decode *this* station’s transmission |
+| **RX copy / CS range** | For listener **B** hearing transmitter **A**: extends with **B’s Gain**; can exceed the distance at which **A** could decode **B** if **B** runs lower **PWR** than **Gain** implies for reception |
 | **Minimum range** | Optional skip zone (signals don't decode too close) |
 | **Distance calculation** | Great-circle (Haversine) from grid square centers |
 
-**Example:** An operator with TX Power 5 can reach stations up to ~2000 km away. An operator with TX Power 10 can reach ~4000 km.
+**Example (symmetric PWR, asymmetric perception):** **A** (PWR 5) is heard by **B** up to ~2000 km by **PWR** alone; if **B** has **Gain +6 dB**, **B** may still copy **A** somewhat beyond that model edge, while **A** without extra gain might **not** copy **B** when **B** uses the same PWR at the same distance — **one-way** copy and **hidden-node** CS behavior follow naturally.
 
-Operators outside the transmitting station's range will not decode the message and will not send an ACK.
+Operators for whom the link does not meet the **decode** threshold will not log a copy and will not send an ACK for that transmission.
 
 ### ACK Flow Visualization
 
 The simulator demonstrates the full acknowledgment cycle:
 
 ```
-1. Station A transmits (PWR: 5)  → A gets red outline
-2. Stations B, C within 2000 km  → B, C get green outlines, record A's Message ID
-3. Station D at 3000 km          → D does NOT hear A (out of range)
-4. A's transmission ends         → Outlines clear
-5. Station B wins next slot      → B transmits with ACK for A
-6. Station A receives B's ACK    → A marks contact with B as confirmed
+1. Station A transmits (PWR: 5)     → A gets red outline
+2. B (Gain +8 dB) copies A          → B green outline, logs A; D (Gain +2 dB) too far → no green, D may not sense channel busy
+3. Station C within A’s TX disk     → C green outline if C’s Gain allows copy at that distance
+4. A's transmission ends            → Outlines clear
+5. Station B wins next slot         → B transmits with ACK for A
+6. Station A receives B's ACK       → A marks contact with B as confirmed (if A can decode B at that distance)
 ```
 
 ### Statistics Dashboard
@@ -397,7 +465,7 @@ The simulator tracks aggregate statistics:
 
 ### Mission Complete Condition
 
-The simulation tracks progress toward the mission goal: **every operator has been decoded by at least one peer**. The mission timer stops when all operators have a confirmed reception (green confirmation dot in their tile header).
+The simulation tracks progress toward the mission goal: **every operator has been decoded by at least one peer**. The mission timer stops when all operators have a confirmed reception (green confirmation dot in their tile header). **Contacts made** and the contact graph are for analysis; they do not need to match the mission-complete predicate unless you configure them that way.
 
 ---
 
@@ -413,8 +481,11 @@ The simulation tracks progress toward the mission goal: **every operator has bee
 | Queue simulator (basic) | ✅ Complete |
 | Geographic map visualization | 📋 Planned |
 | Operator tile grid | 📋 Planned |
+| Tile backoff bar + next-TX countdown | 📋 Planned |
+| Contact list popup + map lines (heard / ACKed) | 📋 Planned |
 | Dynamic user rotation | 📋 Planned |
-| TX Power / range modeling | 📋 Planned |
+| TX Power / TX footprint modeling | 📋 Planned |
+| RX Gain (+1…+10 dB) / asymmetric listen & carrier sense | 📋 Planned |
 | QRP vs full-power modes | 📋 Planned |
 | ACK flow in simulator | 📋 Planned |
 | Statistics dashboard | 📋 Planned |
@@ -454,7 +525,7 @@ The simulation tracks progress toward the mission goal: **every operator has bee
 |---------|-----------|---------|
 | Operator dot/tile | Random color | Unique station identifier |
 | Red outline | Transmitting | Station is sending |
-| Green outline | Receiving | Station is decoding incoming signal |
+| Green outline | Receiving | This station decodes the TX (distance, other **PWR**, this station **Gain**) |
 | No outline | Idle | Station is listening or waiting |
 
 ### Operator Tile Fields
@@ -463,34 +534,60 @@ The simulation tracks progress toward the mission goal: **every operator has bee
 |-------|--------|-------------|
 | Callsign | `W1AW` | Station call sign |
 | Gridsquare | `FN31pr` | 6-character Maidenhead locator |
-| PWR | `1`–`10` | TX Power level (QRP scale) |
+| PWR | `1`–`10` | TX Power — **transmit footprint** only (who can decode you) |
+| Gain | `+1` … `+10` dB | RX gain — **listening** / decode-of-others and **carrier-sense** range only; does not extend your TX range |
 | TX | Integer | Transmissions sent |
 | RX | Integer | Transmissions received |
 | ACK | Integer | Confirmed acknowledgments |
+| Made | Integer | **Contacts made** — distinct other operators in this station's contact list |
 | Time | `00:04:24` | Time since first TX (HH:MM:SS) |
-| Contacts | Integer | Two-way confirmed contacts |
 
-### TX Power Levels
+### Tile queue UI (backoff + countdown)
 
-| Level | Type | Effective Range |
-|-------|------|-----------------|
+| Control | Meaning |
+|---------|---------|
+| Backoff bar | Fill = progress through current **backoff** until eligible to contend again |
+| Next TX | **`M:SS`** countdown to next **planned transmit attempt** (slot boundary + backoff); `On air` / `—` when transmitting or idle |
+
+### Contact graph (selected operator)
+
+| Line style | Meaning |
+|------------|---------|
+| Grey dotted | **Heard** — decoded the other station; not ACK-confirmed |
+| Solid white | **ACKed** — mutual confirmation per simulator rules |
+
+Selecting an operator (tile or list row) opens the **contacts popup**; the same rows drive one map line per contact from the selected dot to the peer's dot. **Dismiss** the popup or pick another operator to clear or replace the overlay.
+
+### TX footprint (PWR only)
+
+| Level | Type | Order-of-magnitude TX footprint |
+|-------|------|--------------------------------|
 | 1 | QRP min | ~400 km |
 | 5 | QRP typical | ~2000 km |
 | 10 | QRP max | ~4000 km |
 | 100 | Full power (1500W) | ~8000+ km |
 
-### Contest Types
+### RX Gain (+1 dB … +10 dB)
 
-| Type | Power Range | Description |
+| Gain | Effect |
+|------|--------|
+| +1 … +10 dB | Each step extends **maximum distance** at which **this** station decodes others and treats the channel as busy for CS; **does not** change how far **others** decode **this** station |
+
+**Asymmetry:** You typically **hear** more stations than **hear you** — high **Gain**, modest **PWR**. Distant operators may transmit without sensing your pileup (**hidden node**).
+
+### Propagation model (summary)
+
+| Parameter | Role |
+|-----------|------|
+| TX footprint | From **transmitter PWR** only |
+| RX / CS range | From **listener Gain** + other station **PWR** + distance |
+| Min range | Optional skip zone (configurable) |
+| Calculation | Great-circle (Haversine) from grid centers |
+
+### Contest types
+
+| Type | Power range | Description |
 |------|-------------|-------------|
 | QRP Contest | 1–10 | Low power, skill-based |
 | Regular Contest | 1–100 | Up to 1500W PEP (US max) |
-
-### Propagation Model
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| Max range | ~4000 km | Typical 20m band daytime skip |
-| Min range | 0 km | Optional skip zone (configurable) |
-| Calculation | Great-circle | Haversine formula from grid centers |
 

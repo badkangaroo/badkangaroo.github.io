@@ -20,6 +20,8 @@ This algorithm targets the **Ribbit** stack: browser-based clients using **WebAs
 
 **Half-duplex:** Typical HF operation cannot receive a distant station on the same passband while transmitting. Even with a separate carrier-sense tap, **local sidetone** or acoustic coupling from speakers to the mic can falsely assert “channel busy.” The scheduler should treat energy during **local playback** as **not** evidence of a remote occupant (gate CS on `isTransmitting` / playback state).
 
+**Asymmetric propagation (contest simulator / future live model):** See `Docs/contesting_mode.md` — **TX PWR** sets how far *others* decode you; **RX Gain (+1…+10 dB)** extends how far *you* decode others and whether *you* sense the channel as busy. Link budgets are **not** symmetric: a node can copy a pileup it is “hidden” from on the transmit side, and distant nodes may not defer because they never detect the occupant. When implementing Step 2 (carrier sense), `channel_is_active()` should reflect **this** receiver’s detection threshold, not a single shared “who is on air” set for all nodes.
+
 **Time alignment:** Message headers use a **31-bit UTC timestamp with 2-second resolution** (`Docs/codec.md`, Timestamp Encoding). Slot boundaries in this document are chosen to match that resolution. The **GPS** bit and browser geolocation are used for gridsquare and metadata; **slot scheduling should use the same UTC clock** used when building the message (e.g. GPS-disciplined time if available, else NTP/browser time with known error — see GPS fallback `[REVIEW]`).
 
 **Persistence:** The app persists **received** history via IndexedDB; an outbound contest queue is **not** yet persisted. Implementers should decide whether queued entries survive reloads and whether **`in_flight`** state is recovered after a tab crash mid-transmission.
@@ -373,6 +375,7 @@ loop at every slot boundary (even UTC second):
 
 ## Related Documents
 
+- `Docs/contesting_mode.md` — Contest UX and simulator: **PWR** vs **RX Gain**, asymmetric listen / carrier sense, contact graph
 - `Docs/codec.md` — Message format, timestamp encoding, Message ID structure, contest ACK layout (variable, trades with message space)
 - `Docs/RELEASE_PLAN.md` — Product direction; contest UI still evolving relative to this transport spec
 - `README.md` — Ribbit feature list (contest mode, ACK planned)
