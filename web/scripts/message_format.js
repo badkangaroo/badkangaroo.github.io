@@ -1,9 +1,17 @@
 /**
- * Ribbit Message Format Handler
- * Supports dual-mode messaging:
- * - Mode 1 (Chat): UTF-8 free-form text
- * - Mode 2 (Contest): Bitwise-packed structured data
+ * Match MessageCodec.BitStreamToName display rules: trim, then first character
+ * uppercase and the rest lowercase. Raw WASM unpack uses ALPHABIT_DECODE (uppercase
+ * letters); this step aligns demo / message_format output with MessageCodec.js.
+ * @param {string} raw
+ * @returns {string}
  */
+function displayNameFromPacked(raw) {
+    let name = (raw || '').replace(/\0/g, '').trim();
+    if (name.length > 0) {
+        name = name.charAt(0).toUpperCase() + name.substring(1).toLowerCase();
+    }
+    return name;
+}
 
 class RibbitMessageFormat {
     constructor(wasmModule) {
@@ -215,8 +223,8 @@ class RibbitMessageFormat {
             emergency: !!(flags & 0x04),
             ntp: !!(flags & 0x02),
             gps: !!(flags & 0x01),
-            firstName: this.Module.UTF8ToString(this.firstNameBuffer),
-            lastName: this.Module.UTF8ToString(this.lastNameBuffer),
+            firstName: displayNameFromPacked(this.Module.UTF8ToString(this.firstNameBuffer)),
+            lastName: displayNameFromPacked(this.Module.UTF8ToString(this.lastNameBuffer)),
             message: this.Module.UTF8ToString(this.messageBuffer)
         };
 

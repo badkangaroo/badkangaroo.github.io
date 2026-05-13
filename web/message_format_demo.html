@@ -188,7 +188,7 @@
 
             <!-- Contest mode fields -->
             <div id="contestFields" style="display:none;">
-                <p style="font-size: 12px; color: #666; margin: 4px 0 8px;"><strong>Contest operator name</strong> — packed as <strong>5 bits per character</strong> (alphabit: space, A–Z, and <code>@ . : / -</code>). Letters are case-insensitive on the wire. Full layout: <code>Docs/codec.md</code> in this repository.</p>
+                <p style="font-size: 12px; color: #666; margin: 4px 0 8px;"><strong>Contest operator name</strong> — packed as <strong>5 bits per character</strong> (alphabit: space, A–Z, and <code>@ . : / -</code>). Letters are case-insensitive on the wire; unpack uses that bit width. Decode applies the same title-case display rule as <code>MessageCodec.js</code> (not stored on the wire). Full layout: <code>Docs/codec.md</code> in this repository.</p>
                 <label>First Name:</label>
                 <input type="text" id="firstName" value="Alex" maxlength="15">
 
