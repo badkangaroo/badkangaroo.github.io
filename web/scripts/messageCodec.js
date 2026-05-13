@@ -192,8 +192,8 @@ export class MessageCodec {
     }
 
     /**
-     * Encode name to bitstream (variable length, 5 bits per char)
-     * @param {string} name - Name string (up to 15 chars, letters only)
+     * Encode name to bitstream (variable length, 5 bits per char, alphabit charset)
+     * @param {string} name - Name string (up to 15 chars; letters folded uppercase; see headerBitTypes alphabit)
      * @returns {string} Variable-length bitstream
      */
     GetNameBitStream(name) {

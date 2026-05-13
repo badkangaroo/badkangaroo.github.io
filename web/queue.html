@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RibbitRadio | Transmission Queue Simulator</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "secondary-fixed-dim": "#4cd6fb",
+            "error": "#ffb4ab",
+            "tertiary-fixed-dim": "#ffba43",
+            "primary-fixed-dim": "#78dc77",
+            "inverse-surface": "#e2e2e6",
+            "surface-container-high": "#282a2d",
+            "tertiary": "#ffba43",
+            "outline-variant": "#3f4a3c",
+            "outline": "#899484",
+            "secondary-container": "#00b2d6",
+            "primary": "#78dc77",
+            "surface-container-highest": "#333538",
+            "background": "#111316",
+            "on-error-container": "#ffdad6",
+            "on-tertiary": "#432c00",
+            "on-secondary-container": "#003f4e",
+            "primary-fixed": "#94f990",
+            "secondary": "#4cd6fb",
+            "on-secondary": "#003642",
+            "secondary-fixed": "#b3ebff",
+            "primary-container": "#4caf50",
+            "tertiary-container": "#cf8e00",
+            "on-surface-variant": "#becab9",
+            "surface": "#111316",
+            "surface-container-lowest": "#0c0e11",
+            "on-tertiary-fixed": "#281800",
+            "on-tertiary-fixed-variant": "#614000",
+            "surface-dim": "#111316",
+            "error-container": "#93000a",
+            "on-tertiary-container": "#462e00",
+            "on-secondary-fixed": "#001f27",
+            "on-background": "#e2e2e6",
+            "on-primary": "#00390a",
+            "inverse-on-surface": "#2f3034",
+            "on-primary-fixed": "#002204",
+            "surface-container": "#1e2023",
+            "tertiary-fixed": "#ffddaf",
+            "inverse-primary": "#006e1c",
+            "on-primary-container": "#003c0b",
+            "surface-bright": "#37393d",
+            "on-secondary-fixed-variant": "#004e5f",
+            "on-error": "#690005",
+            "on-primary-fixed-variant": "#005313",
+            "surface-tint": "#78dc77",
+            "surface-container-low": "#1a1c1f",
+            "on-surface": "#e2e2e6",
+            "surface-variant": "#333538"
+          },
+          borderRadius: { DEFAULT: "0.125rem", lg: "0.25rem", xl: "0.5rem", full: "0.75rem" },
+          spacing: {
+            "panel-gap": "1px",
+            standard: "16px",
+            "container-margin": "24px",
+            compact: "8px",
+            unit: "4px"
+          },
+          fontFamily: {
+            "label-caps": ["Space Grotesk"],
+            "body-compact": ["Inter"],
+            "callsign-lg": ["Space Grotesk"],
+            "frequency-display": ["Space Grotesk"]
+          },
+          fontSize: {
+            "label-caps": ["11px", { lineHeight: "1", letterSpacing: "0.1em", fontWeight: "600" }],
+            "body-compact": ["13px", { lineHeight: "1.4", fontWeight: "400" }],
+            "callsign-lg": ["24px", { lineHeight: "1.2", letterSpacing: "0.05em", fontWeight: "600" }],
+            "frequency-display": ["48px", { lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "700" }]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+      font-size: 18px;
+    }
+    .status-glow-green { box-shadow: 0 0 8px #78dc77; }
+    .status-glow-amber { box-shadow: 0 0 8px #ffba43; }
+    .status-glow-blue { box-shadow: 0 0 8px #4cd6fb; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #111316; }
+    ::-webkit-scrollbar-thumb { background: #333538; }
+    ::-webkit-scrollbar-thumb:hover { background: #4caf50; }
+  </style>
+</head>
+<body class="bg-background text-on-background font-body-compact selection:bg-primary selection:text-on-primary overflow-hidden h-screen flex flex-col">
+  <header class="flex justify-between items-center w-full px-4 sm:px-6 py-3 min-h-16 bg-neutral-950 border-b border-neutral-800 shrink-0 z-50">
+    <div class="flex items-center gap-4 sm:gap-6 min-w-0">
+      <span class="text-lg sm:text-xl font-black text-primary tracking-tighter font-['Space_Grotesk'] uppercase truncate">RibbitRadio</span>
+      <span class="hidden sm:inline text-label-caps font-label-caps text-neutral-500 truncate">Queue sim · <a class="text-secondary hover:underline" href="../Docs/contest_queue_algorithm.md">spec</a></span>
+    </div>
+    <div class="flex items-center gap-3 sm:gap-6 shrink-0">
+      <div class="flex flex-col items-end">
+        <span class="text-label-caps font-label-caps text-neutral-500">Sim time</span>
+        <span id="hdr-session" class="font-['Space_Grotesk'] text-lg sm:text-2xl font-bold text-primary-fixed-dim tabular-nums leading-none tracking-tight">00:00:00</span>
+      </div>
+      <div class="hidden sm:block h-10 w-px bg-neutral-800" aria-hidden="true"></div>
+      <div class="flex flex-col items-end">
+        <span class="text-label-caps font-label-caps text-neutral-500">Mission</span>
+        <span id="hdr-mission" class="font-['Space_Grotesk'] text-base sm:text-xl font-semibold text-secondary tabular-nums leading-none">00:00.00</span>
+      </div>
+      <div class="hidden sm:block h-10 w-px bg-neutral-800" aria-hidden="true"></div>
+      <div class="flex flex-col items-end">
+        <span class="text-label-caps font-label-caps text-neutral-500">Confirmed</span>
+        <span id="hdr-net" class="font-callsign-lg text-on-surface tabular-nums text-lg sm:text-2xl leading-none">0 / 0</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex flex-1 min-h-0 overflow-hidden">
+    <aside class="flex flex-col w-56 sm:w-64 bg-neutral-950 border-r border-neutral-800 shrink-0 overflow-y-auto">
+      <div class="p-4 sm:p-6 border-b border-neutral-800">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-neutral-800 border border-neutral-700 flex items-center justify-center rounded">
+            <span class="material-symbols-outlined text-primary">analytics</span>
+          </div>
+          <div class="min-w-0">
+            <h2 class="text-base font-bold text-neutral-100 font-['Space_Grotesk'] truncate">Live queue</h2>
+            <p class="text-[10px] text-neutral-500 uppercase tracking-widest font-medium">CSMA model</p>
+          </div>
+        </div>
+      </div>
+      <div class="p-4 space-y-4 border-b border-neutral-800">
+        <label class="block">
+          <span class="text-label-caps font-label-caps text-neutral-500">Operators</span>
+          <input id="numOps" type="number" min="2" max="24" value="6" class="mt-1 w-full rounded border border-outline-variant bg-surface-container px-2 py-1.5 text-on-surface" />
+        </label>
+        <label class="block">
+          <span class="text-label-caps font-label-caps text-neutral-500">Speed (×)</span>
+          <input id="speed" type="number" min="0.25" max="20" step="0.25" value="4" class="mt-1 w-full rounded border border-outline-variant bg-surface-container px-2 py-1.5 text-on-surface" />
+        </label>
+        <div class="flex flex-col gap-2">
+          <button type="button" id="btnReset" class="w-full py-2 bg-primary-container text-on-primary-container font-label-caps text-xs rounded hover:opacity-90 flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-sm">restart_alt</span>
+            Reset &amp; run
+          </button>
+          <button type="button" id="btnPause" class="w-full py-2 bg-surface-container-high border border-outline-variant text-on-surface font-label-caps text-xs rounded hover:bg-surface-container-highest flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-sm">pause</span>
+            Pause
+          </button>
+          <button type="button" id="btnStep" class="w-full py-2 bg-surface-container-high border border-outline-variant text-on-surface font-label-caps text-xs rounded hover:bg-surface-container-highest flex items-center justify-center gap-2" title="50 ms sim step while paused">
+            <span class="material-symbols-outlined text-sm">skip_next</span>
+            Step
+          </button>
+        </div>
+      </div>
+      <div class="p-4 text-[11px] text-neutral-500 font-mono space-y-1">
+        <div>Slot: <span id="slotIdx" class="text-on-surface">0</span></div>
+        <div>TX ok: <span id="txCount" class="text-primary">0</span></div>
+        <div>Deferrals: <span id="deferCount" class="text-tertiary">0</span></div>
+      </div>
+    </aside>
+
+    <main class="flex-1 bg-background overflow-y-auto min-h-0 p-4">
+      <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-end border-b border-neutral-800 pb-4">
+        <div>
+          <h1 class="text-xl sm:text-callsign-lg font-callsign-lg text-neutral-100 font-['Space_Grotesk']">Live transmission queue</h1>
+          <p id="subtitle-ops" class="text-body-compact text-neutral-500 mt-1">Monitoring 0 operator nodes.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <div class="flex items-center gap-2 px-3 py-1 bg-surface-container border border-outline-variant rounded">
+            <div id="pill-live-dot" class="w-2 h-2 rounded-full bg-neutral-600"></div>
+            <span class="text-label-caps text-on-surface"><span id="pill-live">0</span> LIVE</span>
+          </div>
+          <div class="flex items-center gap-2 px-3 py-1 bg-surface-container border border-outline-variant rounded">
+            <div id="pill-pending-dot" class="w-2 h-2 rounded-full bg-tertiary status-glow-amber"></div>
+            <span class="text-label-caps text-on-surface"><span id="pill-pending">0</span> PENDING</span>
+          </div>
+          <div class="flex items-center gap-2 px-3 py-1 bg-surface-container border border-outline-variant rounded">
+            <div id="pill-confirmed-dot" class="w-2 h-2 rounded-full bg-primary status-glow-green"></div>
+            <span class="text-label-caps text-on-surface"><span id="pill-confirmed">0</span> CONFIRMED</span>
+          </div>
+        </div>
+      </div>
+
+      <p id="mission-banner" class="hidden mb-3 text-sm font-['Space_Grotesk'] text-primary font-semibold">All operators confirmed — mission complete.</p>
+
+      <div id="operator-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-panel-gap bg-neutral-800 border border-neutral-800 p-px"></div>
+    </main>
+  </div>
+
+  <footer class="h-8 shrink-0 bg-surface-container-lowest border-t border-neutral-800 flex items-center justify-between px-4 text-[10px] font-mono text-neutral-500 uppercase">
+    <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+      <div class="flex items-center gap-1 shrink-0">
+        <div id="footer-ready-dot" class="w-2 h-2 rounded-full bg-primary status-glow-green animate-pulse"></div>
+        <span id="footer-status" class="text-primary">Sim running</span>
+      </div>
+      <span class="hidden sm:inline truncate">Docs/contest_queue_algorithm.md</span>
+    </div>
+    <span class="text-secondary-fixed-dim font-bold shrink-0">QUEUE SIM</span>
+  </footer>
+
+  <script>
+(function () {
+  const SLOT_MS = 2000;
+  const TX_MS = 2400;
+  const T_MIN = 50;
+  const T_MAX = 400;
+  const MAX_BACKOFF_EXP = 4;
+  const SILENCE_SLOTS = 3;
+  const TICK_MS = 50;
+
+  const FIRST_NAMES = [
+    "Alex", "Jordan", "Riley", "Casey", "Morgan", "Quinn", "Reese", "Skyler",
+    "Jamie", "Dakota", "Avery", "Rowan", "Sage", "River", "Phoenix", "Blair"
+  ];
+  const LAST_NAMES = [
+    "Okada", "Chen", "Reyes", "Patel", "Nielsen", "Kowalski", "Bishop", "Grant",
+    "Hayes", "Vega", "Morales", "Frost", "Ellis", "Brooks", "Lane", "Wright"
+  ];
+
+  function randPick(arr) {
+    return arr[(Math.random() * arr.length) | 0];
+  }
+
+  function randomCallsign() {
+    const p = randPick(["K", "W", "N"]);
+    const n = 1 + ((Math.random() * 3) | 0);
+    let suf = "";
+    for (let i = 0; i < n; i++) suf += String((Math.random() * 10) | 0);
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let l = "";
+    for (let i = 0; i < 2; i++) l += letters[(Math.random() * 26) | 0];
+    return p + suf + l;
+  }
+
+  function randomOperator() {
+    return {
+      name: randPick(FIRST_NAMES) + " " + randPick(LAST_NAMES),
+      callsign: randomCallsign()
+    };
+  }
+
+  function makeOperators(n) {
+    const used = new Set();
+    const ops = [];
+    for (let i = 0; i < n; i++) {
+      let c;
+      do { c = randomCallsign(); } while (used.has(c));
+      used.add(c);
+      const o = randomOperator();
+      o.callsign = c;
+      o.id = i;
+      o.heardSenders = [];
+      o.heardSet = new Set();
+      o.heardByIds = new Set();
+      o.backoffUntilSlot = 0;
+      o.attempts = 0;
+      /** First GPS slot index this station may contend again after a deferral (random backoff); null until first defer or silence unlock. */
+      o.pickedContendSlot = null;
+      o.needsSend = true;
+      o.isTransmitting = false;
+      o.isHearing = false;
+      ops.push(o);
+    }
+    return ops;
+  }
+
+  let operators = [];
+  let simMs = 0;
+  let channel = null;
+  let consecutiveSilentSlots = 0;
+  let lastSlotResolved = -1;
+  let missionStartMs = 0;
+  let missionEndMs = null;
+  let successfulTx = 0;
+  let deferEvents = 0;
+  let running = false;
+  let rafId = 0;
+  let lastReal = 0;
+  let speedMul = 4;
+
+  const elGrid = document.getElementById("operator-grid");
+  const elHdrSession = document.getElementById("hdr-session");
+  const elHdrMission = document.getElementById("hdr-mission");
+  const elHdrNet = document.getElementById("hdr-net");
+  const elSubtitle = document.getElementById("subtitle-ops");
+  const elPillLive = document.getElementById("pill-live");
+  const elPillPending = document.getElementById("pill-pending");
+  const elPillConfirmed = document.getElementById("pill-confirmed");
+  const elPillLiveDot = document.getElementById("pill-live-dot");
+  const elMissionBanner = document.getElementById("mission-banner");
+  const elFooterStatus = document.getElementById("footer-status");
+  const elFooterReadyDot = document.getElementById("footer-ready-dot");
+  const elSlot = document.getElementById("slotIdx");
+  const elTxCount = document.getElementById("txCount");
+  const elDefer = document.getElementById("deferCount");
+  const elNumOps = document.getElementById("numOps");
+  const elSpeed = document.getElementById("speed");
+  const btnReset = document.getElementById("btnReset");
+  const btnPause = document.getElementById("btnPause");
+  const btnStep = document.getElementById("btnStep");
+
+  function formatHMS(ms) {
+    const total = Math.floor(ms / 1000);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    if (h > 0) return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+
+  function formatMission(ms) {
+    const sec = ms / 1000;
+    if (sec >= 3600) return sec.toFixed(0) + " s";
+    return sec.toFixed(2);
+  }
+
+  function allHeard() {
+    return operators.every((o) => o.heardByIds.size >= 1);
+  }
+
+  function missionComplete() {
+    return operators.length > 0 && allHeard();
+  }
+
+  function cardState(op) {
+    if (op.isTransmitting) return "tx";
+    if (op.isHearing) return "rx";
+    if (op.needsSend) return "q";
+    return "ok";
+  }
+
+  function segmentFill(op) {
+    const n = operators.length;
+    const maxPeer = Math.max(1, n - 1);
+    const k = Math.min(maxPeer, op.heardByIds.size);
+    return Math.round((4 * k) / maxPeer);
+  }
+
+  function render() {
+    const n = operators.length;
+    const live = operators.filter((o) => o.isTransmitting).length;
+    const pending = operators.filter((o) => o.heardByIds.size === 0).length;
+    const confirmed = operators.filter((o) => o.heardByIds.size >= 1).length;
+
+    elHdrSession.textContent = formatHMS(simMs);
+    if (missionEndMs != null) {
+      elHdrMission.textContent = formatMission(missionEndMs - missionStartMs) + " done";
+      elHdrMission.classList.remove("text-secondary");
+      elHdrMission.classList.add("text-primary");
+    } else {
+      elHdrMission.textContent = formatMission(simMs - missionStartMs);
+      elHdrMission.classList.add("text-secondary");
+      elHdrMission.classList.remove("text-primary");
+    }
+    elHdrNet.textContent = `${confirmed} / ${n}`;
+    elSubtitle.textContent = `Monitoring ${n} operator node${n === 1 ? "" : "s"} · slot ${Math.floor(simMs / SLOT_MS)}`;
+    elPillLive.textContent = String(live);
+    elPillPending.textContent = String(pending);
+    elPillConfirmed.textContent = String(confirmed);
+    elPillLiveDot.className =
+      "w-2 h-2 rounded-full " + (live > 0 ? "bg-primary status-glow-green" : "bg-neutral-600");
+    elMissionBanner.classList.toggle("hidden", missionEndMs == null);
+    elFooterStatus.textContent = missionEndMs != null ? "Complete" : running ? "Sim running" : "Paused";
+    elFooterReadyDot.className =
+      "w-2 h-2 rounded-full " +
+      (missionEndMs != null ? "bg-primary" : running ? "bg-primary status-glow-green animate-pulse" : "bg-tertiary");
+    elSlot.textContent = String(Math.floor(simMs / SLOT_MS));
+    elTxCount.textContent = String(successfulTx);
+    elDefer.textContent = String(deferEvents);
+
+    const currentSlotIdx = Math.floor(simMs / SLOT_MS);
+
+    for (const op of operators) {
+      const card = elGrid.querySelector(`[data-op-id="${op.id}"]`);
+      if (!card) continue;
+
+      const st = cardState(op);
+      const border =
+        st === "tx"
+          ? "border-primary"
+          : st === "rx"
+            ? "border-secondary"
+            : st === "q"
+              ? "border-tertiary"
+              : "border-primary/50";
+      card.className =
+        `bg-neutral-900 p-4 border-l-2 ${border} group hover:bg-neutral-800 transition-all ` +
+        (st === "tx" ? "cursor-default" : "cursor-default");
+
+      const callsignEl = card.querySelector(".op-callsign");
+      const badge = card.querySelector(".op-badge");
+      const dot = card.querySelector(".conf-indicator");
+
+      if (st === "tx") {
+        callsignEl.className = "op-callsign font-callsign-lg text-primary tracking-tighter";
+        badge.className =
+          "op-badge px-2 py-0.5 bg-primary/10 border border-primary/30 rounded text-[10px] text-primary font-bold";
+        badge.textContent = "LIVE";
+      } else if (st === "rx") {
+        callsignEl.className = "op-callsign font-callsign-lg text-secondary tracking-tighter";
+        badge.className =
+          "op-badge px-2 py-0.5 bg-secondary/10 border border-secondary/30 rounded text-[10px] text-secondary font-bold";
+        badge.textContent = "RX";
+      } else if (st === "q") {
+        callsignEl.className = "op-callsign font-callsign-lg text-neutral-100 tracking-tighter";
+        badge.className =
+          "op-badge px-2 py-0.5 bg-tertiary/10 border border-tertiary/30 rounded text-[10px] text-tertiary font-bold";
+        badge.textContent = "IN QUEUE";
+      } else {
+        callsignEl.className = "op-callsign font-callsign-lg text-primary-fixed-dim tracking-tighter";
+        badge.className =
+          "op-badge px-2 py-0.5 bg-primary/10 border border-primary/30 rounded text-[10px] text-primary font-bold";
+        badge.textContent = "CONFIRMED";
+      }
+
+      if (op.heardByIds.size >= 1) {
+        dot.className =
+          "conf-indicator w-3 h-3 rounded-full bg-primary border border-primary-container shrink-0 status-glow-green";
+        dot.title = "Heard by " + op.heardByIds.size + " peer(s)";
+      } else {
+        dot.className =
+          "conf-indicator w-3 h-3 rounded-sm bg-neutral-950 border-2 border-neutral-600 shrink-0";
+        dot.title = "Not yet heard by any peer";
+      }
+
+      const slotWait = Math.max(0, op.backoffUntilSlot * SLOT_MS - simMs);
+      const waitRow = card.querySelector(".op-wait-val");
+      if (op.needsSend && slotWait > 0) {
+        waitRow.textContent = formatHMS(slotWait) + " backoff";
+        waitRow.className = "op-wait-val text-[11px] font-mono text-tertiary";
+      } else if (op.needsSend) {
+        waitRow.textContent = "Ready";
+        waitRow.className = "op-wait-val text-[11px] font-mono text-primary";
+      } else {
+        waitRow.textContent = "—";
+        waitRow.className = "op-wait-val text-[11px] font-mono text-neutral-600";
+      }
+
+      const decEl = card.querySelector(".op-decode-val");
+      decEl.textContent = `${op.heardSenders.length} decode(s)`;
+      decEl.className =
+        "op-decode-val text-[11px] font-mono " +
+        (op.heardSenders.length > 0 ? "text-secondary" : "text-neutral-600");
+
+      const slotVal = card.querySelector(".op-slot-val");
+      let slotLabel = "—";
+      let slotSub = "slot index";
+      if (st === "tx" && channel && op.id === channel.occupantId) {
+        const s = channel.contentionSlotIndex;
+        slotLabel = `S${s}`;
+        slotSub = `won contention · phase ${s % 8}`;
+      } else if (op.needsSend) {
+        if (op.pickedContendSlot != null && op.pickedContendSlot > currentSlotIdx) {
+          slotLabel = `S${op.pickedContendSlot}`;
+          slotSub = `picked after defer · phase ${op.pickedContendSlot % 8}`;
+        } else if (op.pickedContendSlot != null) {
+          slotLabel = "READY";
+          slotSub = `try S≤${currentSlotIdx} · next 2 s edge`;
+        } else {
+          slotLabel = "—";
+          slotSub = "no backoff pick yet";
+        }
+      }
+      slotVal.textContent = slotLabel;
+      slotVal.className =
+        "op-slot-val text-[11px] font-mono tabular-nums " +
+        (st === "tx"
+          ? "text-primary"
+          : op.needsSend && op.pickedContendSlot != null && op.pickedContendSlot > currentSlotIdx
+            ? "text-tertiary"
+            : op.needsSend && op.pickedContendSlot != null
+              ? "text-secondary"
+              : op.needsSend
+                ? "text-neutral-500"
+                : "text-neutral-600");
+      const slotSubEl = card.querySelector(".op-slot-sub");
+      if (slotSubEl) {
+        slotSubEl.textContent = slotSub;
+      }
+
+      let phase = currentSlotIdx % 8;
+      if (st === "tx" && channel && op.id === channel.occupantId) {
+        phase = channel.contentionSlotIndex % 8;
+      } else if (op.needsSend && op.pickedContendSlot != null) {
+        phase = op.pickedContendSlot % 8;
+      }
+      card.querySelectorAll(".slot-cycle .tick").forEach((tick, i) => {
+        const on = i === phase;
+        tick.className =
+          "tick h-2 flex-1 rounded-sm transition-colors " +
+          (on
+            ? st === "tx"
+              ? "bg-primary status-glow-green"
+              : op.pickedContendSlot != null && op.pickedContendSlot > currentSlotIdx
+                ? "bg-tertiary status-glow-amber"
+                : "bg-secondary status-glow-blue"
+            : "bg-neutral-800");
+      });
+
+      const list = card.querySelector(".heard-list");
+      list.replaceChildren();
+      for (const h of op.heardSenders) {
+        const d = document.createElement("div");
+        d.className = "truncate text-[10px] text-neutral-400 py-0.5 border-b border-neutral-800/80 last:border-0";
+        d.textContent = h;
+        list.appendChild(d);
+      }
+
+      const fill = segmentFill(op);
+      const segs = card.querySelectorAll(".seg");
+      const colors =
+        st === "tx"
+          ? ["bg-primary", "status-glow-green"]
+          : st === "rx"
+            ? ["bg-secondary", "status-glow-blue"]
+            : st === "q"
+              ? ["bg-tertiary", ""]
+              : ["bg-primary/60", ""];
+      segs.forEach((seg, i) => {
+        const on = i < fill;
+        seg.className =
+          "seg h-1 flex-1 rounded-sm " +
+          (on ? colors[0] + (colors[1] ? " " + colors[1] : "") : "bg-neutral-800");
+      });
+    }
+  }
+
+  function buildGrid() {
+    elGrid.replaceChildren();
+    for (const op of operators) {
+      const card = document.createElement("article");
+      card.dataset.opId = String(op.id);
+      card.innerHTML = `
+        <div class="flex justify-between items-start mb-3 gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="conf-indicator w-3 h-3 rounded-sm bg-neutral-950 border-2 border-neutral-600 shrink-0" title=""></span>
+            <span class="op-callsign font-callsign-lg tracking-tighter truncate">?</span>
+          </div>
+          <div class="op-badge px-2 py-0.5 rounded text-[10px] font-bold shrink-0">…</div>
+        </div>
+        <div class="text-[11px] text-neutral-500 truncate op-name mb-3"></div>
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between items-center text-[11px] font-mono text-neutral-400">
+            <span>WAIT</span>
+            <span class="op-wait-val text-neutral-500">--</span>
+          </div>
+          <div class="flex justify-between items-center text-[11px] font-mono text-neutral-400">
+            <span>DECODES</span>
+            <span class="op-decode-val text-neutral-600">0</span>
+          </div>
+          <div class="flex justify-between items-start gap-2 text-[11px] font-mono text-neutral-400">
+            <span class="shrink-0 pt-0.5">TX SLOT</span>
+            <span class="text-right min-w-0">
+              <span class="op-slot-val text-neutral-600 block">—</span>
+              <span class="op-slot-sub block text-[9px] text-neutral-600 font-normal normal-case mt-0.5 leading-tight"></span>
+            </span>
+          </div>
+        </div>
+        <div class="slot-cycle flex gap-0.5 mt-2" title="Phase = slot index mod 8 (visual cycle)">
+          <span class="tick h-2 flex-1 rounded-sm bg-neutral-800"></span>
+          <span class="tick h-2 flex-1 rounded-sm bg-neutral-800"></span>
+          <span class="tick h-2 flex-1 rounded-sm bg-neutral-800"></span>
+          <span class="tick h-2 flex-1 rounded-sm bg-neutral-800"></span>
+          <span class="tick h-2 flex-1 rounded-sm bg-neutral-800"></span>
+          <span class="tick h-2 flex-1 rounded-sm bg-neutral-800"></span>
+          <span class="tick h-2 flex-1 rounded-sm bg-neutral-800"></span>
+          <span class="tick h-2 flex-1 rounded-sm bg-neutral-800"></span>
+        </div>
+        <div class="heard-list mt-2 max-h-20 overflow-y-auto min-h-[2.5rem]"></div>
+        <div class="mt-4 flex gap-1 seg-row">
+          <div class="seg h-1 flex-1 bg-neutral-800 rounded-sm"></div>
+          <div class="seg h-1 flex-1 bg-neutral-800 rounded-sm"></div>
+          <div class="seg h-1 flex-1 bg-neutral-800 rounded-sm"></div>
+          <div class="seg h-1 flex-1 bg-neutral-800 rounded-sm"></div>
+        </div>
+      `;
+      card.querySelector(".op-callsign").textContent = op.callsign;
+      card.querySelector(".op-name").textContent = op.name;
+      elGrid.appendChild(card);
+    }
+    render();
+  }
+
+  function applyBackoff(op, currentSlot) {
+    op.attempts += 1;
+    const exp = Math.min(op.attempts, MAX_BACKOFF_EXP);
+    const maxSlots = 2 ** exp;
+    const slots = 1 + ((Math.random() * maxSlots) | 0);
+    op.backoffUntilSlot = currentSlot + slots;
+    op.pickedContendSlot = op.backoffUntilSlot;
+    deferEvents++;
+  }
+
+  function channelBusyAt(t) {
+    return channel != null && channel.startMs <= t && t < channel.endMs;
+  }
+
+  function resolveSlotBoundary(slotIndex) {
+    const slotStartMs = slotIndex * SLOT_MS;
+    if (channelBusyAt(slotStartMs)) return;
+
+    const wants = operators.filter((o) => o.needsSend && o.backoffUntilSlot <= slotIndex);
+    if (wants.length === 0) {
+      consecutiveSilentSlots++;
+      if (consecutiveSilentSlots >= SILENCE_SLOTS) {
+        for (const o of operators) {
+          if (o.needsSend) {
+            o.backoffUntilSlot = slotIndex;
+            o.pickedContendSlot = slotIndex;
+          }
+        }
+        consecutiveSilentSlots = 0;
+      }
+      return;
+    }
+    consecutiveSilentSlots = 0;
+
+    const draws = wants.map((o) => ({
+      op: o,
+      listenMs: T_MIN + Math.random() * (T_MAX - T_MIN)
+    }));
+    draws.sort((a, b) => a.listenMs - b.listenMs || a.op.id - b.op.id);
+
+    const winnerDraw = draws[0];
+    const winner = winnerDraw.op;
+    const plannedStart = slotStartMs + winnerDraw.listenMs;
+    const winStart = Math.max(plannedStart, simMs);
+
+    for (let i = 1; i < draws.length; i++) applyBackoff(draws[i].op, slotIndex);
+
+    channel = {
+      occupantId: winner.id,
+      startMs: winStart,
+      endMs: winStart + TX_MS,
+      contentionSlotIndex: slotIndex
+    };
+    winner.pickedContendSlot = slotIndex;
+    for (const o of operators) {
+      o.isTransmitting = o.id === winner.id;
+      o.isHearing = o.id !== winner.id;
+    }
+  }
+
+  function onChannelEnd() {
+    if (!channel) return;
+    const occ = operators[channel.occupantId];
+    successfulTx++;
+    for (const o of operators) {
+      o.isTransmitting = false;
+      o.isHearing = false;
+      if (o.id === occ.id) {
+        occ.needsSend = false;
+        occ.attempts = 0;
+        occ.pickedContendSlot = null;
+        continue;
+      }
+      const label = occ.callsign + " — " + occ.name;
+      if (!o.heardSet.has(occ.id)) {
+        o.heardSet.add(occ.id);
+        o.heardSenders.push(label);
+        occ.heardByIds.add(o.id);
+      }
+    }
+    if (missionComplete() && missionEndMs == null) {
+      missionEndMs = simMs;
+      running = false;
+      btnPause.textContent = "Pause";
+    }
+    channel = null;
+  }
+
+  function tick(dtMs) {
+    simMs += dtMs;
+    if (channel && simMs >= channel.endMs) onChannelEnd();
+
+    while (true) {
+      if (!operators.some((o) => o.needsSend)) break;
+      const s = lastSlotResolved + 1;
+      const boundary = s * SLOT_MS;
+      if (boundary > simMs) break;
+      if (channelBusyAt(boundary)) break;
+      resolveSlotBoundary(s);
+      lastSlotResolved = s;
+    }
+
+    if (channel) {
+      for (const o of operators) {
+        o.isTransmitting = o.id === channel.occupantId;
+        o.isHearing = o.id !== channel.occupantId;
+      }
+    } else {
+      for (const o of operators) {
+        o.isTransmitting = false;
+        o.isHearing = false;
+      }
+    }
+    render();
+  }
+
+  function loop(now) {
+    if (!running) return;
+    if (!lastReal) lastReal = now;
+    const realDt = now - lastReal;
+    lastReal = now;
+    const simDt = Math.min(realDt * speedMul, 500);
+    tick(simDt);
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function startLoop() {
+    cancelAnimationFrame(rafId);
+    lastReal = 0;
+    if (running) rafId = requestAnimationFrame(loop);
+  }
+
+  function reset() {
+    cancelAnimationFrame(rafId);
+    running = false;
+    const n = Math.max(2, Math.min(24, parseInt(elNumOps.value, 10) || 6));
+    elNumOps.value = String(n);
+    speedMul = Math.max(0.25, Math.min(20, parseFloat(elSpeed.value) || 4));
+    elSpeed.value = String(speedMul);
+
+    operators = makeOperators(n);
+    simMs = 0;
+    channel = null;
+    consecutiveSilentSlots = 0;
+    lastSlotResolved = -1;
+    missionStartMs = 0;
+    missionEndMs = null;
+    successfulTx = 0;
+    deferEvents = 0;
+
+    buildGrid();
+    btnPause.textContent = "Pause";
+    running = true;
+    startLoop();
+  }
+
+  function pauseToggle() {
+    if (missionEndMs != null) return;
+    running = !running;
+    btnPause.textContent = running ? "Pause" : "Resume";
+    lastReal = 0;
+    if (running) startLoop();
+    else cancelAnimationFrame(rafId);
+  }
+
+  function stepOnce() {
+    if (running || missionEndMs != null) return;
+    tick(TICK_MS);
+  }
+
+  btnReset.addEventListener("click", reset);
+  btnPause.addEventListener("click", pauseToggle);
+  btnStep.addEventListener("click", stepOnce);
+
+  reset();
+})();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ribbit — Contest queue simulator</title>
+  <style>
+    :root {
+      --bg: #0b1018;
+      --bg-elev: #0f1622;
+      --panel: #141d2b;
+      --panel-2: #1a2436;
+      --border: #243049;
+      --border-hi: #344667;
+      --text: #e7ecf3;
+      --text-dim: #b9c4d6;
+      --muted: #7d8aa1;
+
+      --accent: #38bdf8;
+      --neon-cyan: #5eead4;
+      --neon-magenta: #f472b6;
+      --warn: #fbbf24;
+
+      --tx-red: #ff3b5c;
+      --tx-red-soft: rgba(255, 59, 92, 0.35);
+      --rx-green: #3ade7c;
+      --rx-green-soft: rgba(58, 222, 124, 0.28);
+
+      --grid-major: rgba(94, 234, 212, 0.32);
+      --grid-minor: rgba(56, 189, 248, 0.085);
+      --grid-axis: rgba(244, 114, 182, 0.5);
+      --grid-frame: rgba(94, 234, 212, 0.45);
+      --grid-label: rgba(94, 234, 212, 0.18);
+
+      --line-heard: #94a3b8;
+      --line-acked: #ffffff;
+
+      --shadow-glow-cyan: 0 0 28px rgba(94, 234, 212, 0.18);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(1200px 700px at 80% -10%, rgba(94, 234, 212, 0.07), transparent 60%),
+                  radial-gradient(900px 600px at -10% 110%, rgba(244, 114, 182, 0.06), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+    code, .mono { font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, monospace; }
+
+    header.app {
+      padding: 0.9rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--panel) 0%, var(--bg-elev) 100%);
+      position: sticky; top: 0; z-index: 5;
+    }
+    header.app h1 {
+      margin: 0 0 0.2rem;
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--accent) 50%, var(--neon-magenta));
+      -webkit-background-clip: text; background-clip: text;
+      color: transparent;
+    }
+    header.app p {
+      margin: 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+      max-width: 90ch;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem 1.1rem;
+      align-items: flex-end;
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elev);
+    }
+    .field { display: flex; flex-direction: column; gap: 0.2rem; }
+    .field label {
+      font-size: 0.7rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .field input[type="number"], .field select {
+      padding: 0.42rem 0.5rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+    }
+    .field input[type="number"] { width: 5.5rem; }
+    .field select { min-width: 9rem; }
+
+    button {
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 500;
+      font: inherit;
+      transition: border-color 0.12s, color 0.12s, background 0.12s;
+    }
+    button:hover { border-color: var(--accent); color: var(--accent); }
+    button.primary {
+      background: linear-gradient(180deg, #0d4d63, #0a3a4c);
+      border-color: var(--neon-cyan);
+      color: #e0f7ff;
+      box-shadow: var(--shadow-glow-cyan);
+    }
+    button.primary:hover { filter: brightness(1.1); color: #e0f7ff; border-color: var(--neon-cyan); }
+    button.toggle.on {
+      background: linear-gradient(180deg, #0d4d63, #0a3a4c);
+      border-color: var(--neon-cyan);
+      color: #e0f7ff;
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .stats {
+      display: flex; flex-wrap: wrap;
+      gap: 0.6rem 1.6rem;
+      padding: 0.55rem 1.25rem;
+      font-size: 0.85rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-elev);
+    }
+    .stats .stat { display: inline-flex; align-items: baseline; gap: 0.35rem; }
+    .stats .stat .lbl { color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.7rem; }
+    .stats .stat .val { color: var(--neon-cyan); font-weight: 600; }
+    .stats .stat.warn .val { color: var(--warn); }
+    .stats .stat.ok .val { color: var(--rx-green); }
+
+    .map-wrap {
+      padding: 0.85rem 1.25rem 0.4rem;
+    }
+    .map-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: radial-gradient(800px 500px at 50% 50%, rgba(56, 189, 248, 0.045), transparent 70%),
+                  linear-gradient(180deg, #08111c 0%, #0b1726 100%);
+      border: 1px solid var(--border-hi);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(94, 234, 212, 0.06) inset, 0 20px 60px rgba(0,0,0,0.45);
+    }
+    .map-frame svg { display: block; width: 100%; height: 100%; user-select: none; }
+    .map-frame .corner {
+      position: absolute;
+      font: 600 0.65rem ui-monospace, monospace;
+      color: var(--neon-cyan);
+      opacity: 0.55;
+      padding: 0.25rem 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      pointer-events: none;
+    }
+    .map-frame .corner.tl { top: 0.35rem; left: 0.5rem; }
+    .map-frame .corner.tr { top: 0.35rem; right: 0.5rem; }
+    .map-frame .corner.bl { bottom: 0.35rem; left: 0.5rem; }
+    .map-frame .corner.br { bottom: 0.35rem; right: 0.5rem; }
+
+    .legend {
+      padding: 0.45rem 1.25rem 0.85rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.25rem;
+      align-items: center;
+    }
+    .legend span.lg { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .swatch {
+      width: 12px; height: 12px; border-radius: 50%;
+      display: inline-block;
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+    .swatch.tx { background: var(--tx-red); border-color: var(--tx-red); box-shadow: 0 0 8px var(--tx-red-soft); }
+    .swatch.rx { background: var(--rx-green); border-color: var(--rx-green); }
+    .swatch.heard { background: transparent; border: 1px dashed var(--line-heard); }
+    .swatch.acked { background: var(--line-acked); }
+
+    .tile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 0.7rem;
+      padding: 0.4rem 1.25rem 2.5rem;
+    }
+    .op-tile {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.55rem 0.7rem 0.65rem;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s, opacity 0.25s;
+      will-change: transform;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .op-tile::before {
+      content: "";
+      position: absolute; inset: 0;
+      background: var(--tile-tint, transparent);
+      z-index: -1;
+    }
+    .op-tile.entering { opacity: 0; transform: translateY(6px); }
+    .op-tile.entered  { opacity: 1; transform: translateY(0); }
+    .op-tile.leaving  { opacity: 0; transform: translateY(-6px); }
+    .op-tile:hover { border-color: var(--border-hi); }
+    .op-tile.tx     { border-color: var(--tx-red); box-shadow: 0 0 0 2px rgba(255, 59, 92, 0.25), 0 0 20px var(--tx-red-soft); }
+    .op-tile.rx     { border-color: var(--rx-green); box-shadow: 0 0 0 2px rgba(58, 222, 124, 0.25); }
+    .op-tile.tx.rx  { border-color: var(--tx-red); }
+    .op-tile.selected {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 0 2px rgba(94, 234, 212, 0.4), 0 0 26px rgba(94, 234, 212, 0.35);
+    }
+    .op-tile .top {
+      display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+      margin-bottom: 0.35rem;
+    }
+    .op-tile .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 6px var(--op-color);
+    }
+    .op-tile .call { font-weight: 700; letter-spacing: 0.03em; font-size: 0.95rem; }
+    .op-tile .grid { font: 0.72rem/1 ui-monospace, monospace; color: var(--text-dim); }
+    .op-tile .badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.1rem 0.4rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+    .op-tile .badge.pwr  { border-color: rgba(244, 114, 182, 0.4); color: #fbcfe8; }
+    .op-tile .badge.gain { border-color: rgba(94, 234, 212, 0.4);  color: #99f6e4; }
+
+    .op-tile .bo-row {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.7rem; color: var(--muted);
+      margin-top: 0.2rem;
+    }
+    .op-tile .bo-row .bo-label { width: 3.5rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    .op-tile .bar {
+      flex: 1; height: 6px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 3px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .op-tile .bar .fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--accent));
+      width: 0%;
+      transition: width 0.2s linear;
+    }
+    .op-tile.tx .bar .fill { background: linear-gradient(90deg, var(--tx-red), var(--neon-magenta)); }
+    .op-tile .bo-pct { font-variant-numeric: tabular-nums; min-width: 2.5rem; text-align: right; color: var(--text-dim); }
+
+    .op-tile .ntx-row {
+      font-size: 0.78rem; color: var(--text-dim);
+      margin-top: 0.2rem;
+      display: flex; justify-content: space-between; align-items: baseline;
+    }
+    .op-tile .ntx-row .countdown { font: 600 0.85rem ui-monospace, monospace; color: var(--neon-cyan); }
+    .op-tile .ntx-row .countdown.tx-on { color: var(--tx-red); }
+    .op-tile .ntx-row .countdown.idle  { color: var(--muted); }
+
+    .op-tile .metrics {
+      margin-top: 0.4rem;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.25rem 0.5rem;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+    .op-tile .metrics .m { display: flex; flex-direction: column; align-items: flex-start; }
+    .op-tile .metrics .m .lbl { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    .op-tile .metrics .m .val { font: 600 0.85rem ui-monospace, monospace; color: var(--text); }
+
+    .op-tile .time-row {
+      margin-top: 0.4rem;
+      font: 0.72rem ui-monospace, monospace;
+      color: var(--muted);
+      display: flex; justify-content: space-between;
+    }
+    .op-tile .time-row .since-label { text-transform: uppercase; letter-spacing: 0.06em; }
+    .op-tile .time-row .since { color: var(--text-dim); }
+
+    .contacts-pop {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: min(360px, 90vw);
+      background: linear-gradient(180deg, var(--panel) 0%, var(--bg-elev) 100%);
+      border-left: 1px solid var(--border-hi);
+      box-shadow: -20px 0 60px rgba(0,0,0,0.55);
+      transform: translateX(100%);
+      transition: transform 0.25s ease-out;
+      z-index: 30;
+      display: flex; flex-direction: column;
+    }
+    .contacts-pop.open { transform: translateX(0); }
+    .contacts-pop .pop-head {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .contacts-pop .pop-head .dot {
+      width: 14px; height: 14px; border-radius: 50%;
+      box-shadow: 0 0 8px var(--op-color);
+    }
+    .contacts-pop .pop-head .title { flex: 1; }
+    .contacts-pop .pop-head .title .call { font-weight: 700; }
+    .contacts-pop .pop-head .title .grid { font: 0.72rem ui-monospace, monospace; color: var(--text-dim); }
+    .contacts-pop .pop-head .close {
+      background: transparent; border: 1px solid var(--border);
+      padding: 0.25rem 0.55rem;
+      color: var(--muted);
+    }
+    .contacts-pop .pop-head .close:hover { color: var(--neon-cyan); border-color: var(--neon-cyan); }
+    .contacts-pop .pop-stats {
+      padding: 0.45rem 1rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      display: flex; gap: 1rem; flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+    }
+    .contacts-pop .pop-stats b { color: var(--text); }
+    .contacts-pop .pop-body {
+      flex: 1; overflow-y: auto;
+      padding: 0.5rem 0.5rem 1rem;
+    }
+    .contacts-pop .pop-body .row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 0.55rem;
+      align-items: center;
+      padding: 0.45rem 0.55rem;
+      border-radius: 8px;
+    }
+    .contacts-pop .pop-body .row:hover { background: rgba(255,255,255,0.03); }
+    .contacts-pop .pop-body .row .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .contacts-pop .pop-body .row .who .call { font-weight: 600; font-size: 0.85rem; }
+    .contacts-pop .pop-body .row .who .grid { font: 0.7rem ui-monospace, monospace; color: var(--muted); }
+    .contacts-pop .pop-body .row .meta { text-align: right; font: 0.7rem ui-monospace, monospace; color: var(--muted); }
+    .contacts-pop .pop-body .row .meta .pill {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      font-size: 0.62rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.18rem;
+    }
+    .contacts-pop .pop-body .row .meta .pill.heard {
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--line-heard);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+    }
+    .contacts-pop .pop-body .row .meta .pill.acked {
+      background: rgba(94, 234, 212, 0.18);
+      color: var(--neon-cyan);
+      border: 1px solid var(--neon-cyan);
+    }
+    .contacts-pop .pop-body .empty {
+      padding: 1rem;
+      color: var(--muted);
+      font-style: italic;
+      text-align: center;
+    }
+
+    .scrim {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.12);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 20;
+    }
+    .scrim.show { opacity: 1; pointer-events: auto; }
+
+    /* SVG-specific */
+    svg .grid-minor { stroke: var(--grid-minor); stroke-width: 1; }
+    svg .grid-major { stroke: var(--grid-major); stroke-width: 1.25; }
+    svg .grid-axis  { stroke: var(--grid-axis); stroke-width: 1.5; }
+    svg .grid-frame { stroke: var(--grid-frame); stroke-width: 1.5; fill: none; }
+    svg .field-label {
+      fill: var(--grid-label);
+      font: 600 8px ui-monospace, monospace;
+      pointer-events: none;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+    svg .op-dot { transition: r 0.15s, filter 0.15s; }
+    svg .op-hit { fill: rgba(0,0,0,0); cursor: pointer; }
+    svg .op-ring-tx { fill: none; stroke: var(--tx-red); stroke-width: 2.5; pointer-events: none; }
+    svg .op-ring-rx { fill: none; stroke: var(--rx-green); stroke-width: 1.75; pointer-events: none; }
+    svg .op-ring-sel {
+      fill: none; stroke: var(--neon-cyan); stroke-width: 2;
+      pointer-events: none;
+    }
+    svg .contact-heard {
+      stroke: var(--line-heard);
+      stroke-width: 1.5;
+      stroke-dasharray: 5 4;
+      opacity: 0.85;
+      pointer-events: none;
+    }
+    svg .contact-acked {
+      stroke: var(--line-acked);
+      stroke-width: 2;
+      opacity: 0.95;
+      pointer-events: none;
+    }
+    svg .op-fade-in  { animation: opIn 0.4s ease-out both; }
+    svg .op-fade-out { animation: opOut 0.3s ease-in both; }
+    @keyframes opIn  { from { opacity: 0; r: 1; } to { opacity: 1; } }
+    @keyframes opOut { from { opacity: 1; } to { opacity: 0; r: 1; } }
+  </style>
+</head>
+<body>
+  <header class="app">
+    <h1>Ribbit — Contest queue simulator</h1>
+    <p>
+      Discrete-time model of GPS-slotted p-persistent CSMA from
+      <code>Docs/contest_queue_algorithm.md</code> with asymmetric propagation
+      (PWR transmits, RX gain extends listening / carrier sense). Click any
+      operator dot or tile to inspect its contacts. See <code>Docs/contesting_mode.md</code>.
+    </p>
+  </header>
+
+  <div class="toolbar">
+    <div class="field">
+      <label for="maxOps">Operators (max)</label>
+      <input id="maxOps" type="number" min="2" max="100" value="24" />
+    </div>
+    <div class="field">
+      <label for="speed">Speed (×)</label>
+      <input id="speed" type="number" min="0.25" max="20" step="0.25" value="4" />
+    </div>
+    <div class="field">
+      <label for="contestMode">Contest mode</label>
+      <select id="contestMode">
+        <option value="qrp" selected>QRP (1–10 W)</option>
+        <option value="regular">Regular (≤1500 W)</option>
+      </select>
+    </div>
+    <button type="button" id="btnRotation" class="toggle on" title="Toggle dynamic operator rotation">Rotation: on</button>
+    <button type="button" id="btnReset" class="primary">Reset &amp; run</button>
+    <button type="button" id="btnPause">Pause</button>
+    <button type="button" id="btnStep" title="Advance one tick while paused">Step</button>
+    <button type="button" id="btnClear">Clear selection</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><span class="lbl">Sim</span><span class="val mono" id="simTime">0.0 s</span></div>
+    <div class="stat"><span class="lbl">Slot</span><span class="val mono" id="slotIdx">0</span></div>
+    <div class="stat"><span class="lbl">Active ops</span><span class="val" id="activeOps">0</span></div>
+    <div class="stat ok"><span class="lbl">Total TX</span><span class="val" id="totalTx">0</span></div>
+    <div class="stat ok"><span class="lbl">Total ACKs</span><span class="val" id="totalAck">0</span></div>
+    <div class="stat warn"><span class="lbl">Deferrals</span><span class="val" id="defers">0</span></div>
+    <div class="stat"><span class="lbl">Util</span><span class="val" id="util">0%</span></div>
+    <div class="stat"><span class="lbl">Avg made</span><span class="val" id="avgMade">0.0</span></div>
+    <div class="stat"><span class="lbl">First-contact</span><span class="val" id="firstContact">0%</span></div>
+  </div>
+
+  <div class="map-wrap">
+    <div class="map-frame" id="mapFrame">
+      <span class="corner tl">N · 90°</span>
+      <span class="corner tr">N · 90°</span>
+      <span class="corner bl">S · 90°</span>
+      <span class="corner br">S · 90°</span>
+      <svg id="map" viewBox="0 0 720 540" preserveAspectRatio="xMidYMid meet" aria-label="Maidenhead grid map">
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.5" result="b" />
+            <feMerge>
+              <feMergeNode in="b" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <filter id="glow-strong" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="b" />
+            <feMerge>
+              <feMergeNode in="b" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        <g id="grid-layer"></g>
+        <g id="contact-lines"></g>
+        <g id="dots-layer"></g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span class="lg"><span class="swatch tx"></span> Transmitting</span>
+    <span class="lg"><span class="swatch rx"></span> Hearing</span>
+    <span class="lg"><span class="swatch heard"></span> Contact heard</span>
+    <span class="lg"><span class="swatch acked"></span> Contact ACKed</span>
+    <span class="lg" style="margin-left:auto;color:var(--muted);">Click a dot or tile to inspect</span>
+  </div>
+
+  <div class="tile-grid" id="tileGrid"></div>
+
+  <div class="scrim" id="scrim"></div>
+  <aside class="contacts-pop" id="contactsPop" aria-hidden="true">
+    <div class="pop-head">
+      <span class="dot" id="popDot"></span>
+      <div class="title">
+        <div class="call" id="popCall">—</div>
+        <div class="grid" id="popGrid">—</div>
+      </div>
+      <button class="close" id="popClose" type="button">Close</button>
+    </div>
+    <div class="pop-stats">
+      <div>PWR <b id="popPwr">—</b></div>
+      <div>Gain <b id="popGain">—</b></div>
+      <div>TX <b id="popTx">0</b></div>
+      <div>RX <b id="popRx">0</b></div>
+      <div>ACK <b id="popAck">0</b></div>
+      <div>Made <b id="popMade">0</b></div>
+    </div>
+    <div class="pop-body" id="popBody"></div>
+  </aside>
+
+  <script>
+(function () {
+  "use strict";
+
+  // ── Constants ────────────────────────────────────────────────────────────
+  const SLOT_MS = 2000;
+  const TX_MS = 2400;
+  const T_MIN = 50;
+  const T_MAX = 400;
+  const MAX_BACKOFF_EXP = 4;
+  const SILENCE_SLOTS = 3;
+  const POST_TX_MIN_SLOTS = 2;
+  const POST_TX_MAX_SLOTS = 5;
+  const SPAWN_MIN_MS = 5000;
+  const SPAWN_MAX_MS = 15000;
+  const DEPART_RATE_PER_SEC = 0.02 / 60;
+  const FADE_OUT_MS = 320;
+
+  const VIEW_W = 720;
+  const VIEW_H = 540;
+  const LON_MIN = -180, LON_MAX = 180;
+  const LAT_MIN = -90,  LAT_MAX = 90;
+
+  const PRESETS = {
+    qrp:     { label: "QRP",     pwrMin: 1, pwrMax: 10,  baseRadiusKm: 400, perDbKm: 220 },
+    regular: { label: "Regular", pwrMin: 1, pwrMax: 100, baseRadiusKm: 80,  perDbKm: 300 }
+  };
+
+  // ── Helpers ─────────────────────────────────────────────────────────────
+  const rand = Math.random;
+  const randInt = (lo, hi) => lo + ((rand() * (hi - lo + 1)) | 0);
+  const randPick = (arr) => arr[(rand() * arr.length) | 0];
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const pad2 = (n) => (n < 10 ? "0" + n : "" + n);
+
+  function fmtTime(ms) {
+    const s = Math.max(0, ms / 1000 | 0);
+    const h = (s / 3600) | 0;
+    const m = ((s / 60) % 60) | 0;
+    const ss = s % 60;
+    return pad2(h) + ":" + pad2(m) + ":" + pad2(ss);
+  }
+  function fmtCountdown(ms) {
+    const s = Math.max(0, Math.ceil(ms / 1000));
+    const m = (s / 60) | 0;
+    const ss = s % 60;
+    return m + ":" + pad2(ss);
+  }
+
+  function haversineKm(a, b) {
+    const R = 6371;
+    const toRad = Math.PI / 180;
+    const dLat = (b.lat - a.lat) * toRad;
+    const dLon = (b.lon - a.lon) * toRad;
+    const la1 = a.lat * toRad;
+    const la2 = b.lat * toRad;
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+
+  function latLonToXy(lat, lon) {
+    const x = ((lon - LON_MIN) / (LON_MAX - LON_MIN)) * VIEW_W;
+    const y = ((LAT_MAX - lat) / (LAT_MAX - LAT_MIN)) * VIEW_H;
+    return { x, y };
+  }
+
+  function latLonToGrid(lat, lon) {
+    const adjLon = lon + 180;
+    const adjLat = lat + 90;
+    const A = Math.floor(adjLon / 20);
+    const B = Math.floor(adjLat / 10);
+    const C = Math.floor((adjLon % 20) / 2);
+    const D = Math.floor(adjLat % 10);
+    const E = Math.floor(((adjLon - Math.floor(adjLon / 2) * 2) * 60) / 5);
+    const F = Math.floor(((adjLat - Math.floor(adjLat)) * 60) / 2.5);
+    return (
+      String.fromCharCode(65 + clamp(A, 0, 17)) +
+      String.fromCharCode(65 + clamp(B, 0, 17)) +
+      String(clamp(C, 0, 9)) +
+      String(clamp(D, 0, 9)) +
+      String.fromCharCode(97 + clamp(E, 0, 23)) +
+      String.fromCharCode(97 + clamp(F, 0, 23))
+    );
+  }
+
+  const FIRST_NAMES = [
+    "Alex", "Jordan", "Riley", "Casey", "Morgan", "Quinn", "Reese", "Skyler",
+    "Jamie", "Dakota", "Avery", "Rowan", "Sage", "River", "Phoenix", "Blair",
+    "Iris", "Niko", "Theo", "Lin", "Kai", "Sora", "Mika", "Noa"
+  ];
+  const LAST_NAMES = [
+    "Okada", "Chen", "Reyes", "Patel", "Nielsen", "Kowalski", "Bishop", "Grant",
+    "Hayes", "Vega", "Morales", "Frost", "Ellis", "Brooks", "Lane", "Wright",
+    "Aoki", "Kim", "Singh", "Costa", "Mahmoud", "Petrov", "Schmidt", "Park"
+  ];
+
+  function randomCallsign(taken) {
+    const prefixes = ["K", "W", "N", "VE", "JA", "DL", "G", "PA", "OK", "F"];
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    for (let tries = 0; tries < 50; tries++) {
+      const p = randPick(prefixes);
+      const n = randInt(0, 9);
+      const ln = randInt(2, 3);
+      let suf = "";
+      for (let i = 0; i < ln; i++) suf += letters[(rand() * 26) | 0];
+      const c = p + n + suf;
+      if (!taken.has(c)) return c;
+    }
+    return "X" + randInt(1000, 9999) + "ZZ";
+  }
+
+  // ── Simulation state ─────────────────────────────────────────────────────
+  let simMs = 0;
+  let lastSlotResolved = -1;
+  let consecutiveSilentSlots = 0;
+  let missionStartMs = 0;
+  let missionEndMs = null;
+
+  let operators = [];
+  let operatorsById = new Map();
+  let channels = []; // { occupantId, startMs, endMs, pendingAcksSnapshot }
+
+  let totalTxSlots = 0;
+  let totalTxBursts = 0;
+  let totalAcks = 0;
+  let totalDefers = 0;
+  let totalSlots = 0;
+
+  let nextSpawnAtMs = SPAWN_MIN_MS;
+  let nextId = 0;
+
+  let preset = PRESETS.qrp;
+  let presetKey = "qrp";
+
+  let maxOps = 24;
+  let speedMul = 4;
+  let rotationOn = true;
+  let running = false;
+  let rafId = 0;
+  let lastReal = 0;
+
+  let selectedOpId = null;
+
+  // ── DOM refs ────────────────────────────────────────────────────────────
+  const $ = (id) => document.getElementById(id);
+  const elMaxOps    = $("maxOps");
+  const elSpeed     = $("speed");
+  const elMode      = $("contestMode");
+  const btnRotation = $("btnRotation");
+  const btnReset    = $("btnReset");
+  const btnPause    = $("btnPause");
+  const btnStep     = $("btnStep");
+  const btnClear    = $("btnClear");
+  const elSimTime   = $("simTime");
+  const elSlot      = $("slotIdx");
+  const elActive    = $("activeOps");
+  const elTotalTx   = $("totalTx");
+  const elTotalAck  = $("totalAck");
+  const elDefers    = $("defers");
+  const elUtil      = $("util");
+  const elAvgMade   = $("avgMade");
+  const elFirst     = $("firstContact");
+  const svgMap      = $("map");
+  const gridLayer   = $("grid-layer");
+  const linesLayer  = $("contact-lines");
+  const dotsLayer   = $("dots-layer");
+  const tileGrid    = $("tileGrid");
+  const pop         = $("contactsPop");
+  const popDot      = $("popDot");
+  const popCall     = $("popCall");
+  const popGrid     = $("popGrid");
+  const popPwr      = $("popPwr");
+  const popGain     = $("popGain");
+  const popTx       = $("popTx");
+  const popRx       = $("popRx");
+  const popAck      = $("popAck");
+  const popMade     = $("popMade");
+  const popBody     = $("popBody");
+  const popClose    = $("popClose");
+  const scrim       = $("scrim");
+
+  // ── Map grid (one-time render) ──────────────────────────────────────────
+  function buildGrid() {
+    const parts = [];
+    // minor: every 2 lon, every 1 lat (square boundaries)
+    for (let lon = LON_MIN; lon <= LON_MAX; lon += 2) {
+      const x = latLonToXy(0, lon).x;
+      const major = (((lon - LON_MIN) % 20) === 0);
+      if (major) continue;
+      parts.push('<line class="grid-minor" x1="' + x.toFixed(1) + '" y1="0" x2="' + x.toFixed(1) + '" y2="' + VIEW_H + '"/>');
+    }
+    for (let lat = LAT_MIN; lat <= LAT_MAX; lat += 1) {
+      const y = latLonToXy(lat, 0).y;
+      const major = (((lat - LAT_MIN) % 10) === 0);
+      if (major) continue;
+      parts.push('<line class="grid-minor" x1="0" y1="' + y.toFixed(1) + '" x2="' + VIEW_W + '" y2="' + y.toFixed(1) + '"/>');
+    }
+    // major: every 20 lon, every 10 lat (field boundaries)
+    for (let lon = LON_MIN; lon <= LON_MAX; lon += 20) {
+      const x = latLonToXy(0, lon).x;
+      const cls = (lon === 0) ? "grid-axis" : "grid-major";
+      parts.push('<line class="' + cls + '" x1="' + x.toFixed(1) + '" y1="0" x2="' + x.toFixed(1) + '" y2="' + VIEW_H + '"/>');
+    }
+    for (let lat = LAT_MIN; lat <= LAT_MAX; lat += 10) {
+      const y = latLonToXy(lat, 0).y;
+      const cls = (lat === 0) ? "grid-axis" : "grid-major";
+      parts.push('<line class="' + cls + '" x1="0" y1="' + y.toFixed(1) + '" x2="' + VIEW_W + '" y2="' + y.toFixed(1) + '"/>');
+    }
+    // field labels (AA..RR) — only show on every other field to reduce clutter
+    for (let fi = 0; fi < 18; fi++) {
+      for (let fj = 0; fj < 18; fj++) {
+        const lon = LON_MIN + fi * 20 + 10;
+        const lat = LAT_MAX - fj * 10 - 5;
+        const { x, y } = latLonToXy(lat, lon);
+        const label = String.fromCharCode(65 + fi) + String.fromCharCode(65 + (17 - fj));
+        parts.push('<text class="field-label" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '">' + label + '</text>');
+      }
+    }
+    // outer frame
+    parts.push('<rect class="grid-frame" x="0.5" y="0.5" width="' + (VIEW_W - 1) + '" height="' + (VIEW_H - 1) + '" rx="6" ry="6"/>');
+    gridLayer.innerHTML = parts.join("");
+  }
+
+  // ── Operator factory ────────────────────────────────────────────────────
+  function makeOperator(callsignSet) {
+    const lat = (rand() * 160) - 80;
+    const lon = (rand() * 360) - 180;
+    const callsign = randomCallsign(callsignSet);
+    callsignSet.add(callsign);
+    const op = {
+      id: ++nextId,
+      callsign,
+      name: randPick(FIRST_NAMES) + " " + randPick(LAST_NAMES),
+      lat, lon,
+      gridSquare: latLonToGrid(lat, lon),
+      colorHue: randInt(0, 359),
+      pwr: randInt(preset.pwrMin, preset.pwrMax),
+      gainDb: randInt(1, 10),
+      joinedAtMs: simMs,
+      firstTxAtMs: null,
+      backoffUntilSlot: 0,
+      backoffStartSlot: 0,
+      attempts: 0,
+      isTransmitting: false,
+      isHearing: false,
+      hearingFromIds: new Set(),
+      needsSend: true,
+      txCount: 0,
+      rxCount: 0,
+      ackCount: 0,
+      contacts: new Map(),
+      pendingAcks: new Set(),
+      active: true,
+      leaving: false,
+      _enterAt: simMs
+    };
+    return op;
+  }
+
+  function activeOperators() {
+    return operators.filter((o) => o.active && !o.leaving);
+  }
+
+  function operatorById(id) { return operatorsById.get(id) || null; }
+
+  // ── Propagation ─────────────────────────────────────────────────────────
+  function txRadiusKm(pwr)     { return preset.baseRadiusKm * pwr; }
+  function gainBoostKm(gainDb) { return preset.perDbKm * gainDb; }
+  function canHear(listener, transmitter) {
+    if (listener === transmitter) return false;
+    const d = haversineKm(listener, transmitter);
+    return d <= txRadiusKm(transmitter.pwr) + gainBoostKm(listener.gainDb);
+  }
+
+  // ── Slot scheduler with per-operator carrier sense ──────────────────────
+  function applyBackoff(op, currentSlot) {
+    op.attempts = Math.min(op.attempts + 1, MAX_BACKOFF_EXP + 4);
+    const exp = Math.min(op.attempts, MAX_BACKOFF_EXP);
+    const slots = 1 + ((rand() * (1 << exp)) | 0);
+    op.backoffStartSlot = currentSlot;
+    op.backoffUntilSlot = currentSlot + slots;
+    totalDefers++;
+  }
+
+  function postTxCooldown(op, currentSlot) {
+    const slots = randInt(POST_TX_MIN_SLOTS, POST_TX_MAX_SLOTS);
+    op.attempts = 0;
+    op.backoffStartSlot = currentSlot;
+    op.backoffUntilSlot = currentSlot + slots;
+  }
+
+  function channelsBusyForListenerAt(listener, atMs) {
+    let count = 0;
+    for (const ch of channels) {
+      if (ch.startMs > atMs || ch.endMs <= atMs) continue;
+      const tx = operatorById(ch.occupantId);
+      if (!tx || !tx.active || tx === listener) continue;
+      if (canHear(listener, tx)) count++;
+    }
+    return count;
+  }
+
+  function resolveSlotBoundary(slotIndex) {
+    const slotStartMs = slotIndex * SLOT_MS;
+    totalSlots++;
+
+    const candidates = activeOperators().filter(
+      (o) => o.needsSend && o.backoffUntilSlot <= slotIndex && !o.isTransmitting
+    );
+
+    if (candidates.length === 0) {
+      consecutiveSilentSlots++;
+      if (consecutiveSilentSlots >= SILENCE_SLOTS) {
+        for (const o of activeOperators()) {
+          if (o.needsSend && o.backoffUntilSlot > slotIndex) {
+            o.backoffUntilSlot = slotIndex;
+          }
+        }
+        consecutiveSilentSlots = 0;
+      }
+      return;
+    }
+
+    consecutiveSilentSlots = 0;
+
+    const draws = candidates.map((o) => ({
+      op: o,
+      listenMs: T_MIN + rand() * (T_MAX - T_MIN)
+    }));
+    draws.sort((a, b) => a.listenMs - b.listenMs || a.op.id - b.op.id);
+
+    const newWinners = [];
+
+    for (const d of draws) {
+      const op = d.op;
+      const listenEndMs = slotStartMs + d.listenMs;
+
+      const heardActive = channels.some((ch) => {
+        if (listenEndMs < ch.startMs || listenEndMs >= ch.endMs) return false;
+        const tx = operatorById(ch.occupantId);
+        if (!tx || !tx.active || tx === op) return false;
+        return canHear(op, tx);
+      });
+
+      const heardNewWinner = newWinners.some((w) => {
+        if (listenEndMs < w.startMs || listenEndMs >= w.endMs) return false;
+        return canHear(op, w.tx);
+      });
+
+      if (heardActive || heardNewWinner) {
+        applyBackoff(op, slotIndex);
+        continue;
+      }
+
+      const winStart = Math.max(listenEndMs, simMs);
+      const winEnd = winStart + TX_MS;
+      newWinners.push({ tx: op, startMs: winStart, endMs: winEnd });
+    }
+
+    for (const w of newWinners) {
+      channels.push({
+        occupantId: w.tx.id,
+        startMs: w.startMs,
+        endMs: w.endMs,
+        pendingAcks: new Set(w.tx.pendingAcks)
+      });
+      w.tx.isTransmitting = false;
+      w.tx.attempts = 0;
+      if (w.tx.firstTxAtMs == null) w.tx.firstTxAtMs = w.startMs;
+    }
+    if (newWinners.length > 0) totalTxSlots++;
+  }
+
+  function onChannelEnd(ch) {
+    const tx = operatorById(ch.occupantId);
+    if (!tx) return;
+    totalTxBursts++;
+    tx.txCount++;
+
+    const ackedListeners = [];
+    for (const listener of activeOperators()) {
+      if (listener === tx) continue;
+      if (!canHear(listener, tx)) continue;
+      listener.rxCount++;
+
+      const wasAck = ch.pendingAcks.has(listener.id);
+      let entry = listener.contacts.get(tx.id);
+      if (!entry) {
+        entry = { status: "heard", count: 0, lastMs: 0 };
+        listener.contacts.set(tx.id, entry);
+      }
+      entry.count++;
+      entry.lastMs = simMs;
+
+      if (wasAck) {
+        if (entry.status !== "acked") {
+          entry.status = "acked";
+          listener.ackCount++;
+          totalAcks++;
+        }
+        const txEntry = tx.contacts.get(listener.id);
+        if (txEntry && txEntry.status !== "acked") {
+          txEntry.status = "acked";
+          tx.ackCount++;
+          totalAcks++;
+        }
+      }
+
+      listener.pendingAcks.add(tx.id);
+      ackedListeners.push(listener);
+    }
+
+    tx.pendingAcks.clear();
+
+    const currentSlot = Math.floor(simMs / SLOT_MS);
+    postTxCooldown(tx, currentSlot);
+    tx.needsSend = true;
+  }
+
+  // ── Channel state propagation each tick ──────────────────────────────────
+  function updateChannelStates() {
+    for (const o of operators) {
+      o.isTransmitting = false;
+      o.isHearing = false;
+      o.hearingFromIds.clear();
+    }
+    for (const ch of channels) {
+      if (simMs < ch.startMs || simMs >= ch.endMs) continue;
+      const tx = operatorById(ch.occupantId);
+      if (!tx || !tx.active) continue;
+      tx.isTransmitting = true;
+      for (const listener of activeOperators()) {
+        if (listener === tx) continue;
+        if (canHear(listener, tx)) {
+          listener.isHearing = true;
+          listener.hearingFromIds.add(tx.id);
+        }
+      }
+    }
+  }
+
+  function reapChannels() {
+    if (channels.length === 0) return;
+    const ended = [];
+    const survivors = [];
+    for (const ch of channels) {
+      if (simMs >= ch.endMs) ended.push(ch);
+      else survivors.push(ch);
+    }
+    if (ended.length) {
+      channels = survivors;
+      for (const ch of ended) onChannelEnd(ch);
+    }
+  }
+
+  // ── Rotation engine ─────────────────────────────────────────────────────
+  function maybeSpawn() {
+    if (!rotationOn) return;
+    if (simMs < nextSpawnAtMs) return;
+    const aliveCount = activeOperators().length;
+    if (aliveCount < maxOps) {
+      spawnOne();
+    }
+    nextSpawnAtMs = simMs + randInt(SPAWN_MIN_MS, SPAWN_MAX_MS);
+  }
+
+  function spawnOne() {
+    const taken = new Set(operators.map((o) => o.callsign));
+    const op = makeOperator(taken);
+    operators.push(op);
+    operatorsById.set(op.id, op);
+    addMapDot(op);
+    addTile(op);
+  }
+
+  function maybeDepart(simDt) {
+    if (!rotationOn) return;
+    const live = activeOperators();
+    if (live.length <= 2) return;
+    const pPerMs = DEPART_RATE_PER_SEC / 1000;
+    for (const op of live) {
+      if (op.contacts.size < 3) continue;
+      if (rand() < pPerMs * simDt) {
+        beginDepart(op);
+        if (activeOperators().length <= 2) break;
+      }
+    }
+  }
+
+  function beginDepart(op) {
+    op.leaving = true;
+    channels = channels.filter((ch) => ch.occupantId !== op.id);
+    const tile = tileEls.get(op.id);
+    if (tile) tile.classList.add("leaving");
+    const dot = dotEls.get(op.id);
+    if (dot && dot.group) {
+      dot.group.classList.remove("op-fade-in");
+      dot.group.classList.add("op-fade-out");
+    }
+    setTimeout(() => finishDepart(op), FADE_OUT_MS);
+  }
+
+  function finishDepart(op) {
+    op.active = false;
+    operators = operators.filter((o) => o !== op);
+    operatorsById.delete(op.id);
+    removeMapDot(op);
+    removeTile(op);
+    if (selectedOpId === op.id) clearSelection();
+  }
+
+  // ── SVG dot management ──────────────────────────────────────────────────
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const dotEls = new Map(); // id -> { group, dot, hit, ringTx, ringRx, ringSel }
+
+  function addMapDot(op) {
+    const { x, y } = latLonToXy(op.lat, op.lon);
+    const g = document.createElementNS(SVG_NS, "g");
+    g.setAttribute("data-id", String(op.id));
+    g.setAttribute("transform", "translate(" + x.toFixed(1) + "," + y.toFixed(1) + ")");
+    g.classList.add("op-fade-in");
+
+    const ringRx = document.createElementNS(SVG_NS, "circle");
+    ringRx.setAttribute("class", "op-ring-rx");
+    ringRx.setAttribute("r", "9");
+    ringRx.setAttribute("opacity", "0");
+
+    const ringTx = document.createElementNS(SVG_NS, "circle");
+    ringTx.setAttribute("class", "op-ring-tx");
+    ringTx.setAttribute("r", "12");
+    ringTx.setAttribute("opacity", "0");
+    ringTx.setAttribute("filter", "url(#glow)");
+
+    const ringSel = document.createElementNS(SVG_NS, "circle");
+    ringSel.setAttribute("class", "op-ring-sel");
+    ringSel.setAttribute("r", "14");
+    ringSel.setAttribute("opacity", "0");
+    ringSel.setAttribute("filter", "url(#glow)");
+
+    const dot = document.createElementNS(SVG_NS, "circle");
+    dot.setAttribute("class", "op-dot");
+    dot.setAttribute("r", "5.5");
+    dot.setAttribute("fill", "hsl(" + op.colorHue + ", 78%, 60%)");
+    dot.setAttribute("stroke", "rgba(255,255,255,0.45)");
+    dot.setAttribute("stroke-width", "1");
+    dot.setAttribute("filter", "url(#glow)");
+
+    const hit = document.createElementNS(SVG_NS, "circle");
+    hit.setAttribute("class", "op-hit");
+    hit.setAttribute("r", "14");
+    hit.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleSelect(op.id);
+    });
+
+    g.appendChild(ringRx);
+    g.appendChild(ringTx);
+    g.appendChild(ringSel);
+    g.appendChild(dot);
+    g.appendChild(hit);
+    dotsLayer.appendChild(g);
+
+    dotEls.set(op.id, { group: g, dot, hit, ringTx, ringRx, ringSel });
+  }
+
+  function removeMapDot(op) {
+    const entry = dotEls.get(op.id);
+    if (!entry) return;
+    if (entry.group.parentNode) entry.group.parentNode.removeChild(entry.group);
+    dotEls.delete(op.id);
+  }
+
+  function updateMapDots() {
+    for (const op of operators) {
+      const e = dotEls.get(op.id);
+      if (!e) continue;
+      e.ringTx.setAttribute("opacity", op.isTransmitting ? "1" : "0");
+      e.ringRx.setAttribute("opacity", op.isHearing && !op.isTransmitting ? "1" : "0");
+      const sel = (op.id === selectedOpId);
+      e.ringSel.setAttribute("opacity", sel ? "1" : "0");
+      if (sel) {
+        // bring to front
+        if (e.group.parentNode && e.group.parentNode.lastChild !== e.group) {
+          e.group.parentNode.appendChild(e.group);
+        }
+      }
+    }
+  }
+
+  // ── Tile management ─────────────────────────────────────────────────────
+  const tileEls = new Map(); // id -> { tile, refs }
+
+  function addTile(op) {
+    const tile = document.createElement("article");
+    tile.className = "op-tile entering";
+    tile.dataset.id = String(op.id);
+    tile.style.setProperty("--op-color", "hsl(" + op.colorHue + ", 78%, 60%)");
+    tile.style.setProperty("--tile-tint", "hsla(" + op.colorHue + ", 70%, 55%, 0.13)");
+
+    tile.innerHTML =
+      '<div class="top">' +
+        '<span class="dot" style="background:hsl(' + op.colorHue + ',78%,60%)"></span>' +
+        '<span class="call"></span>' +
+        '<span class="grid mono"></span>' +
+        '<span class="badge pwr"></span>' +
+        '<span class="badge gain"></span>' +
+      '</div>' +
+      '<div class="bo-row">' +
+        '<span class="bo-label">Backoff</span>' +
+        '<div class="bar"><div class="fill"></div></div>' +
+        '<span class="bo-pct mono">—</span>' +
+      '</div>' +
+      '<div class="ntx-row"><span class="lbl">Next TX</span><span class="countdown mono">—</span></div>' +
+      '<div class="metrics">' +
+        '<div class="m"><span class="lbl">TX</span><span class="val m-tx">0</span></div>' +
+        '<div class="m"><span class="lbl">RX</span><span class="val m-rx">0</span></div>' +
+        '<div class="m"><span class="lbl">ACK</span><span class="val m-ack">0</span></div>' +
+        '<div class="m"><span class="lbl">Made</span><span class="val m-made">0</span></div>' +
+      '</div>' +
+      '<div class="time-row"><span class="since-label">Time</span><span class="since mono">—</span></div>';
+
+    const refs = {
+      call: tile.querySelector(".call"),
+      grid: tile.querySelector(".grid"),
+      pwr: tile.querySelector(".badge.pwr"),
+      gain: tile.querySelector(".badge.gain"),
+      fill: tile.querySelector(".bar .fill"),
+      boPct: tile.querySelector(".bo-pct"),
+      countdown: tile.querySelector(".countdown"),
+      mTx: tile.querySelector(".m-tx"),
+      mRx: tile.querySelector(".m-rx"),
+      mAck: tile.querySelector(".m-ack"),
+      mMade: tile.querySelector(".m-made"),
+      since: tile.querySelector(".since")
+    };
+    refs.call.textContent = op.callsign;
+    refs.grid.textContent = op.gridSquare;
+    refs.pwr.textContent = "PWR " + op.pwr;
+    refs.gain.textContent = "+" + op.gainDb + " dB";
+
+    tile.addEventListener("click", () => toggleSelect(op.id));
+
+    tileGrid.appendChild(tile);
+    tileEls.set(op.id, { tile, refs });
+
+    requestAnimationFrame(() => {
+      tile.classList.remove("entering");
+      tile.classList.add("entered");
+    });
+  }
+
+  function removeTile(op) {
+    const entry = tileEls.get(op.id);
+    if (!entry) return;
+    if (entry.tile.parentNode) entry.tile.parentNode.removeChild(entry.tile);
+    tileEls.delete(op.id);
+  }
+
+  function backoffFraction(op, currentSlot) {
+    if (op.backoffUntilSlot <= currentSlot) return 1;
+    const total = Math.max(1, op.backoffUntilSlot - op.backoffStartSlot);
+    const elapsed = currentSlot - op.backoffStartSlot;
+    return clamp(elapsed / total, 0, 1);
+  }
+
+  function nextTxCountdownMs(op, currentSlot) {
+    const slotMs = Math.max(op.backoffUntilSlot, currentSlot + 1) * SLOT_MS;
+    return Math.max(0, slotMs - simMs);
+  }
+
+  function updateTiles() {
+    const currentSlot = Math.floor(simMs / SLOT_MS);
+    for (const op of operators) {
+      const entry = tileEls.get(op.id);
+      if (!entry) continue;
+      const { tile, refs } = entry;
+      tile.classList.toggle("tx", op.isTransmitting);
+      tile.classList.toggle("rx", op.isHearing && !op.isTransmitting);
+      tile.classList.toggle("selected", op.id === selectedOpId);
+
+      const frac = backoffFraction(op, currentSlot);
+      refs.fill.style.width = (frac * 100).toFixed(0) + "%";
+      if (op.isTransmitting) {
+        refs.boPct.textContent = "TX";
+      } else if (op.backoffUntilSlot <= currentSlot) {
+        refs.boPct.textContent = "ready";
+      } else {
+        refs.boPct.textContent = (frac * 100).toFixed(0) + "%";
+      }
+
+      if (op.isTransmitting) {
+        refs.countdown.textContent = "On air";
+        refs.countdown.className = "countdown mono tx-on";
+      } else if (!op.needsSend) {
+        refs.countdown.textContent = "Idle";
+        refs.countdown.className = "countdown mono idle";
+      } else {
+        refs.countdown.textContent = fmtCountdown(nextTxCountdownMs(op, currentSlot));
+        refs.countdown.className = "countdown mono";
+      }
+
+      refs.mTx.textContent = String(op.txCount);
+      refs.mRx.textContent = String(op.rxCount);
+      refs.mAck.textContent = String(op.ackCount);
+      refs.mMade.textContent = String(op.contacts.size);
+
+      if (op.firstTxAtMs != null) {
+        refs.since.textContent = fmtTime(simMs - op.firstTxAtMs);
+      } else {
+        refs.since.textContent = "—";
+      }
+    }
+  }
+
+  // ── Selection + contacts overlay ────────────────────────────────────────
+  function toggleSelect(id) {
+    if (selectedOpId === id) clearSelection();
+    else selectOp(id);
+  }
+
+  function selectOp(id) {
+    selectedOpId = id;
+    const op = operatorById(id);
+    if (!op) return;
+    openPopup(op);
+    const tile = tileEls.get(id);
+    if (tile && tile.tile && typeof tile.tile.scrollIntoView === "function") {
+      tile.tile.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }
+
+  function clearSelection() {
+    selectedOpId = null;
+    closePopup();
+  }
+
+  function openPopup(op) {
+    pop.classList.add("open");
+    pop.setAttribute("aria-hidden", "false");
+    scrim.classList.add("show");
+    popDot.style.setProperty("--op-color", "hsl(" + op.colorHue + ",78%,60%)");
+    popDot.style.background = "hsl(" + op.colorHue + ",78%,60%)";
+    popCall.textContent = op.callsign;
+    popGrid.textContent = op.gridSquare + " · " + op.name;
+    populatePopupBody(op);
+  }
+
+  function closePopup() {
+    pop.classList.remove("open");
+    pop.setAttribute("aria-hidden", "true");
+    scrim.classList.remove("show");
+  }
+
+  function populatePopupBody(op) {
+    popPwr.textContent = String(op.pwr);
+    popGain.textContent = "+" + op.gainDb + " dB";
+    popTx.textContent = String(op.txCount);
+    popRx.textContent = String(op.rxCount);
+    popAck.textContent = String(op.ackCount);
+    popMade.textContent = String(op.contacts.size);
+
+    if (op.contacts.size === 0) {
+      popBody.innerHTML = '<div class="empty">No contacts decoded yet.</div>';
+      return;
+    }
+    const rows = [];
+    const entries = Array.from(op.contacts.entries()).sort((a, b) => b[1].lastMs - a[1].lastMs);
+    for (const [peerId, info] of entries) {
+      const peer = operatorById(peerId);
+      const call = peer ? peer.callsign : "(gone)";
+      const grid = peer ? peer.gridSquare : "—";
+      const hue = peer ? peer.colorHue : 200;
+      const ago = Math.max(0, ((simMs - info.lastMs) / 1000) | 0);
+      const pill = info.status === "acked" ? '<span class="pill acked">ACKed</span>' : '<span class="pill heard">Heard</span>';
+      rows.push(
+        '<div class="row">' +
+          '<span class="dot" style="background:hsl(' + hue + ',78%,60%)"></span>' +
+          '<div class="who"><div class="call">' + escapeHtml(call) + '</div><div class="grid mono">' + escapeHtml(grid) + '</div></div>' +
+          '<div class="meta">' + pill + '<div>' + info.count + ' rx · ' + ago + 's ago</div></div>' +
+        '</div>'
+      );
+    }
+    popBody.innerHTML = rows.join("");
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+    }[c]));
+  }
+
+  function updateContactLines() {
+    linesLayer.innerHTML = "";
+    if (selectedOpId == null) return;
+    const op = operatorById(selectedOpId);
+    if (!op) return;
+    const a = latLonToXy(op.lat, op.lon);
+    const parts = [];
+    for (const [peerId, info] of op.contacts) {
+      const peer = operatorById(peerId);
+      if (!peer) continue;
+      const b = latLonToXy(peer.lat, peer.lon);
+      if (info.status === "acked") {
+        parts.push(
+          '<line class="contact-acked" x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
+          '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) + '" filter="url(#glow)"/>'
+        );
+      } else {
+        parts.push(
+          '<line class="contact-heard" x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
+          '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) + '"/>'
+        );
+      }
+    }
+    linesLayer.innerHTML = parts.join("");
+  }
+
+  function updatePopupIfOpen() {
+    if (selectedOpId == null) return;
+    const op = operatorById(selectedOpId);
+    if (!op) { clearSelection(); return; }
+    populatePopupBody(op);
+  }
+
+  // ── Stats ───────────────────────────────────────────────────────────────
+  function updateStats() {
+    elSimTime.textContent = (simMs / 1000).toFixed(1) + " s";
+    elSlot.textContent = String(Math.floor(simMs / SLOT_MS));
+    const live = activeOperators();
+    elActive.textContent = String(live.length);
+    elTotalTx.textContent = String(totalTxBursts);
+    elTotalAck.textContent = String(totalAcks);
+    elDefers.textContent = String(totalDefers);
+    const util = totalSlots > 0 ? (totalTxSlots / totalSlots) : 0;
+    elUtil.textContent = (util * 100).toFixed(0) + "%";
+    if (live.length === 0) {
+      elAvgMade.textContent = "0.0";
+      elFirst.textContent = "0%";
+    } else {
+      let madeSum = 0;
+      let withContact = 0;
+      for (const o of live) {
+        madeSum += o.contacts.size;
+        if (o.contacts.size >= 1) withContact++;
+      }
+      elAvgMade.textContent = (madeSum / live.length).toFixed(1);
+      elFirst.textContent = ((withContact / live.length) * 100).toFixed(0) + "%";
+    }
+  }
+
+  // ── Tick loop ───────────────────────────────────────────────────────────
+  function tick(dtMs) {
+    simMs += dtMs;
+
+    reapChannels();
+    maybeSpawn();
+    maybeDepart(dtMs);
+
+    while (true) {
+      if (operators.length === 0) break;
+      const s = lastSlotResolved + 1;
+      const boundary = s * SLOT_MS;
+      if (boundary > simMs) break;
+      resolveSlotBoundary(s);
+      lastSlotResolved = s;
+    }
+
+    updateChannelStates();
+    updateMapDots();
+    updateTiles();
+    updateContactLines();
+    updatePopupIfOpen();
+    updateStats();
+  }
+
+  function loop(now) {
+    if (!running) return;
+    if (!lastReal) lastReal = now;
+    const realDt = now - lastReal;
+    lastReal = now;
+    const simDt = Math.min(realDt * speedMul, 500);
+    tick(simDt);
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function startLoop() {
+    cancelAnimationFrame(rafId);
+    lastReal = 0;
+    if (running) rafId = requestAnimationFrame(loop);
+  }
+
+  // ── Lifecycle ───────────────────────────────────────────────────────────
+  function applyPresetFromUi() {
+    presetKey = elMode.value === "regular" ? "regular" : "qrp";
+    preset = PRESETS[presetKey];
+    for (const o of operators) {
+      o.pwr = randInt(preset.pwrMin, preset.pwrMax);
+    }
+    channels = [];
+  }
+
+  function reset() {
+    cancelAnimationFrame(rafId);
+    running = false;
+    maxOps = clamp(parseInt(elMaxOps.value, 10) || 24, 2, 100);
+    elMaxOps.value = String(maxOps);
+    speedMul = clamp(parseFloat(elSpeed.value) || 4, 0.25, 20);
+    elSpeed.value = String(speedMul);
+    presetKey = elMode.value === "regular" ? "regular" : "qrp";
+    preset = PRESETS[presetKey];
+
+    operators = [];
+    operatorsById = new Map();
+    channels = [];
+    dotEls.clear();
+    tileEls.clear();
+    dotsLayer.innerHTML = "";
+    linesLayer.innerHTML = "";
+    tileGrid.innerHTML = "";
+
+    simMs = 0;
+    lastSlotResolved = -1;
+    consecutiveSilentSlots = 0;
+    missionStartMs = 0;
+    missionEndMs = null;
+    nextSpawnAtMs = randInt(SPAWN_MIN_MS, SPAWN_MAX_MS);
+    nextId = 0;
+    totalTxSlots = 0;
+    totalTxBursts = 0;
+    totalAcks = 0;
+    totalDefers = 0;
+    totalSlots = 0;
+
+    selectedOpId = null;
+    closePopup();
+
+    const initial = clamp(Math.min(6, maxOps), 2, maxOps);
+    const taken = new Set();
+    for (let i = 0; i < initial; i++) {
+      const op = makeOperator(taken);
+      operators.push(op);
+      operatorsById.set(op.id, op);
+      addMapDot(op);
+      addTile(op);
+    }
+
+    btnPause.textContent = "Pause";
+    running = true;
+    updateStats();
+    startLoop();
+  }
+
+  function pauseToggle() {
+    running = !running;
+    btnPause.textContent = running ? "Pause" : "Resume";
+    lastReal = 0;
+    if (running) startLoop();
+    else cancelAnimationFrame(rafId);
+  }
+
+  function stepOnce() {
+    if (running) return;
+    tick(100);
+  }
+
+  function setRotation(on) {
+    rotationOn = !!on;
+    btnRotation.textContent = "Rotation: " + (rotationOn ? "on" : "off");
+    btnRotation.classList.toggle("on", rotationOn);
+  }
+
+  // ── Event wiring ────────────────────────────────────────────────────────
+  btnReset.addEventListener("click", reset);
+  btnPause.addEventListener("click", pauseToggle);
+  btnStep.addEventListener("click", stepOnce);
+  btnClear.addEventListener("click", clearSelection);
+  btnRotation.addEventListener("click", () => setRotation(!rotationOn));
+  popClose.addEventListener("click", clearSelection);
+  scrim.addEventListener("click", clearSelection);
+  elMode.addEventListener("change", applyPresetFromUi);
+  elSpeed.addEventListener("change", () => {
+    speedMul = clamp(parseFloat(elSpeed.value) || 4, 0.25, 20);
+    elSpeed.value = String(speedMul);
+  });
+  elMaxOps.addEventListener("change", () => {
+    maxOps = clamp(parseInt(elMaxOps.value, 10) || 24, 2, 100);
+    elMaxOps.value = String(maxOps);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && selectedOpId != null) {
+      e.preventDefault();
+      clearSelection();
+    }
+  });
+  svgMap.addEventListener("click", (e) => {
+    if (e.target === svgMap || e.target.tagName === "g") {
+      // background click — no-op for now
+    }
+  });
+
+  // ── Boot ────────────────────────────────────────────────────────────────
+  buildGrid();
+  reset();
+})();
+  </script>
+</body>
+</html>

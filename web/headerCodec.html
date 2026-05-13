@@ -21,16 +21,16 @@
                 <li><span class="highlight-callsign">Callsign</span> - 48 bits [8 chars × 6 bits alphanumbit]</li>
                 <li><span class="highlight-timestamp">Timestamp</span> - 31 bits [Year/Month(10) + Day(5) + Hour(5) +
                     Minute(6) + Second(5)]</li>
+                <li><span class="highlight-emergency">Emergency</span> - 1 bit (boolean flag; with callsign + timestamp = 80-bit Message ID)</li>
                 <li><span class="highlight-gridsquare">Gridsquare</span> - 28 bits [Letters(5+5) + Numbers(4+4) +
                     Letters(5+5)]</li>
-                <li><span class="highlight-emergency">Emergency</span> - 1 bit (boolean flag)</li>
                 <li><span class="highlight-meta">NTP</span> - 1 bit (boolean flag)</li>
                 <li><span class="highlight-meta">GPS</span> - 1 bit (boolean flag)</li>
                 <li><span class="highlight-meta">Name Length</span> - 8 bits [FirstName 4 bits + LastName 4 bits]</li>
                 <li><span class="highlight-meta">Message Length</span> - 8 bits (0-240 bytes)</li>
                 <li><span class="highlight-meta">Message Type</span> - 2 bits (0-3)</li>
-                <li><span class="highlight-name">FirstName</span> - Variable (0-75 bits, 5 bits per char, max 15)</li>
-                <li><span class="highlight-name">LastName</span> - Variable (0-75 bits, 5 bits per char, max 15)</li>
+                <li><span class="highlight-name">FirstName</span> - Variable (0-75 bits): <strong>5 bits per character</strong> (alphabit: space, A-Z, @ . : / -); letters case-insensitive on wire; decoder uses title case</li>
+                <li><span class="highlight-name">LastName</span> - Variable (0-75 bits): same alphabit as FirstName</li>
                 <li><span class="highlight-message">Message</span> - Variable (0-1920 bits, UTF-8 encoded)</li>
                 <li><span class="highlight-ack">ACK</span> - Variable (acknowledgement array)</li>
             </ul>
@@ -196,7 +196,7 @@
             <div class="field-group">
                 <h3><span class="highlight-name">Name</span></h3>
                 <div class="input-row">
-                    <label for="firstname">First Name (up to 15 letters)</label>
+                    <label for="firstname">First name (max 15 chars, 5-bit alphabit)</label>
                     <input type="text" id="firstname" name="firstname" onkeyup="firstNameChange()" maxlength="15"
                         placeholder="Alex">
                 </div>
@@ -206,7 +206,7 @@
                 </div>
 
                 <div class="input-row">
-                    <label for="lastname">Last Name (up to 15 letters)</label>
+                    <label for="lastname">Last name (max 15 chars, 5-bit alphabit)</label>
                     <input type="text" id="lastname" name="lastname" onkeyup="lastNameChange()" maxlength="15"
                         placeholder="Okita">
                 </div>
@@ -654,7 +654,7 @@
             ";": 0b111101, ",": 0b111110, ".": 0b111111, " ": 0b111111
         };
 
-        // alphabit lookup table (5 bits for letters)
+        // alphabit: 5 bits per character (32 symbols: space, A-Z, @ . : / -) — same as headerBitTypes.js / WASM
         const alphabit = {
             " ": 0b00000, "A": 0b00001, "B": 0b00010, "C": 0b00011,
             "D": 0b00100, "E": 0b00101, "F": 0b00110, "G": 0b00111,
@@ -1016,8 +1016,8 @@
 
             document.getElementById("decoded-header-callsign-bits").innerHTML = `${callsignFragment}`;
             document.getElementById("decoded-header-timestamp-bits").innerHTML = `${timestampFragment}`;
-            document.getElementById("decoded-header-gridsquare-bits").innerHTML = `${gridsquareFragment}`;
             document.getElementById("decoded-header-emergency-bit").innerHTML = `${emergencyFragment}`;
+            document.getElementById("decoded-header-gridsquare-bits").innerHTML = `${gridsquareFragment}`;
             document.getElementById("decoded-header-ntp-bit").innerHTML = `${ntpFragment}`;
             document.getElementById("decoded-header-gps-bit").innerHTML = `${gpsFragment}`;
             document.getElementById("decoded-header-name-length-bits").innerHTML = `${nameLengthFragment}`;
