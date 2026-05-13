@@ -1029,8 +1029,8 @@
   function beginDepart(op) {
     op.leaving = true;
     channels = channels.filter((ch) => ch.occupantId !== op.id);
-    const tile = tileEls.get(op.id);
-    if (tile) tile.classList.add("leaving");
+    const tileEntry = tileEls.get(op.id);
+    if (tileEntry && tileEntry.tile) tileEntry.tile.classList.add("leaving");
     const dot = dotEls.get(op.id);
     if (dot && dot.group) {
       dot.group.classList.remove("op-fade-in");
