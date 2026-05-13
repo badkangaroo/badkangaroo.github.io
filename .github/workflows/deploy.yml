@@ -12,7 +12,7 @@ on:
 permissions:
   contents: read
   pages: write
-  id-token: token
+  id-token: write
 
 concurrency:
   group: pages
@@ -21,14 +21,21 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: github-pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: web
 
-  # Deployment is handled by GitHub when the artifact is uploaded to the github-pages environment.
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
