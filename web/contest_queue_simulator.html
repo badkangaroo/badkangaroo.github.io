@@ -786,8 +786,8 @@
       needsSend: true,
       txCount: 0,
       rxCount: 0,
-      ackCount: 0,
       contacts: new Map(),
+      ackedPeerIds: new Set(),
       pendingAcks: new Set(),
       active: true,
       leaving: false,
@@ -934,15 +934,15 @@
       if (wasAck) {
         if (entry.status !== "acked") {
           entry.status = "acked";
-          listener.ackCount++;
           totalAcks++;
         }
+        listener.ackedPeerIds.add(tx.id);
         const txEntry = tx.contacts.get(listener.id);
         if (txEntry && txEntry.status !== "acked") {
           txEntry.status = "acked";
-          tx.ackCount++;
           totalAcks++;
         }
+        tx.ackedPeerIds.add(listener.id);
       }
 
       listener.pendingAcks.add(tx.id);
@@ -1240,7 +1240,7 @@
 
       refs.mTx.textContent = String(op.txCount);
       refs.mRx.textContent = String(op.rxCount);
-      refs.mAck.textContent = String(op.ackCount);
+      refs.mAck.textContent = String(op.ackedPeerIds.size);
       refs.mMade.textContent = String(op.contacts.size);
 
       if (op.firstTxAtMs != null) {
@@ -1295,7 +1295,7 @@
     popGain.textContent = "+" + op.gainDb + " dB";
     popTx.textContent = String(op.txCount);
     popRx.textContent = String(op.rxCount);
-    popAck.textContent = String(op.ackCount);
+    popAck.textContent = String(op.ackedPeerIds.size);
     popMade.textContent = String(op.contacts.size);
 
     if (op.contacts.size === 0) {
