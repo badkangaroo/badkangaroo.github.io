@@ -498,6 +498,8 @@ The simulation tracks progress toward the mission goal: **every operator has bee
 
 ## Related Documentation
 
+- **[Queue.md](Queue.md)** — How the transmission queue works; operator states and `web/queue.html` UI reference
+- **[contest_queue_timing_audit.md](contest_queue_timing_audit.md)** — Simulator timing audit (composite burst, listen window, backoff, fairness bound)
 - **[codec.md](codec.md)** — Message format, timestamp encoding, Message ID structure, ACK layout
 - **[contest_queue_algorithm.md](contest_queue_algorithm.md)** — Full technical specification with pseudocode and open questions
 - **[ribbit_wasm.md](ribbit_wasm.md)** — WASM API for encoding/decoding contest messages

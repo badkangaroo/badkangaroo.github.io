@@ -46,9 +46,13 @@
                   radial-gradient(900px 600px at -10% 110%, rgba(244, 114, 182, 0.06), transparent 60%),
                   var(--bg);
       color: var(--text);
+      height: 100%;
       min-height: 100vh;
       line-height: 1.45;
       -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
     code, .mono { font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, monospace; }
 
@@ -57,6 +61,7 @@
       border-bottom: 1px solid var(--border);
       background: linear-gradient(180deg, var(--panel) 0%, var(--bg-elev) 100%);
       position: sticky; top: 0; z-index: 5;
+      flex-shrink: 0;
     }
     header.app h1 {
       margin: 0 0 0.2rem;
@@ -125,6 +130,114 @@
     }
     button:disabled { opacity: 0.45; cursor: not-allowed; }
 
+    .app-split {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .timing-panel {
+      width: 17.5rem;
+      flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      background: var(--bg-elev);
+      padding: 1rem 1rem 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.35rem;
+    }
+    .timing-panel h2 {
+      margin: 0 0 0.85rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+    }
+    .panel-section {
+      padding-bottom: 1.35rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-section:last-child {
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    .panel-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .panel-fields .field input[type="number"] {
+      width: 100%;
+    }
+    .panel-fields .field select {
+      width: 100%;
+      min-width: 0;
+    }
+    .panel-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .panel-actions button {
+      width: 100%;
+      text-align: center;
+    }
+    .slider-area {
+      display: flex;
+      flex-direction: column;
+      gap: 1.35rem;
+    }
+    .slider-row label {
+      display: block;
+      margin-bottom: 0.45rem;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .slider-control {
+      display: grid;
+      grid-template-columns: 3.25rem minmax(0, 1fr) 2.75rem 1.75rem 1.75rem;
+      gap: 0.35rem;
+      align-items: center;
+    }
+    .slider-control input[type="number"] {
+      width: 100%;
+      padding: 0.35rem 0.4rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.82rem;
+    }
+    .slider-control input[type="range"] {
+      width: 100%;
+      margin: 0;
+      accent-color: var(--neon-cyan);
+    }
+    .slider-control .slider-val {
+      font: 600 0.8rem ui-monospace, monospace;
+      color: var(--neon-cyan);
+      text-align: right;
+      white-space: nowrap;
+    }
+    .slider-control .step-btn {
+      padding: 0.28rem 0;
+      min-width: 0;
+      font-size: 1rem;
+      line-height: 1;
+      font-weight: 600;
+    }
+    .main-pane {
+      flex: 1;
+      min-width: 0;
+      overflow-y: auto;
+    }
+
     .stats {
       display: flex; flex-wrap: wrap;
       gap: 0.6rem 1.6rem;
@@ -186,6 +299,11 @@
     }
     .swatch.tx { background: var(--tx-red); border-color: var(--tx-red); box-shadow: 0 0 8px var(--tx-red-soft); }
     .swatch.rx { background: var(--rx-green); border-color: var(--rx-green); }
+    .swatch.rx-flow {
+      background: linear-gradient(90deg, transparent 0%, transparent 35%, var(--rx-green) 50%, transparent 65%, transparent 100%);
+      border-color: var(--rx-green);
+      border-radius: 2px;
+    }
     .swatch.heard { background: transparent; border: 1px dashed var(--line-heard); }
     .swatch.acked { background: var(--line-acked); }
 
@@ -424,6 +542,15 @@
       opacity: 0.95;
       pointer-events: none;
     }
+    svg .rx-signal-line {
+      stroke: var(--rx-green);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-dasharray: 10 8;
+      opacity: 0.9;
+      pointer-events: none;
+      filter: url(#glow);
+    }
     svg .op-fade-in  { animation: opIn 0.4s ease-out both; }
     svg .op-fade-out { animation: opOut 0.3s ease-in both; }
     @keyframes opIn  { from { opacity: 0; r: 1; } to { opacity: 1; } }
@@ -441,29 +568,78 @@
     </p>
   </header>
 
-  <div class="toolbar">
-    <div class="field">
-      <label for="maxOps">Operators (max)</label>
-      <input id="maxOps" type="number" min="2" max="100" value="24" />
-    </div>
-    <div class="field">
-      <label for="speed">Speed (×)</label>
-      <input id="speed" type="number" min="0.25" max="20" step="0.25" value="4" />
-    </div>
-    <div class="field">
-      <label for="contestMode">Contest mode</label>
-      <select id="contestMode">
-        <option value="qrp" selected>QRP (1–10 W)</option>
-        <option value="regular">Regular (≤1500 W)</option>
-      </select>
-    </div>
-    <button type="button" id="btnRotation" class="toggle on" title="Toggle dynamic operator rotation">Rotation: on</button>
-    <button type="button" id="btnReset" class="primary">Reset &amp; run</button>
-    <button type="button" id="btnPause">Pause</button>
-    <button type="button" id="btnStep" title="Advance one tick while paused">Step</button>
-    <button type="button" id="btnClear">Clear selection</button>
-  </div>
+  <div class="app-split">
+    <aside class="timing-panel" aria-label="Simulator controls">
+      <section class="panel-section">
+        <h2>Timing</h2>
+        <div class="slider-area">
+          <div class="slider-row">
+            <label for="txTimeInput">TX time (s)</label>
+            <div class="slider-control">
+              <input id="txTimeInput" type="number" min="2" max="5" step="0.1" value="3" aria-label="TX time seconds" />
+              <input id="txTimeSlider" type="range" min="2" max="5" step="0.1" value="3" aria-label="TX time slider" />
+              <span class="slider-val" id="txTimeVal">3.0</span>
+              <button type="button" class="step-btn" id="txTimeInc" title="Increase TX time">+</button>
+              <button type="button" class="step-btn" id="txTimeDec" title="Decrease TX time">−</button>
+            </div>
+          </div>
+          <div class="slider-row">
+            <label for="timingWindowInput">Timing window (s)</label>
+            <div class="slider-control">
+              <input id="timingWindowInput" type="number" min="1" max="4" step="0.05" value="2" aria-label="Timing window seconds" />
+              <input id="timingWindowSlider" type="range" min="1" max="4" step="0.05" value="2" aria-label="Timing window slider" />
+              <span class="slider-val" id="timingWindowVal">2.0</span>
+              <button type="button" class="step-btn" id="timingWindowInc" title="Increase timing window">+</button>
+              <button type="button" class="step-btn" id="timingWindowDec" title="Decrease timing window">−</button>
+            </div>
+          </div>
+          <div class="slider-row">
+            <label for="txFramesInput">TX frames</label>
+            <div class="slider-control">
+              <input id="txFramesInput" type="number" min="10" max="30" step="1" value="20" aria-label="TX frames" />
+              <input id="txFramesSlider" type="range" min="10" max="30" step="1" value="20" aria-label="TX frames slider" />
+              <span class="slider-val" id="txFramesVal">20</span>
+              <button type="button" class="step-btn" id="txFramesInc" title="Increase TX frames">+</button>
+              <button type="button" class="step-btn" id="txFramesDec" title="Decrease TX frames">−</button>
+            </div>
+          </div>
+        </div>
+      </section>
 
+      <section class="panel-section">
+        <h2>Simulation</h2>
+        <div class="panel-fields">
+          <div class="field">
+            <label for="maxOps">Operators (max)</label>
+            <input id="maxOps" type="number" min="2" max="100" value="24" />
+          </div>
+          <div class="field">
+            <label for="speed">Speed (×)</label>
+            <input id="speed" type="number" min="0.25" max="20" step="0.25" value="4" />
+          </div>
+          <div class="field">
+            <label for="contestMode">Contest mode</label>
+            <select id="contestMode">
+              <option value="qrp" selected>QRP (1–10 W)</option>
+              <option value="regular">Regular (≤1500 W)</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel-section">
+        <h2>Controls</h2>
+        <div class="panel-actions">
+          <button type="button" id="btnRotation" class="toggle on" title="Toggle dynamic operator rotation">Rotation: on</button>
+          <button type="button" id="btnReset" class="primary">Reset &amp; run</button>
+          <button type="button" id="btnPause">Pause</button>
+          <button type="button" id="btnStep" title="Advance one tick while paused">Step</button>
+          <button type="button" id="btnClear">Clear selection</button>
+        </div>
+      </section>
+    </aside>
+
+    <div class="main-pane">
   <div class="stats">
     <div class="stat"><span class="lbl">Sim</span><span class="val mono" id="simTime">0.0 s</span></div>
     <div class="stat"><span class="lbl">Slot</span><span class="val mono" id="slotIdx">0</span></div>
@@ -500,6 +676,7 @@
           </filter>
         </defs>
         <g id="grid-layer"></g>
+        <g id="rx-lines" aria-label="Live receive signal paths"></g>
         <g id="contact-lines"></g>
         <g id="dots-layer"></g>
       </svg>
@@ -509,12 +686,15 @@
   <div class="legend">
     <span class="lg"><span class="swatch tx"></span> Transmitting</span>
     <span class="lg"><span class="swatch rx"></span> Hearing</span>
+    <span class="lg"><span class="swatch rx-flow"></span> Live RX path</span>
     <span class="lg"><span class="swatch heard"></span> Contact heard</span>
     <span class="lg"><span class="swatch acked"></span> Contact ACKed</span>
     <span class="lg" style="margin-left:auto;color:var(--muted);">Click a dot or tile to inspect</span>
   </div>
 
   <div class="tile-grid" id="tileGrid"></div>
+    </div>
+  </div>
 
   <div class="scrim" id="scrim"></div>
   <aside class="contacts-pop" id="contactsPop" aria-hidden="true">
@@ -541,15 +721,33 @@
 (function () {
   "use strict";
 
-  // ── Constants ────────────────────────────────────────────────────────────
-  const SLOT_MS = 2000;
-  const TX_MS = 2400;
-  const T_MIN = 50;
-  const T_MAX = 400;
-  const MAX_BACKOFF_EXP = 4;
-  const SILENCE_SLOTS = 3;
-  const POST_TX_MIN_SLOTS = 2;
-  const POST_TX_MAX_SLOTS = 5;
+  // ── Timing (mutable; seconds → ms in sim) ───────────────────────────────
+  // ── Layer 1 (PHY): composite on-air burst — authoritative TX unit ──
+  const COMPOSITE_BURST_SEC = 2.35;   // 0.2 VOX + 0.1 silence + 2.048 waveform
+  const TX_TIME_MIN = 2.0;            // range includes the burst (R3.2)
+  const TX_TIME_MAX = 5.0;
+  const TIMING_STEP = 0.05;           // finer step so 2.35 is representable (was 0.1)
+  let   txTimeSec   = COMPOSITE_BURST_SEC;   // default = burst (R3.1)
+
+  // ── Layer 2 (MAC): GPS slot + carrier-sense listen window ──
+  const SLOT_SEC = 2.0;               // fixed GPS grid (R3.3); slot may be < burst
+  let   slotSec  = SLOT_SEC;
+  const LISTEN_MIN_MS = 50;           // carrier-sense listen window (R3.4)
+  const LISTEN_MAX_MS = 400;
+  const SILENCE_SLOTS = 3;            // unchanged, already correct (R3.6)
+
+  // ── Backoff (binary exponential) ──
+  const MAX_BACKOFF_EXP = 4;          // max window 2^4 = 16 slots (R3.5)
+  const AGING_PROMOTE_ATTEMPTS = 3;   // attempts > 3 ⇒ HIGH priority (R4.2)
+
+  // ── UI slider state (slot/frame controls; refined in later tasks) ──
+  const TX_FRAMES_MIN = 10;
+  const TX_FRAMES_MAX = 30;
+  let timingWindowSec = SLOT_SEC;
+  let txFrames = 20;
+
+  let slotMs = slotSec * 1000;        // 2000
+  let txMs   = txTimeSec * 1000;      // 2350
   const SPAWN_MIN_MS = 5000;
   const SPAWN_MAX_MS = 15000;
   const DEPART_RATE_PER_SEC = 0.02 / 60;
@@ -664,6 +862,12 @@
   let totalAcks = 0;
   let totalDefers = 0;
   let totalSlots = 0;
+  let windowHadTx = {};
+
+  // ── Fairness monitor (R5): bounded-wait verification instrumentation ──
+  let fairnessPeakN = 0;         // peak concurrent contenders observed (needsSend)
+  let fairnessMaxWait = 0;       // max wait (slots) across all operators (R5.1)
+  let fairnessViolations = [];   // { id, callsign, observedWait, bound } (R5.3)
 
   let nextSpawnAtMs = SPAWN_MIN_MS;
   let nextId = 0;
@@ -685,6 +889,21 @@
   const elMaxOps    = $("maxOps");
   const elSpeed     = $("speed");
   const elMode      = $("contestMode");
+  const elTxTimeInput = $("txTimeInput");
+  const elTxTimeSlider = $("txTimeSlider");
+  const elTxTimeVal = $("txTimeVal");
+  const elTxTimeInc = $("txTimeInc");
+  const elTxTimeDec = $("txTimeDec");
+  const elTimingWindowInput = $("timingWindowInput");
+  const elTimingWindowSlider = $("timingWindowSlider");
+  const elTimingWindowVal = $("timingWindowVal");
+  const elTimingWindowInc = $("timingWindowInc");
+  const elTimingWindowDec = $("timingWindowDec");
+  const elTxFramesInput = $("txFramesInput");
+  const elTxFramesSlider = $("txFramesSlider");
+  const elTxFramesVal = $("txFramesVal");
+  const elTxFramesInc = $("txFramesInc");
+  const elTxFramesDec = $("txFramesDec");
   const btnRotation = $("btnRotation");
   const btnReset    = $("btnReset");
   const btnPause    = $("btnPause");
@@ -701,6 +920,7 @@
   const elFirst     = $("firstContact");
   const svgMap      = $("map");
   const gridLayer   = $("grid-layer");
+  const rxLinesLayer = $("rx-lines");
   const linesLayer  = $("contact-lines");
   const dotsLayer   = $("dots-layer");
   const tileGrid    = $("tileGrid");
@@ -777,9 +997,16 @@
       gainDb: randInt(1, 10),
       joinedAtMs: simMs,
       firstTxAtMs: null,
-      backoffUntilSlot: 0,
-      backoffStartSlot: 0,
-      attempts: 0,
+      attempts: 0,               // aging counter (deferrals); single source of truth
+      emergency: false,          // HIGH priority when set (see priorityClass)
+      enqueueSlot: currentSlotIndex(),  // slot when it entered contention
+      backoffUntilSlot: -1,      // may not contend before this slot
+      lastServedSlot: currentSlotIndex(),  // slot of most recent transmit (R5)
+      maxWaitSlots: 0,           // longest wait (slots) this op has observed (R5.1)
+      nextTxMs: null,
+      nextTxFrame: null,
+      scheduledAtMs: simMs,
+      targetWindowIndex: 0,
       isTransmitting: false,
       isHearing: false,
       hearingFromIds: new Set(),
@@ -811,103 +1038,213 @@
     return d <= txRadiusKm(transmitter.pwr) + gainBoostKm(listener.gainDb);
   }
 
-  // ── Slot scheduler with per-operator carrier sense ──────────────────────
-  function applyBackoff(op, currentSlot) {
-    op.attempts = Math.min(op.attempts + 1, MAX_BACKOFF_EXP + 4);
-    const exp = Math.min(op.attempts, MAX_BACKOFF_EXP);
-    const slots = 1 + ((rand() * (1 << exp)) | 0);
-    op.backoffStartSlot = currentSlot;
-    op.backoffUntilSlot = currentSlot + slots;
-    totalDefers++;
+  // ── Slot index + priority classification (aging scheduler) ─────────────
+  // currentSlotIndex() maps sim time onto the fixed 2 s GPS slot grid.
+  // priorityClass(op) is HIGH iff the operator is flagged emergency or has
+  // aged past AGING_PROMOTE_ATTEMPTS deferrals (attempts > 3), else NORMAL.
+  function currentSlotIndex() {
+    return Math.floor(simMs / slotMs);
   }
 
-  function postTxCooldown(op, currentSlot) {
-    const slots = randInt(POST_TX_MIN_SLOTS, POST_TX_MAX_SLOTS);
-    op.attempts = 0;
-    op.backoffStartSlot = currentSlot;
-    op.backoffUntilSlot = currentSlot + slots;
+  function priorityClass(op) {
+    return (op.emergency || op.attempts > AGING_PROMOTE_ATTEMPTS) ? "HIGH" : "NORMAL";
   }
 
-  function channelsBusyForListenerAt(listener, atMs) {
-    let count = 0;
-    for (const ch of channels) {
-      if (ch.startMs > atMs || ch.endMs <= atMs) continue;
-      const tx = operatorById(ch.occupantId);
-      if (!tx || !tx.active || tx === listener) continue;
-      if (canHear(listener, tx)) count++;
+  // ── Fairness bound (R5) ─────────────────────────────────────────────────
+  // Bounded_Wait(n) = ramp-up (14 slots) + n * ceil((LISTEN_MAX_MS + txMs)/slotMs).
+  // mirrors boundedWaitSlots — web/test/contest-queue/scheduler-model.js
+  function boundedWaitSlots(n) {
+    const rampup = (1 << 1) + (1 << 2) + (1 << 3);        // 14
+    const round  = Math.ceil((LISTEN_MAX_MS + txMs) / slotMs); // 2
+    return rampup + n * round;
+  }
+
+  // Called once per successful transmit (from startChannel). Computes the wait
+  // since the op was last served, updates the per-op and global max wait,
+  // records any bound violation (R5.3), then resets the aging counter.
+  function recordServed(op) {
+    const now  = currentSlotIndex();
+    const wait = now - op.lastServedSlot;
+    op.maxWaitSlots = Math.max(op.maxWaitSlots, wait);
+    fairnessMaxWait = Math.max(fairnessMaxWait, wait);     // R5.1
+    const bound = boundedWaitSlots(fairnessPeakN);
+    if (wait > bound) {                                    // R5.3
+      fairnessViolations.push({
+        id: op.id, callsign: op.callsign, observedWait: wait, bound
+      });
     }
-    return count;
+    op.lastServedSlot = now;
+    op.attempts = 0;
+  }
+
+  // ── Carrier-sense listen-window scheduling (50–400 ms) ──────────────────
+  // The txFrames slider quantizes the 50–400 ms listen window into discrete
+  // contention frames (carrier-sense granularity) — it no longer divides
+  // (slot − tx). listenSpanMs() is the window span; frameStepMs() guards
+  // txFrames <= 0 to avoid divide-by-zero (offset then floors to LISTEN_MIN_MS).
+  function listenSpanMs() {
+    return LISTEN_MAX_MS - LISTEN_MIN_MS; // 350
+  }
+
+  function frameStepMs() {
+    return txFrames > 0 ? listenSpanMs() / txFrames : 0;
+  }
+
+  // Attempt-count aging bias (R4.1, R4.5). Coarse two-tier bias: the band is the
+  // full listen window (AGE_BAND_MS = LISTEN_MAX_MS = 400), so any operator with
+  // attempts >= 1 has its aged offset floored to 0 (deferred operators get
+  // carrier-sense priority over fresh attempts == 0 arrivals). This is not a
+  // graduated per-attempt separation; ordering within the collapsed offset-0
+  // group is decided by contentionRank (the primary fairness mechanism).
+  const AGE_BAND_MS = LISTEN_MAX_MS;   // = 400; collapses deferred operators to 0
+  function agedOffset(baseMs, op) {
+    const shift = op.attempts * AGE_BAND_MS;   // attempts>=1 => floored to 0
+    return Math.max(0, baseMs - shift);
+  }
+
+  // Deterministic contention tie-break (R4.1, R4.5) — the primary fairness
+  // mechanism that orders the collapsed offset-0 group: earliest offset, then
+  // HIGH before NORMAL, then higher attempts (more aged), then older enqueueSlot,
+  // then lower id.
+  function contentionRank(a, b) {
+    const pa = priorityClass(a) === "HIGH" ? 0 : 1;
+    const pb = priorityClass(b) === "HIGH" ? 0 : 1;
+    return (a.nextTxMs - b.nextTxMs)
+        || (pa - pb)
+        || (b.attempts - a.attempts)
+        || (a.enqueueSlot - b.enqueueSlot)
+        || (a.id - b.id);
+  }
+
+  // Draw a carrier-sense listen offset in [LISTEN_MIN_MS, LISTEN_MAX_MS],
+  // quantized into txFrames frames, then biased earlier by attempt count
+  // (aging — see agedOffset). Records the drawn frame on the op for the UI.
+  function listenOffsetMs(op) {
+    const frame = txFrames > 1 ? randInt(0, txFrames - 1) : 0;
+    if (op) op.nextTxFrame = frame;
+    const base = LISTEN_MIN_MS + frame * frameStepMs();
+    return agedOffset(base, op);
+  }
+
+  function nextWindowStartMs(fromMs) {
+    const at = fromMs == null ? simMs : fromMs;
+    return (Math.floor(at / slotMs) + 1) * slotMs;
+  }
+
+  function scheduleNextTx(op) {
+    // Target the first window at/after backoffUntilSlot (binary exponential
+    // backoff — see applyBackoff). backoffUntilSlot defaults to -1, so an op
+    // that has never backed off simply targets the next window from simMs.
+    const windowStart = Math.max(
+      nextWindowStartMs(simMs),
+      op.backoffUntilSlot * slotMs
+    );
+    const offsetMs = listenOffsetMs(op);
+    op.nextTxMs = windowStart + offsetMs;
+    op.scheduledAtMs = simMs;
+    op.targetWindowIndex = Math.floor(windowStart / slotMs);
+  }
+
+  function channelBusyForOp(op, atMs) {
+    for (const ch of channels) {
+      if (atMs < ch.startMs || atMs >= ch.endMs) continue;
+      const tx = operatorById(ch.occupantId);
+      if (!tx || !tx.active || tx.id === op.id) continue;
+      if (canHear(op, tx)) return true;
+    }
+    return false;
+  }
+
+  function startChannel(op, startMs) {
+    const winEnd = startMs + txMs;
+    channels.push({
+      occupantId: op.id,
+      startMs,
+      endMs: winEnd,
+      pendingAcks: new Set(op.pendingAcks)
+    });
+    op.isTransmitting = false;
+    recordServed(op);   // fairness monitor + attempts reset (R5)
+    if (op.firstTxAtMs == null) op.firstTxAtMs = startMs;
+    windowHadTx[Math.floor(startMs / slotMs)] = true;
+    totalTxSlots++;
+    op.nextTxMs = Infinity;
+  }
+
+  function applyBackoff(op) {
+    // Single source of truth for attempts increment (design Property 4):
+    // attempts advances by exactly one per contended-and-lost slot here and
+    // nowhere else.
+    op.attempts += 1;
+    totalDefers++;
+    if (priorityClass(op) === "HIGH") {
+      op.backoffUntilSlot = currentSlotIndex();          // HIGH: contend every slot
+    } else {
+      const exp = Math.min(op.attempts, MAX_BACKOFF_EXP); // <= 4
+      const backoffSlots = randInt(1, 1 << exp);          // 1 .. 2^exp, <= 16
+      op.backoffUntilSlot = currentSlotIndex() + backoffSlots;
+    }
+    scheduleNextTx(op);
+  }
+
+  function postTxCooldown(op) {
+    op.attempts = 0;
+    scheduleNextTx(op);
+  }
+
+  function processScheduledTx() {
+    // Track peak concurrent contenders (needsSend) for the bound computation (R5).
+    let contenders = 0;
+    for (const o of activeOperators()) {
+      if (o.needsSend) contenders++;
+    }
+    fairnessPeakN = Math.max(fairnessPeakN, contenders);
+
+    const ready = activeOperators().filter(
+      (o) =>
+        o.needsSend &&
+        !o.isTransmitting &&
+        o.nextTxMs != null &&
+        o.nextTxMs !== Infinity &&
+        simMs >= o.nextTxMs
+    );
+    ready.sort(contentionRank);
+
+    for (const op of ready) {
+      if (!op.needsSend || op.isTransmitting) continue;
+      const atMs = Math.max(op.nextTxMs, simMs);
+      if (channelBusyForOp(op, atMs)) {
+        applyBackoff(op);
+        continue;
+      }
+      startChannel(op, atMs);
+    }
   }
 
   function resolveSlotBoundary(slotIndex) {
-    const slotStartMs = slotIndex * SLOT_MS;
     totalSlots++;
-
-    const candidates = activeOperators().filter(
-      (o) => o.needsSend && o.backoffUntilSlot <= slotIndex && !o.isTransmitting
-    );
-
-    if (candidates.length === 0) {
-      consecutiveSilentSlots++;
-      if (consecutiveSilentSlots >= SILENCE_SLOTS) {
-        for (const o of activeOperators()) {
-          if (o.needsSend && o.backoffUntilSlot > slotIndex) {
-            o.backoffUntilSlot = slotIndex;
+    if (slotIndex > 0) {
+      const prev = slotIndex - 1;
+      if (!windowHadTx[prev]) {
+        consecutiveSilentSlots++;
+        if (consecutiveSilentSlots >= SILENCE_SLOTS) {
+          // Silence-threshold reset (design Part 3): clear every queued
+          // operator's backoff so it can contend immediately. Do NOT touch
+          // attempts here — attempts is the single source of truth,
+          // incremented exactly once per contended slot in applyBackoff.
+          // mirrors silenceReset — web/test/contest-queue/scheduler-model.js
+          for (const o of activeOperators()) {
+            if (o.needsSend) {
+              o.backoffUntilSlot = slotIndex;
+              scheduleNextTx(o);
+            }
           }
+          consecutiveSilentSlots = 0;
         }
+      } else {
         consecutiveSilentSlots = 0;
       }
-      return;
     }
-
-    consecutiveSilentSlots = 0;
-
-    const draws = candidates.map((o) => ({
-      op: o,
-      listenMs: T_MIN + rand() * (T_MAX - T_MIN)
-    }));
-    draws.sort((a, b) => a.listenMs - b.listenMs || a.op.id - b.op.id);
-
-    const newWinners = [];
-
-    for (const d of draws) {
-      const op = d.op;
-      const listenEndMs = slotStartMs + d.listenMs;
-
-      const heardActive = channels.some((ch) => {
-        if (listenEndMs < ch.startMs || listenEndMs >= ch.endMs) return false;
-        const tx = operatorById(ch.occupantId);
-        if (!tx || !tx.active || tx === op) return false;
-        return canHear(op, tx);
-      });
-
-      const heardNewWinner = newWinners.some((w) => {
-        if (listenEndMs < w.startMs || listenEndMs >= w.endMs) return false;
-        return canHear(op, w.tx);
-      });
-
-      if (heardActive || heardNewWinner) {
-        applyBackoff(op, slotIndex);
-        continue;
-      }
-
-      const winStart = Math.max(listenEndMs, simMs);
-      const winEnd = winStart + TX_MS;
-      newWinners.push({ tx: op, startMs: winStart, endMs: winEnd });
-    }
-
-    for (const w of newWinners) {
-      channels.push({
-        occupantId: w.tx.id,
-        startMs: w.startMs,
-        endMs: w.endMs,
-        pendingAcks: new Set(w.tx.pendingAcks)
-      });
-      w.tx.isTransmitting = false;
-      w.tx.attempts = 0;
-      if (w.tx.firstTxAtMs == null) w.tx.firstTxAtMs = w.startMs;
-    }
-    if (newWinners.length > 0) totalTxSlots++;
   }
 
   function onChannelEnd(ch) {
@@ -950,9 +1287,7 @@
     }
 
     tx.pendingAcks.clear();
-
-    const currentSlot = Math.floor(simMs / SLOT_MS);
-    postTxCooldown(tx, currentSlot);
+    postTxCooldown(tx);
     tx.needsSend = true;
   }
 
@@ -1010,6 +1345,7 @@
     operatorsById.set(op.id, op);
     addMapDot(op);
     addTile(op);
+    scheduleNextTx(op);
   }
 
   function maybeDepart(simDt) {
@@ -1051,6 +1387,68 @@
   // ── SVG dot management ──────────────────────────────────────────────────
   const SVG_NS = "http://www.w3.org/2000/svg";
   const dotEls = new Map(); // id -> { group, dot, hit, ringTx, ringRx, ringSel }
+  const rxLineEls = new Map(); // "txId:rxId" -> { line, animate }
+
+  const RX_DASH_TOTAL = 18;
+  const RX_DASH_ANIM_MS = 850;
+
+  function rxLineKey(txId, rxId) {
+    return txId + ":" + rxId;
+  }
+
+  function ensureRxSignalLine(txId, rxId, x1, y1, x2, y2) {
+    const key = rxLineKey(txId, rxId);
+    let entry = rxLineEls.get(key);
+    if (!entry) {
+      const line = document.createElementNS(SVG_NS, "line");
+      line.setAttribute("class", "rx-signal-line");
+      line.setAttribute("stroke-dasharray", "10 8");
+
+      const anim = document.createElementNS(SVG_NS, "animate");
+      anim.setAttribute("attributeName", "stroke-dashoffset");
+      anim.setAttribute("from", "0");
+      anim.setAttribute("to", String(-RX_DASH_TOTAL));
+      anim.setAttribute("dur", RX_DASH_ANIM_MS + "ms");
+      anim.setAttribute("repeatCount", "indefinite");
+      line.appendChild(anim);
+
+      rxLinesLayer.appendChild(line);
+      entry = { line, animate: anim };
+      rxLineEls.set(key, entry);
+    }
+    entry.line.setAttribute("x1", x1.toFixed(1));
+    entry.line.setAttribute("y1", y1.toFixed(1));
+    entry.line.setAttribute("x2", x2.toFixed(1));
+    entry.line.setAttribute("y2", y2.toFixed(1));
+  }
+
+  function clearRxSignalLines() {
+    for (const entry of rxLineEls.values()) {
+      if (entry.line.parentNode) entry.line.parentNode.removeChild(entry.line);
+    }
+    rxLineEls.clear();
+  }
+
+  function updateRxSignalLines() {
+    const active = new Set();
+    for (const listener of activeOperators()) {
+      if (!listener.isHearing || listener.isTransmitting) continue;
+      for (const txId of listener.hearingFromIds) {
+        const tx = operatorById(txId);
+        if (!tx || !tx.isTransmitting) continue;
+        const a = latLonToXy(tx.lat, tx.lon);
+        const b = latLonToXy(listener.lat, listener.lon);
+        const key = rxLineKey(tx.id, listener.id);
+        active.add(key);
+        ensureRxSignalLine(tx.id, listener.id, a.x, a.y, b.x, b.y);
+      }
+    }
+    for (const [key, entry] of rxLineEls) {
+      if (active.has(key)) continue;
+      if (entry.line.parentNode) entry.line.parentNode.removeChild(entry.line);
+      rxLineEls.delete(key);
+    }
+  }
 
   function addMapDot(op) {
     const { x, y } = latLonToXy(op.lat, op.lon);
@@ -1195,20 +1593,26 @@
     tileEls.delete(op.id);
   }
 
-  function backoffFraction(op, currentSlot) {
-    if (op.backoffUntilSlot <= currentSlot) return 1;
-    const total = Math.max(1, op.backoffUntilSlot - op.backoffStartSlot);
-    const elapsed = currentSlot - op.backoffStartSlot;
+  function backoffFraction(op) {
+    if (op.nextTxMs == null || op.scheduledAtMs == null) return 1;
+    if (simMs >= op.nextTxMs) return 1;
+    const total = Math.max(1, op.nextTxMs - op.scheduledAtMs);
+    const elapsed = simMs - op.scheduledAtMs;
     return clamp(elapsed / total, 0, 1);
   }
 
-  function nextTxCountdownMs(op, currentSlot) {
-    const slotMs = Math.max(op.backoffUntilSlot, currentSlot + 1) * SLOT_MS;
-    return Math.max(0, slotMs - simMs);
+  function nextTxCountdownMs(op) {
+    if (op.nextTxMs == null || op.nextTxMs === Infinity) return 0;
+    return Math.max(0, op.nextTxMs - simMs);
+  }
+
+  function fmtCountdownWithFrame(ms, frame) {
+    const base = fmtCountdown(ms);
+    if (frame == null) return base;
+    return base + " · F" + frame;
   }
 
   function updateTiles() {
-    const currentSlot = Math.floor(simMs / SLOT_MS);
     for (const op of operators) {
       const entry = tileEls.get(op.id);
       if (!entry) continue;
@@ -1217,11 +1621,15 @@
       tile.classList.toggle("rx", op.isHearing && !op.isTransmitting);
       tile.classList.toggle("selected", op.id === selectedOpId);
 
-      const frac = backoffFraction(op, currentSlot);
+      const frac = backoffFraction(op);
       refs.fill.style.width = (frac * 100).toFixed(0) + "%";
       if (op.isTransmitting) {
         refs.boPct.textContent = "TX";
-      } else if (op.backoffUntilSlot <= currentSlot) {
+      } else if (
+        op.nextTxMs != null &&
+        op.nextTxMs !== Infinity &&
+        simMs >= op.nextTxMs
+      ) {
         refs.boPct.textContent = "ready";
       } else {
         refs.boPct.textContent = (frac * 100).toFixed(0) + "%";
@@ -1234,7 +1642,10 @@
         refs.countdown.textContent = "Idle";
         refs.countdown.className = "countdown mono idle";
       } else {
-        refs.countdown.textContent = fmtCountdown(nextTxCountdownMs(op, currentSlot));
+        refs.countdown.textContent = fmtCountdownWithFrame(
+          nextTxCountdownMs(op),
+          op.nextTxFrame
+        );
         refs.countdown.className = "countdown mono";
       }
 
@@ -1364,7 +1775,7 @@
   // ── Stats ───────────────────────────────────────────────────────────────
   function updateStats() {
     elSimTime.textContent = (simMs / 1000).toFixed(1) + " s";
-    elSlot.textContent = String(Math.floor(simMs / SLOT_MS));
+    elSlot.textContent = String(Math.floor(simMs / slotMs));
     const live = activeOperators();
     elActive.textContent = String(live.length);
     elTotalTx.textContent = String(totalTxBursts);
@@ -1398,13 +1809,16 @@
     while (true) {
       if (operators.length === 0) break;
       const s = lastSlotResolved + 1;
-      const boundary = s * SLOT_MS;
+      const boundary = s * slotMs;
       if (boundary > simMs) break;
       resolveSlotBoundary(s);
       lastSlotResolved = s;
     }
 
+    processScheduledTx();
+
     updateChannelStates();
+    updateRxSignalLines();
     updateMapDots();
     updateTiles();
     updateContactLines();
@@ -1447,6 +1861,9 @@
     elSpeed.value = String(speedMul);
     presetKey = elMode.value === "regular" ? "regular" : "qrp";
     preset = PRESETS[presetKey];
+    setTxTimeSec(parseFloat(elTxTimeInput.value) || 3);
+    setTimingWindowSec(parseFloat(elTimingWindowInput.value) || 10);
+    setTxFrames(parseInt(elTxFramesInput.value, 10) || 20);
 
     operators = [];
     operatorsById = new Map();
@@ -1454,6 +1871,7 @@
     dotEls.clear();
     tileEls.clear();
     dotsLayer.innerHTML = "";
+    clearRxSignalLines();
     linesLayer.innerHTML = "";
     tileGrid.innerHTML = "";
 
@@ -1469,6 +1887,10 @@
     totalAcks = 0;
     totalDefers = 0;
     totalSlots = 0;
+    windowHadTx = {};
+    fairnessPeakN = 0;
+    fairnessMaxWait = 0;
+    fairnessViolations = [];
 
     selectedOpId = null;
     closePopup();
@@ -1481,6 +1903,7 @@
       operatorsById.set(op.id, op);
       addMapDot(op);
       addTile(op);
+      scheduleNextTx(op);
     }
 
     btnPause.textContent = "Pause";
@@ -1506,6 +1929,112 @@
     rotationOn = !!on;
     btnRotation.textContent = "Rotation: " + (rotationOn ? "on" : "off");
     btnRotation.classList.toggle("on", rotationOn);
+  }
+
+  // ── Timing controls ─────────────────────────────────────────────────────
+  function formatTimingSec(v) {
+    return (Math.round(v * 10) / 10).toFixed(1);
+  }
+
+  // Slot is a fixed GPS grid, independent of the composite burst (R3.3).
+  // The range no longer derives from txTimeSec, so slot < burst (e.g. 2 s
+  // slot / 2.35 s burst) is reachable and bursts may span a slot boundary.
+  function timingWindowMinSec() {
+    return 1.0;
+  }
+
+  function timingWindowMaxSec() {
+    return 4.0;
+  }
+
+  function applyTimingToSim() {
+    slotMs = timingWindowSec * 1000;
+    txMs = txTimeSec * 1000;
+  }
+
+  function syncTimingWindowUi() {
+    const min = timingWindowMinSec();
+    const max = timingWindowMaxSec();
+    timingWindowSec = clamp(timingWindowSec, min, max);
+    const str = formatTimingSec(timingWindowSec);
+    elTimingWindowInput.min = String(min);
+    elTimingWindowInput.max = String(max);
+    elTimingWindowSlider.min = String(min);
+    elTimingWindowSlider.max = String(max);
+    elTimingWindowInput.value = str;
+    elTimingWindowSlider.value = str;
+    elTimingWindowVal.textContent = str;
+    applyTimingToSim();
+  }
+
+  function syncTxTimeUi() {
+    txTimeSec = clamp(txTimeSec, TX_TIME_MIN, TX_TIME_MAX);
+    const str = formatTimingSec(txTimeSec);
+    elTxTimeInput.value = str;
+    elTxTimeSlider.value = str;
+    elTxTimeVal.textContent = str;
+    syncTimingWindowUi();
+  }
+
+  function setTxTimeSec(v) {
+    txTimeSec = clamp(v, TX_TIME_MIN, TX_TIME_MAX);
+    txTimeSec = Math.round(txTimeSec / TIMING_STEP) * TIMING_STEP;
+    syncTxTimeUi();
+  }
+
+  function setTimingWindowSec(v) {
+    timingWindowSec = clamp(v, timingWindowMinSec(), timingWindowMaxSec());
+    timingWindowSec = Math.round(timingWindowSec / TIMING_STEP) * TIMING_STEP;
+    syncTimingWindowUi();
+  }
+
+  function setTxFrames(v) {
+    txFrames = clamp(Math.round(v), TX_FRAMES_MIN, TX_FRAMES_MAX);
+    const str = String(txFrames);
+    elTxFramesInput.value = str;
+    elTxFramesSlider.value = str;
+    elTxFramesVal.textContent = str;
+  }
+
+  function bindTimingRow({ input, slider, display, btnInc, btnDec, read, write, step }) {
+    slider.addEventListener("input", () => write(parseFloat(slider.value)));
+    input.addEventListener("change", () => write(parseFloat(input.value)));
+    btnInc.addEventListener("click", () => write(read() + step));
+    btnDec.addEventListener("click", () => write(read() - step));
+  }
+
+  function initTimingControls() {
+    bindTimingRow({
+      input: elTxTimeInput,
+      slider: elTxTimeSlider,
+      display: elTxTimeVal,
+      btnInc: elTxTimeInc,
+      btnDec: elTxTimeDec,
+      read: () => txTimeSec,
+      write: setTxTimeSec,
+      step: TIMING_STEP
+    });
+    bindTimingRow({
+      input: elTimingWindowInput,
+      slider: elTimingWindowSlider,
+      display: elTimingWindowVal,
+      btnInc: elTimingWindowInc,
+      btnDec: elTimingWindowDec,
+      read: () => timingWindowSec,
+      write: setTimingWindowSec,
+      step: TIMING_STEP
+    });
+    bindTimingRow({
+      input: elTxFramesInput,
+      slider: elTxFramesSlider,
+      display: elTxFramesVal,
+      btnInc: elTxFramesInc,
+      btnDec: elTxFramesDec,
+      read: () => txFrames,
+      write: setTxFrames,
+      step: 1
+    });
+    syncTxTimeUi();
   }
 
   // ── Event wiring ────────────────────────────────────────────────────────
@@ -1539,6 +2068,7 @@
 
   // ── Boot ────────────────────────────────────────────────────────────────
   buildGrid();
+  initTimingControls();
   reset();
 })();
   </script>

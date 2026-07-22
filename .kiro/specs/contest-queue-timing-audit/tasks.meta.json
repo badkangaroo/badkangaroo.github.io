@@ -1,0 +1,435 @@
+{
+  "pbtResults": {
+    "2.4 Write property test for the listen window range": {
+      "status": "passed",
+      "lastRunTimestamp": 1784741258897
+    },
+    "4.2 Write property test for high-priority promotion": {
+      "status": "passed",
+      "lastRunTimestamp": 1784741471164
+    },
+    "4.9 Write property test for silence reset": {
+      "status": "passed",
+      "lastRunTimestamp": 1784741820668
+    },
+    "4.4 Write property test for bounded backoff": {
+      "status": "passed",
+      "lastRunTimestamp": 1784741821976
+    },
+    "4.6 Write property test for aging monotonicity": {
+      "status": "passed",
+      "lastRunTimestamp": 1784741827327
+    },
+    "4.7 Write property test for aging priority ordering": {
+      "status": "passed",
+      "lastRunTimestamp": 1784741850495
+    },
+    "6.2 Write property test for the bounded-wait guarantee": {
+      "status": "passed",
+      "lastRunTimestamp": 1784742252853
+    }
+  },
+  "executionHistory": {
+    "1. Record the timing audit findings document": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740591051
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740604220
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740712736
+      }
+    ],
+    "2.1 Rewrite the timing constants block (~lines 723-740) in `web/contest_queue_simulator.html`": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740591646
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740604617
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740713104
+      }
+    ],
+    "2.2 Decouple the slot from the burst duration": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740591786
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740727543
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741022769
+      }
+    ],
+    "2.3 Replace the frame-over-(slot-tx) listen model with the 50-400 ms carrier-sense window": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740591873
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741027655
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741186798
+      }
+    ],
+    "2.4 Write property test for the listen window range": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740592079
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741192079
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741277256
+      }
+    ],
+    "3. Checkpoint - constants load and page runs": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740592169
+      }
+    ],
+    "4.1 Add operator aging state and priority classification": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740592314
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741192196
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741375365
+      }
+    ],
+    "4.2 Write property test for high-priority promotion": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740592484
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741385718
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741491883
+      }
+    ],
+    "4.3 Implement binary exponential backoff": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740592572
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741385865
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741492051
+      }
+    ],
+    "4.4 Write property test for bounded backoff": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740592675
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741701483
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741955219
+      }
+    ],
+    "4.5 Implement attempt-count aging bias and deterministic tie-break": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740592779
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741496045
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741587958
+      }
+    ],
+    "4.6 Write property test for aging monotonicity": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740592873
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741702460
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741956640
+      }
+    ],
+    "4.7 Write property test for aging priority ordering": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740593106
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741703355
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741957673
+      }
+    ],
+    "4.8 Implement silence-threshold backoff reset": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740593433
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741593539
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741693885
+      }
+    ],
+    "4.9 Write property test for silence reset": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740593579
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741705317
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741958735
+      }
+    ],
+    "5. Checkpoint - scheduler behavior verified": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740593640
+      }
+    ],
+    "6.1 Add the fairness monitor and bound computation": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740593730
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741705462
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741959138
+      }
+    ],
+    "6.2 Write property test for the bounded-wait guarantee": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740593803
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741973786
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784742272972
+      }
+    ],
+    "6.3 Record verification results into the audit document": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740593946
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741976647
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784742275417
+      }
+    ],
+    "7.1 Create an offline JS test harness mirroring the inline scheduling functions": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740594052
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740727953
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741023638
+      }
+    ],
+    "7.2 Write example tests for updated constants and audit content": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740594132
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741975609
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784742274078
+      }
+    ],
+    "7.3 Write the page-load smoke test": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740594236
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741975742
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784742274970
+      }
+    ],
+    "8. Extend the README Transmit/Receive write-up": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740594322
+      },
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784742279804
+      }
+    ],
+    "9. Final checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784740594422
+      }
+    ],
+    "2. Update simulator timing constants and decouple slot from burst": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741277354
+      }
+    ],
+    "4. Implement the aging + bounded-wait fairness scheduler": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784741958816
+      }
+    ],
+    "7. Build the offline test harness and example/smoke tests": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784742275060
+      }
+    ],
+    "6. Implement fairness instrumentation and bound verification": [
+      {
+        "executionId": "142c11c9-a2ff-4e7c-9c5d-d444bb3c86f6",
+        "chatSessionId": "sess_30db9112-f76f-4aab-a18a-0b51091740af",
+        "timestamp": 1784742275500
+      }
+    ]
+  }
+}

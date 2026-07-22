@@ -8,6 +8,8 @@ intended as a design specification for discussion before implementation.
 
 **Open questions are marked `[REVIEW]` throughout.**
 
+**Simulator note:** The geographic contest queue simulator (`web/contest_queue_simulator.html`) models this MAC: 2 s GPS slots, ~2.35 s composite burst (may span a slot boundary), 50–400 ms carrier-sense listen window, binary exponential backoff (≤ 16 slots), 3-slot silence reset, and attempt-count aging / HIGH promotion. Timing audit: `Docs/contest_queue_timing_audit.md`. Practical overview: `Docs/Queue.md`.
+
 ---
 
 ## Ribbit application context
@@ -375,6 +377,8 @@ loop at every slot boundary (even UTC second):
 
 ## Related Documents
 
+- `Docs/Queue.md` — Practical queue overview, operator states, and visualization field reference (`web/queue.html`, `web/contest_queue_simulator.html`)
+- `Docs/contest_queue_timing_audit.md` — Simulator timing audit vs this design (composite burst, listen window, backoff, fairness bound)
 - `Docs/contesting_mode.md` — Contest UX and simulator: **PWR** vs **RX Gain**, asymmetric listen / carrier sense, contact graph
 - `Docs/codec.md` — Message format, timestamp encoding, Message ID structure, contest ACK layout (variable, trades with message space)
 - `Docs/RELEASE_PLAN.md` — Product direction; contest UI still evolving relative to this transport spec

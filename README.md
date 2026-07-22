@@ -399,6 +399,80 @@ Ribbit now supports **dual-mode messaging**:
 
 **Full Details**: [Docs/ribbit_wasm.md](Docs/ribbit_wasm.md)
 
+## Transmit / Receive Architecture (Protocol Layering)
+
+Ribbit's transmit/receive (Tx/Rx) path maps onto the classic OSI "networking burrito." Understanding which layer each part lives in keeps responsibilities clear: the physical signal, the channel-access rules, and the message contents are engineered separately.
+
+- **Layer 1 — Physical (PHY):** The actual on-air signal. This is the C++/WASM DSP core in `src/ribbit`. A full transmission is a *composite burst*: a 300 Hz VOX wake-up tone (~200 ms), a short silence gap (~100 ms), and the Ribbit waveform (2.048 s / 16384 samples at 8 kHz), totaling approximately **2.35 seconds** of channel occupation. The PHY handles modulation, error-correction coding, and encode/decode of audio-over-RF. The 2.35 s burst duration is a PHY property that every higher layer must respect.
+
+- **Layer 2 — Data Link / MAC:** The contest queue Tx/Rx logic (the media-access-control sublayer). This is where Ribbit arbitrates the shared half-duplex channel so operator bursts do not collide. It is a **CSMA/CA** (carrier-sense multiple access with collision avoidance) scheme: GPS-aligned 2-second slots, a short listen window before keying up (carrier sense), binary exponential backoff on contention, a silence-threshold reset, and priority promotion / fairness aging so no operator is starved. The contest queue simulator (`web/contest_queue_simulator.html`) is a discrete-time model of this MAC layer.
+
+- **Framing:** Message structure sits at the boundary between the MAC and the application. `src/ribbit/include/message_format.hh` defines how a message's fields (callsign, timestamp, gridsquare, message ID, ACK arrays) are packed into the frame the PHY carries. See [Docs/codec.md](Docs/codec.md) and the "Message Formats" section above.
+
+- **Application:** The operator's intent — what to say, when to contest, ACK/QSO tracking — feeds message frames into the MAC layer for scheduling.
+
+In short: the **PHY** decides *what the signal is*, the **MAC** decides *when it is allowed on the air*, and the **framing/application** layers decide *what the message contains*. The Tx/Rx component this project engineers for channel access is squarely a **Layer 2 MAC**, with the ~2.35 s composite burst as its authoritative Layer 1 timing constraint.
+
+### Transmit / Receive Process
+
+This walks the end-to-end Tx/Rx cycle in the same layering vocabulary used above. Every timing decision is a **Layer 2 MAC** concern operating over a fixed **Layer 1 PHY** whose authoritative constant is the ~2.35 s composite burst. Because the burst is *longer* than a slot, a transmission legitimately spans a slot boundary — the defining constraint the MAC schedules around.
+
+**1. Slot timing (MAC).** Channel time is divided into fixed **2-second GPS-aligned slots** (aligned to even UTC seconds so all operators share the same grid). The composite burst is **~2.35 s**, so it does not fit inside one slot — it starts in one slot and runs into the next. This is intended: the slot is the contention grid, not a hard transmission budget. Competing operators keep deferring (carrier sense, below) until the in-flight burst ends.
+
+**2. Carrier sense (MAC).** Before keying up, an operator waits a randomized **listen window of 50–400 ms** and listens for an occupied channel (CSMA/CA). If the channel is busy — including a burst still in flight from the previous slot — the operator defers and applies backoff. If the channel is clear when its listen window elapses, the operator wins the slot and keys up. Real-world asymmetry (differing PWR/Gain between stations) and hidden nodes mean carrier sense is not perfect; backoff and the silence reset (below) recover from the resulting collisions.
+
+**3. Transmission (PHY).** The winning operator transmits the **composite burst**: a 300 Hz VOX wake-up tone (**200 ms**) to open squelch, a **100 ms** silence gap, then the Ribbit waveform (**2.048 s** / 16384 samples at 8 kHz) — **≈ 2.35 s** total on-air occupation. The PHY owns modulation and error-correction coding; the MAC treats this duration as an immovable constraint.
+
+**4. Reception with acknowledgment.** A receiving station runs the reverse PHY path (demodulate → error-correct → decode) and then closes the loop at the framing/application layer:
+
+1. **Decode** the incoming burst into a message frame.
+2. **Record the Message ID** from the frame (see the ACK arrays in `message_format.hh`).
+3. **Piggyback the ACK** — the recorded Message ID is carried in the ACK array of the receiver's *next outbound burst*, so acknowledgments cost no extra airtime.
+4. **Confirm** — when the original sender decodes a burst containing its Message ID, the contact is confirmed (QSO complete).
+
+#### Audit findings and resolutions
+
+The timing audit (see [Docs/contest_queue_timing_audit.md](Docs/contest_queue_timing_audit.md)) compared the contest queue simulator's constants against this authoritative model. Each recorded mismatch and its resolution:
+
+| Constant | Was (simulator) | Authoritative model | Resolution |
+|----------|-----------------|---------------------|------------|
+| TX time default | 3.0 s | 2.35 s composite burst | Default set to the composite burst (2.35 s) |
+| Slot / timing window | 10.0 s | 2.0 s GPS slot | Slot fixed at 2 s, aligned to the GPS grid |
+| Slot ≥ tx coupling | slot forced ≥ tx time | slot (2 s) < burst (2.35 s) allowed | Coupling removed; a burst may span a slot boundary |
+| Listen window | `(slot − tx)/txFrames` frame basis | random uniform 50–400 ms | Replaced with a 50–400 ms carrier-sense window |
+| Backoff | reschedule, no growth | binary exponential, max exp 4 (≤ 16 slots) | Binary exponential backoff capped at 16 slots |
+| Aging / promotion | none | promote after > 3 attempts | Attempt-count aging rule added (see below) |
+| Silence threshold | 3 slots | 3 slots | Already matched — no change needed |
+
+#### Strengthened fairness
+
+To guarantee no operator is starved during a busy contest, the MAC's scheduler adds an **attempt-count aging rule**:
+
+- **Aging counter.** Each queued message tracks its `attempts` (deferrals). This increments by exactly one per contended slot the message loses, and resets to 0 once it transmits.
+- **Promotion.** When a message's attempt count exceeds **3**, it is promoted to **HIGH** priority. HIGH-priority messages skip backoff and contend every slot.
+- **Aged listen offset.** Any message that has deferred at least once has its listen offset floored to 0, so deferred (aged) operators always win carrier sense over freshly arrived operators.
+- **Deterministic tie-break.** Among operators tied at the floored offset, the winner is chosen deterministically: HIGH before NORMAL, then higher attempt count, then older enqueue time, then lower id. This is the primary fairness mechanism — the most-aged contender always wins its window.
+
+Together these bound the worst-case wait. For a peak of `N` concurrent contenders:
+
+```
+Bounded_Wait(N) = 14 + 2N  slots      (= 28 + 4N seconds at a 2 s slot)
+```
+
+The 14-slot term is the worst-case pre-promotion backoff ramp-up (2 + 4 + 8 slots); the `2N` term reflects each of the other `N − 1` operators transmitting at most once (one burst + listen window ≈ 2 slots) before the aged message is served. The guarantee is verified by simulation — see the Fairness-Bound Verification results in the audit document.
+
+#### Timing values at a glance
+
+These values are consistent across the updated simulator, the authoritative model, and this write-up:
+
+| Parameter | Value |
+|-----------|-------|
+| GPS slot | 2 s (aligned to even UTC seconds) |
+| Composite burst | ~2.35 s (200 ms VOX + 100 ms silence + 2.048 s waveform) |
+| Carrier-sense listen window | 50–400 ms |
+| Max backoff | ≤ 16 slots (binary exponential, max exponent 4) |
+| Silence reset | 3 consecutive silent slots |
+
 ## Known Issues & Bugs
 
 ### 🐛 Confirmed Bugs
@@ -630,8 +704,11 @@ When reporting bugs or implementing optimizations:
 
 ## Deployment (GitHub Pages)
 
-This repo is set up as a GitHub Pages site (e.g. `https://<user>.github.io/badkangaroo.github.io/` or your custom domain). A GitHub Action deploys the `web` folder when you push to the **release** branch or when you push a **release tag** (e.g. `v0.1.2`).
+This repo is the live GitHub Pages site at [https://badkangaroo.github.io/](https://badkangaroo.github.io/). Pushing to the **release** branch (or a **`v*`** release tag) publishes the repository so both app pages and docs stay reachable:
 
-- **Branch:** Push to `release` to update the live site from the current `web/` contents.
+- App / simulators: `/web/...` (e.g. [`/web/contest_queue_simulator.html`](https://badkangaroo.github.io/web/contest_queue_simulator.html))
+- Documentation: `/Docs/...` (e.g. [`/Docs/contest_queue_timing_audit.md`](https://badkangaroo.github.io/Docs/contest_queue_timing_audit.md))
+
+- **Branch:** Push to `release` to update the live site.
 - **Tag:** Create and push a tag (e.g. `git tag v0.1.2 && git push origin v0.1.2`) to trigger a deploy and record a specific version.
-- Configure **Settings → Pages** to use the GitHub Action (or the `gh-pages` branch if the workflow publishes there). See [.github/workflows/deploy.yml](.github/workflows/deploy.yml) for the workflow.
+- **Workflow:** [.github/workflows/deploy.yml](.github/workflows/deploy.yml) publishes the **repo root** (not only `web/`) so `/web/` and `/Docs/` paths match the live layout. Preferred Pages setting is **Source = GitHub Actions**; a legacy "Deploy from a branch" (`release`, `/`) setup also refreshes the site on every `release` push.
