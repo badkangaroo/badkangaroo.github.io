@@ -1,5 +1,13 @@
-# Deploy web app to GitHub Pages on push to release branch or on release tag.
-# In repo Settings → Pages, set "Source" to "GitHub Actions".
+# Deploy the repository to GitHub Pages on push to release (or a v* tag).
+#
+# Live site layout (https://badkangaroo.github.io/) serves the repo root so
+# both /web/... and /Docs/... URLs work. Publish the whole checkout (`.`),
+# not just `web/`, so Actions deploys match that layout.
+#
+# Preferred Pages setting: Settings → Pages → Source = "GitHub Actions".
+# If Source is still "Deploy from a branch" (release, path /), GitHub's
+# legacy branch publisher also updates the site on every push to release;
+# this workflow remains the Actions-based path and stays layout-compatible.
 
 name: Deploy to GitHub Pages
 
@@ -34,7 +42,9 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: web
+          # Repo root — preserves /web/... and /Docs/... on the live site.
+          # node_modules and other gitignored paths are not in the checkout.
+          path: .
 
       - name: Deploy to GitHub Pages
         id: deployment
