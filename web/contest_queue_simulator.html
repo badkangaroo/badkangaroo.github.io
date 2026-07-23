@@ -299,6 +299,10 @@
     }
     .swatch.tx { background: var(--tx-red); border-color: var(--tx-red); box-shadow: 0 0 8px var(--tx-red-soft); }
     .swatch.rx { background: var(--rx-green); border-color: var(--rx-green); }
+    .swatch.tx-range {
+      background: radial-gradient(circle, rgba(58, 222, 124, 0.35) 0%, rgba(58, 222, 124, 0.08) 70%, transparent 100%);
+      border-color: var(--rx-green);
+    }
     .swatch.rx-flow {
       background: linear-gradient(90deg, transparent 0%, transparent 35%, var(--rx-green) 50%, transparent 65%, transparent 100%);
       border-color: var(--rx-green);
@@ -523,6 +527,12 @@
     }
     svg .op-dot { transition: r 0.15s, filter 0.15s; }
     svg .op-hit { fill: rgba(0,0,0,0); cursor: pointer; }
+    svg .op-tx-range {
+      fill: url(#tx-range-fill);
+      stroke: var(--rx-green);
+      stroke-width: 1;
+      pointer-events: none;
+    }
     svg .op-ring-tx { fill: none; stroke: var(--tx-red); stroke-width: 2.5; pointer-events: none; }
     svg .op-ring-rx { fill: none; stroke: var(--rx-green); stroke-width: 1.75; pointer-events: none; }
     svg .op-ring-sel {
@@ -562,9 +572,11 @@
     <h1>Ribbit — Contest queue simulator</h1>
     <p>
       Discrete-time model of GPS-slotted p-persistent CSMA from
-      <code>Docs/contest_queue_algorithm.md</code> with asymmetric propagation
-      (PWR transmits, RX gain extends listening / carrier sense). Click any
-      operator dot or tile to inspect its contacts. See <code>Docs/contesting_mode.md</code>.
+      <code>Docs/contest_queue_algorithm.md</code>. The map is a
+      <strong>flat grid world</strong> for visual debugging: Maidenhead labels
+      are cosmetic, and anyone inside a transmitter’s green range disk hears
+      the signal. Click any operator dot or tile to inspect its contacts. See
+      <code>Docs/contesting_mode.md</code>.
     </p>
   </header>
 
@@ -658,7 +670,7 @@
       <span class="corner tr">N · 90°</span>
       <span class="corner bl">S · 90°</span>
       <span class="corner br">S · 90°</span>
-      <svg id="map" viewBox="0 0 720 540" preserveAspectRatio="xMidYMid meet" aria-label="Maidenhead grid map">
+      <svg id="map" viewBox="0 0 720 540" preserveAspectRatio="xMidYMid meet" aria-label="Flat contest grid map">
         <defs>
           <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="2.5" result="b" />
@@ -674,8 +686,13 @@
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          <radialGradient id="tx-range-fill" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#3ade7c" stop-opacity="0.3" />
+            <stop offset="100%" stop-color="#3ade7c" stop-opacity="0" />
+          </radialGradient>
         </defs>
         <g id="grid-layer"></g>
+        <g id="range-layer" aria-label="TX signal range disks"></g>
         <g id="rx-lines" aria-label="Live receive signal paths"></g>
         <g id="contact-lines"></g>
         <g id="dots-layer"></g>
@@ -686,6 +703,7 @@
   <div class="legend">
     <span class="lg"><span class="swatch tx"></span> Transmitting</span>
     <span class="lg"><span class="swatch rx"></span> Hearing</span>
+    <span class="lg"><span class="swatch tx-range"></span> TX range</span>
     <span class="lg"><span class="swatch rx-flow"></span> Live RX path</span>
     <span class="lg"><span class="swatch heard"></span> Contact heard</span>
     <span class="lg"><span class="swatch acked"></span> Contact ACKed</span>
@@ -755,12 +773,14 @@
 
   const VIEW_W = 720;
   const VIEW_H = 540;
+  // Flat map coordinates (not a sphere). Stored as lat/lon only so cosmetic
+  // Maidenhead-style labels can be derived; distance is Euclidean in SVG space.
   const LON_MIN = -180, LON_MAX = 180;
   const LAT_MIN = -90,  LAT_MAX = 90;
 
   const PRESETS = {
-    qrp:     { label: "QRP",     pwrMin: 1, pwrMax: 10,  baseRadiusKm: 400, perDbKm: 220 },
-    regular: { label: "Regular", pwrMin: 1, pwrMax: 100, baseRadiusKm: 80,  perDbKm: 300 }
+    qrp:     { label: "QRP",     pwrMin: 1, pwrMax: 10,  baseRadiusKm: 400 },
+    regular: { label: "Regular", pwrMin: 1, pwrMax: 100, baseRadiusKm: 80 }
   };
 
   // ── Helpers ─────────────────────────────────────────────────────────────
@@ -784,23 +804,29 @@
     return m + ":" + pad2(ss);
   }
 
-  function haversineKm(a, b) {
-    const R = 6371;
-    const toRad = Math.PI / 180;
-    const dLat = (b.lat - a.lat) * toRad;
-    const dLon = (b.lon - a.lon) * toRad;
-    const la1 = a.lat * toRad;
-    const la2 = b.lat * toRad;
-    const h = Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLon / 2) ** 2;
-    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
-  }
-
   function latLonToXy(lat, lon) {
     const x = ((lon - LON_MIN) / (LON_MAX - LON_MIN)) * VIEW_W;
     const y = ((LAT_MAX - lat) / (LAT_MAX - LAT_MIN)) * VIEW_H;
     return { x, y };
   }
 
+  /** Map-unit → SVG radius. Scale factor keeps PWR footprints readable on the flat grid. */
+  function kmToSvgR(km) {
+    const UNIT_PER_MAP_DEG = 111.32;
+    return (km / UNIT_PER_MAP_DEG) * (VIEW_H / (LAT_MAX - LAT_MIN));
+  }
+
+  /** True iff listener is inside the drawn TX range disk (Euclidean on the flat map). */
+  function inTxRangeSvg(listener, transmitter) {
+    const a = latLonToXy(transmitter.lat, transmitter.lon);
+    const b = latLonToXy(listener.lat, listener.lon);
+    const r = kmToSvgR(txRadiusKm(transmitter.pwr));
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    return dx * dx + dy * dy <= r * r;
+  }
+
+  /** Cosmetic grid label from flat map coords (not a real-Earth locator). */
   function latLonToGrid(lat, lon) {
     const adjLon = lon + 180;
     const adjLat = lat + 90;
@@ -920,6 +946,7 @@
   const elFirst     = $("firstContact");
   const svgMap      = $("map");
   const gridLayer   = $("grid-layer");
+  const rangeLayer  = $("range-layer");
   const rxLinesLayer = $("rx-lines");
   const linesLayer  = $("contact-lines");
   const dotsLayer   = $("dots-layer");
@@ -1029,13 +1056,14 @@
 
   function operatorById(id) { return operatorsById.get(id) || null; }
 
-  // ── Propagation ─────────────────────────────────────────────────────────
-  function txRadiusKm(pwr)     { return preset.baseRadiusKm * pwr; }
-  function gainBoostKm(gainDb) { return preset.perDbKm * gainDb; }
+  // ── Propagation (flat grid world) ───────────────────────────────────────
+  // The green disk is the source of truth: Euclidean map distance vs PWR-scaled
+  // radius. Gain is assumed uniform (shown on tiles for flavor only). Grid
+  // labels are cosmetic — there is no spherical Earth / antimeridian wrap.
+  function txRadiusKm(pwr) { return preset.baseRadiusKm * pwr; }
   function canHear(listener, transmitter) {
     if (listener === transmitter) return false;
-    const d = haversineKm(listener, transmitter);
-    return d <= txRadiusKm(transmitter.pwr) + gainBoostKm(listener.gainDb);
+    return inTxRangeSvg(listener, transmitter);
   }
 
   // ── Slot index + priority classification (aging scheduler) ─────────────
@@ -1452,6 +1480,14 @@
 
   function addMapDot(op) {
     const { x, y } = latLonToXy(op.lat, op.lon);
+
+    const range = document.createElementNS(SVG_NS, "circle");
+    range.setAttribute("class", "op-tx-range");
+    range.setAttribute("cx", x.toFixed(1));
+    range.setAttribute("cy", y.toFixed(1));
+    range.setAttribute("r", kmToSvgR(txRadiusKm(op.pwr)).toFixed(1));
+    rangeLayer.appendChild(range);
+
     const g = document.createElementNS(SVG_NS, "g");
     g.setAttribute("data-id", String(op.id));
     g.setAttribute("transform", "translate(" + x.toFixed(1) + "," + y.toFixed(1) + ")");
@@ -1497,13 +1533,14 @@
     g.appendChild(hit);
     dotsLayer.appendChild(g);
 
-    dotEls.set(op.id, { group: g, dot, hit, ringTx, ringRx, ringSel });
+    dotEls.set(op.id, { group: g, range, dot, hit, ringTx, ringRx, ringSel });
   }
 
   function removeMapDot(op) {
     const entry = dotEls.get(op.id);
     if (!entry) return;
     if (entry.group.parentNode) entry.group.parentNode.removeChild(entry.group);
+    if (entry.range && entry.range.parentNode) entry.range.parentNode.removeChild(entry.range);
     dotEls.delete(op.id);
   }
 
@@ -1870,6 +1907,7 @@
     channels = [];
     dotEls.clear();
     tileEls.clear();
+    rangeLayer.innerHTML = "";
     dotsLayer.innerHTML = "";
     clearRxSignalLines();
     linesLayer.innerHTML = "";

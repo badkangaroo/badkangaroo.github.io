@@ -264,18 +264,18 @@ This helps validate that the queue system scales gracefully and maintains fairne
 
 ### Geographic Visualization
 
-The simulator includes a **world map** (grid square view) that models realistic HF propagation by placing operators at random locations on the globe.
+The simulator map is a **flat grid world** for visual debugging of the queue algorithm. Maidenhead-style field labels and “lat/lon” placement are **cosmetic** — they do not model a spherical Earth, great-circle paths, or antimeridian wrap. What you see on the map is the simulation’s spatial truth.
 
 #### Operator Placement
 
 Each operator is assigned:
-- A **random Maidenhead grid square** location (format: `AA00aa`, e.g., `FN31pr`)
+- A **random position** on the flat map (displayed with a cosmetic Maidenhead-style label, format `AA00aa`)
 - A **unique color** for their map dot (randomly assigned at simulation start)
 - A **callsign** displayed on their tile
-- A **TX Power level** (1–10) that determines **transmit footprint** — how far *others* can decode this station when it transmits
-- A **Gain** value **+1 dB … +10 dB** that increases **listening range only** — how far away this station can *decode* (and treat as “channel busy” for carrier sense) compared to the baseline implied by the other station’s TX power
+- A **TX Power level** that sets the **green range disk** radius — anyone inside that disk hears the transmission
+- A **Gain** value **+1 dB … +10 dB** shown on tiles for flavor; in this flat model Gain is **assumed uniform** and does **not** change who can hear whom
 
-The map displays operators as colored dots at their geographic positions, providing a visual representation of a real-world contest scenario.
+Operators appear as colored dots at their map positions. Each has a translucent **green TX range disk** (thin border, radial fill) sized from **PWR**.
 
 #### Visual State Indicators
 
@@ -283,14 +283,13 @@ The map displays operators as colored dots at their geographic positions, provid
 |-------|---------------|-------------|
 | **Idle** | Colored dot (no outline) | Station is listening or has empty queue |
 | **Transmitting** | **Red outline** | Station is actively transmitting |
-| **Green outline** | **Receiving** — This listener decodes the transmission (distance, **transmitter PWR**, and **listener Gain**); not everyone at the same geographic distance sees green |
+| **Receiving** | **Green outline** | Listener is inside the transmitter’s green range disk |
+| **TX range** | Green disk around each operator | Max signal range for that station’s **PWR** |
 
 When an operator transmits:
-1. Their dot gains a **red outline** for the duration of the transmission (~2.4s)
-2. Each other operator gets a **green outline** only if they are **within their own receive range** of that transmission — i.e. distance and the **listener’s Gain** (and the **transmitter’s PWR**) together determine decode / “I hear you,” not a single symmetric circle
-3. Operators who are **too far to detect the carrier** (for that listener’s RX chain) do **not** get a green outline and, in the full queue model, **do not** treat the channel as busy when picking a slot — they behave like a **hidden node** relative to that transmitter
-
-That last point is deliberate: on a real band, a big antenna and quiet location (**higher Gain**) let you **hear** more stations than will reliably **hear you** at your **PWR**. Distant stations often **do not know** someone else is occupying the channel when they decide to transmit.
+1. Their dot gains a **red outline** for the duration of the transmission
+2. Every other operator **inside that transmitter’s green disk** gets a **green outline** and a live RX path line
+3. Operators **outside** the disk do not hear the signal and do not treat the channel as busy for carrier sense (hidden-node relative to that disk)
 
 #### Contact graph (operator selected)
 
@@ -301,7 +300,7 @@ When an operator is **selected**—by **clicking their tile** or by **choosing t
 | **Grey dotted** | **Heard** — this operator decoded the other station’s transmission (copy in the log), but the contact is **not** yet ACK-confirmed in the simulator’s sense |
 | **Solid white** | **ACKed** — mutual confirmation: the relationship counts as **acked** (e.g. your Message ID was acknowledged by them, or the pair meets the simulator’s two-way ACK rule) |
 
-Lines are drawn in the **grid-square map** coordinate space (great-circle or projected segment between the two locators). Clearing the selection or choosing another operator updates or removes the overlay.
+Lines are straight segments on the **flat map**. Clearing the selection or choosing another operator updates or removes the overlay.
 
 ### Operator Tiles
 
@@ -345,9 +344,9 @@ Format: **`M:SS`** (e.g. `0:06`, `1:24`) or total seconds, aligned with the simu
 | Field | Description | Example |
 |-------|-------------|---------|
 | **Callsign** | Operator's call sign | `W1AW` |
-| **Gridsquare** | Maidenhead locator (6-char) | `FN31pr` |
-| **PWR** | TX Power level (1–10); sets **transmit** decode range for others | `5` |
-| **Gain** | RX gain **+1 dB … +10 dB**; extends **listening** / decode-of-others and **carrier-sense** range, not transmit footprint | `+7 dB` |
+| **Gridsquare** | Cosmetic map label (Maidenhead-style) | `FN31pr` |
+| **PWR** | TX Power; sets green **TX range disk** radius | `5` |
+| **Gain** | Display only (+1…+10 dB); assumed uniform in flat-disk model | `+7 dB` |
 | **Backoff bar** | Progress through current **backoff** window (queue algorithm) | `62%` fill |
 | **Next TX** | Countdown to next **planned transmit attempt** (slot + backoff alignment) | `0:06` |
 | **TX** | Number of transmissions sent | `12` |
@@ -379,34 +378,30 @@ The tile outlines mirror the map dot outlines, making it easy to track activity 
 
 ### TX Power, RX Gain, and propagation range
 
-**Transmit footprint** is driven only by **PWR**: how far from the transmitter another station can still decode *that* transmission (subject to skip/min distance rules). **PWR does not** increase how well you hear others.
+The simulator uses a **flat-grid** range model so visual debugging stays trustworthy:
 
-**Listening footprint** is asymmetric: when station **A** transmits, whether station **B** decodes (green outline, log copy, ACK opportunity) depends on **distance**, **A’s PWR**, and **B’s Gain** (+1 dB … +10 dB). Each step of Gain stretches the maximum distance at which **B** can copy **A** (implementation may use a dB-per-km curve, a multiplier on the PWR-implied radius, or equivalent).
-
-Typical outcome: **you hear more stations than can hear you** — big **Gain**, modest **PWR** matches “loud signals in the headphones, they still ask for repeats.”
+- **TX range disk** = `baseRadius × PWR` (Euclidean distance on the map). Drawn as the green circle around each operator.
+- **Anyone inside that disk hears** the transmission (decode + carrier sense).
+- **Gain** is assumed the same for everyone and does **not** stretch or shrink the disk.
 
 #### Carrier sense and hidden nodes
 
-For slot picking / **carrier sense**, a station should treat the channel as **busy** only if it **detects** the ongoing transmission — i.e. the same (or stricter) criterion as “would I decode or at least see energy,” keyed off **its own Gain** and the **other station’s PWR**. Operators in **distant** grid squares who are **outside** that detection range **do not** know a transmission is in progress and may still contend for the slot, which is more realistic than a single global “everyone hears everyone” disk.
+A station treats the channel as **busy** only if it lies **inside** an active transmitter’s green disk. Operators outside that disk may still contend (hidden-node relative to that transmitter).
 
 #### Power levels (transmit footprint reference)
 
-| Power Level | Description | Typical TX footprint (order of magnitude) |
+| Power Level | Description | Typical TX disk (order of magnitude, map units) |
 |-------------|-------------|---------------------------------------------|
-| 1 | QRP minimum | ~400 km |
-| 5 | QRP typical | ~2000 km |
-| 10 | QRP maximum | ~4000 km |
-| — | *Full power (1500W PEP)* | *~8000+ km* |
+| 1 | QRP minimum | ~400 |
+| 5 | QRP typical | ~2000 |
+| 10 | QRP maximum | ~4000 |
+| — | *Full power (regular preset)* | *scales with PWR × baseRadius* |
 
-The relationship between **PWR** and **TX footprint** follows an approximate power–distance model (e.g. inverse-square scaled for HF). **Gain** applies on the **receive** side only.
+#### RX Gain (display only in simulator)
 
-#### RX Gain levels (listen / CS extension)
-
-| Gain | Meaning |
+| Gain | Meaning in simulator |
 |------|--------|
-| **+1 dB … +10 dB** | Each step increases **maximum decode / busy-detect distance** toward other stations’ signals; **does not** extend how far **your** signal reaches |
-
-Exact mapping from dB step to extra km is an implementation detail; the important behavior is **asymmetry** and **hidden-node** effects for distant contenders.
+| **+1 dB … +10 dB** | Shown on tiles/popup; **not** used for hear / CS range in the flat-disk model |
 
 #### Contest Types
 
@@ -415,7 +410,7 @@ The simulator supports different contest modes:
 | Contest Type | Power Range | Max TX Power | Typical Range |
 |--------------|-------------|--------------|---------------|
 | **QRP Contest** | 1–10 | 5W equivalent | Limited (tests skill) |
-| **Regular Contest** | 1–100 | Up to 1500W PEP | Continental/Global |
+| **Regular Contest** | 1–100 | Up to 1500W PEP | Larger disks / more overlap |
 
 In a **QRP contest**, operators are limited to low power (levels 1–10), making contacts more challenging and rewarding. Operators must work harder to be heard, and the queue algorithm helps ensure fair access even when signals are weak.
 
@@ -423,31 +418,27 @@ In a **regular contest**, operators can run full legal power (up to 1500W PEP in
 
 ### Propagation Model
 
-The simulator models HF propagation constraints:
-
 | Parameter | Description |
 |-----------|-------------|
-| **Base TX footprint** | ~400 km per **PWR** unit (order of magnitude; tune per contest type) |
-| **TX footprint** | From **transmitter PWR** only — who can decode *this* station’s transmission |
-| **RX copy / CS range** | For listener **B** hearing transmitter **A**: extends with **B’s Gain**; can exceed the distance at which **A** could decode **B** if **B** runs lower **PWR** than **Gain** implies for reception |
-| **Minimum range** | Optional skip zone (signals don't decode too close) |
-| **Distance calculation** | Great-circle (Haversine) from grid square centers |
+| **World** | Flat map grid; Maidenhead labels are cosmetic |
+| **TX footprint** | Green disk from **transmitter PWR** only |
+| **Who hears** | Every operator inside that disk |
+| **Gain** | Assumed uniform (not applied to range) |
+| **Distance** | Euclidean distance in map / SVG space |
 
-**Example (symmetric PWR, asymmetric perception):** **A** (PWR 5) is heard by **B** up to ~2000 km by **PWR** alone; if **B** has **Gain +6 dB**, **B** may still copy **A** somewhat beyond that model edge, while **A** without extra gain might **not** copy **B** when **B** uses the same PWR at the same distance — **one-way** copy and **hidden-node** CS behavior follow naturally.
-
-Operators for whom the link does not meet the **decode** threshold will not log a copy and will not send an ACK for that transmission.
+**Example:** **A** (PWR 5) transmits → every station inside **A’s** green disk gets a green outline and may log/ACK; stations outside the disk neither hear nor defer for **A**.
 
 ### ACK Flow Visualization
 
 The simulator demonstrates the full acknowledgment cycle:
 
 ```
-1. Station A transmits (PWR: 5)     → A gets red outline
-2. B (Gain +8 dB) copies A          → B green outline, logs A; D (Gain +2 dB) too far → no green, D may not sense channel busy
-3. Station C within A’s TX disk     → C green outline if C’s Gain allows copy at that distance
+1. Station A transmits (PWR: 5)     → A gets red outline; green TX disk visible
+2. B inside A’s disk copies A       → B green outline, logs A; D outside disk → no green, D may not sense busy
+3. Station C also inside A’s disk   → C green outline
 4. A's transmission ends            → Outlines clear
 5. Station B wins next slot         → B transmits with ACK for A
-6. Station A receives B's ACK       → A marks contact with B as confirmed (if A can decode B at that distance)
+6. Station A receives B's ACK       → A marks contact with B as confirmed (if A is inside B’s disk)
 ```
 
 ### Statistics Dashboard
@@ -479,13 +470,13 @@ The simulation tracks progress toward the mission goal: **every operator has bee
 | 80-bit Message ID | ✅ Complete |
 | Queue algorithm design | ✅ Specified |
 | Queue simulator (basic) | ✅ Complete |
-| Simulator: Maidenhead grid-square map | ✅ Complete |
+| Simulator: flat grid map (cosmetic Maidenhead labels) | ✅ Complete |
 | Simulator: operator tile grid | ✅ Complete |
 | Simulator: tile backoff bar + next-TX countdown | ✅ Complete |
 | Simulator: contact list popup + map lines (heard / ACKed) | ✅ Complete |
 | Simulator: dynamic user rotation | ✅ Complete |
-| Simulator: TX Power / TX footprint modeling | ✅ Complete |
-| Simulator: RX Gain (+1…+10 dB) / asymmetric listen & carrier sense | ✅ Complete |
+| Simulator: TX Power / green range-disk modeling | ✅ Complete |
+| Simulator: flat-disk hear / CS (Gain display-only) | ✅ Complete |
 | Simulator: QRP vs Regular contest presets | ✅ Complete |
 | Simulator: ACK flow (piggyback on next TX) | ✅ Complete |
 | Simulator: statistics dashboard | ✅ Complete |
@@ -536,8 +527,8 @@ The simulation tracks progress toward the mission goal: **every operator has bee
 |-------|--------|-------------|
 | Callsign | `W1AW` | Station call sign |
 | Gridsquare | `FN31pr` | 6-character Maidenhead locator |
-| PWR | `1`–`10` | TX Power — **transmit footprint** only (who can decode you) |
-| Gain | `+1` … `+10` dB | RX gain — **listening** / decode-of-others and **carrier-sense** range only; does not extend your TX range |
+| PWR | `1`–`10` (or preset max) | TX Power — green **range disk** radius on the flat map |
+| Gain | `+1` … `+10` dB | Display only in simulator; assumed uniform (does not change disk) |
 | TX | Integer | Transmissions sent |
 | RX | Integer | Transmissions received |
 | ACK | Integer | Confirmed acknowledgments |
@@ -560,31 +551,31 @@ The simulation tracks progress toward the mission goal: **every operator has bee
 
 Selecting an operator (tile or list row) opens the **contacts popup**; the same rows drive one map line per contact from the selected dot to the peer's dot. **Dismiss** the popup or pick another operator to clear or replace the overlay.
 
-### TX footprint (PWR only)
+### TX footprint (PWR only, flat map)
 
-| Level | Type | Order-of-magnitude TX footprint |
+| Level | Type | Order-of-magnitude TX disk (map units) |
 |-------|------|--------------------------------|
-| 1 | QRP min | ~400 km |
-| 5 | QRP typical | ~2000 km |
-| 10 | QRP max | ~4000 km |
-| 100 | Full power (1500W) | ~8000+ km |
+| 1 | QRP min | ~400 |
+| 5 | QRP typical | ~2000 |
+| 10 | QRP max | ~4000 |
+| 100 | Full power (regular) | scales with PWR × baseRadius |
 
-### RX Gain (+1 dB … +10 dB)
+### RX Gain (simulator)
 
 | Gain | Effect |
 |------|--------|
-| +1 … +10 dB | Each step extends **maximum distance** at which **this** station decodes others and treats the channel as busy for CS; **does not** change how far **others** decode **this** station |
+| +1 … +10 dB | Shown on UI; **not** applied to hear / CS range |
 
-**Asymmetry:** You typically **hear** more stations than **hear you** — high **Gain**, modest **PWR**. Distant operators may transmit without sensing your pileup (**hidden node**).
+**Flat disk:** Anyone inside the transmitter’s green circle hears; anyone outside does not. Hidden nodes are simply operators outside that disk.
 
 ### Propagation model (summary)
 
 | Parameter | Role |
 |-----------|------|
-| TX footprint | From **transmitter PWR** only |
-| RX / CS range | From **listener Gain** + other station **PWR** + distance |
-| Min range | Optional skip zone (configurable) |
-| Calculation | Great-circle (Haversine) from grid centers |
+| World | Flat grid map; labels cosmetic |
+| TX footprint | From **transmitter PWR** only (green disk) |
+| Who hears / CS | Euclidean map distance ≤ disk radius |
+| Gain | Assumed uniform (display only) |
 
 ### Contest types
 
