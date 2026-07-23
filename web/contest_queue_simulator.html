@@ -25,6 +25,11 @@
       --tx-red-soft: rgba(255, 59, 92, 0.35);
       --rx-green: #3ade7c;
       --rx-green-soft: rgba(58, 222, 124, 0.28);
+      /* Map rings: red = hearing/CS busy (defer); magenta = on air (TX) */
+      --ring-hearing: #ff3b5c;
+      --ring-hearing-soft: rgba(255, 59, 92, 0.35);
+      --ring-tx: #f472b6;
+      --ring-tx-soft: rgba(244, 114, 182, 0.4);
 
       --grid-major: rgba(94, 234, 212, 0.32);
       --grid-minor: rgba(56, 189, 248, 0.085);
@@ -297,8 +302,8 @@
       display: inline-block;
       border: 1px solid rgba(255,255,255,0.18);
     }
-    .swatch.tx { background: var(--tx-red); border-color: var(--tx-red); box-shadow: 0 0 8px var(--tx-red-soft); }
-    .swatch.rx { background: var(--rx-green); border-color: var(--rx-green); }
+    .swatch.tx { background: var(--ring-tx); border-color: var(--ring-tx); box-shadow: 0 0 8px var(--ring-tx-soft); }
+    .swatch.rx { background: var(--ring-hearing); border-color: var(--ring-hearing); box-shadow: 0 0 8px var(--ring-hearing-soft); }
     .swatch.tx-range {
       background: radial-gradient(circle, rgba(58, 222, 124, 0.35) 0%, rgba(58, 222, 124, 0.08) 70%, transparent 100%);
       border-color: var(--rx-green);
@@ -338,9 +343,9 @@
     .op-tile.entered  { opacity: 1; transform: translateY(0); }
     .op-tile.leaving  { opacity: 0; transform: translateY(-6px); }
     .op-tile:hover { border-color: var(--border-hi); }
-    .op-tile.tx     { border-color: var(--tx-red); box-shadow: 0 0 0 2px rgba(255, 59, 92, 0.25), 0 0 20px var(--tx-red-soft); }
-    .op-tile.rx     { border-color: var(--rx-green); box-shadow: 0 0 0 2px rgba(58, 222, 124, 0.25); }
-    .op-tile.tx.rx  { border-color: var(--tx-red); }
+    .op-tile.tx     { border-color: var(--ring-tx); box-shadow: 0 0 0 2px rgba(244, 114, 182, 0.35), 0 0 20px var(--ring-tx-soft); }
+    .op-tile.rx     { border-color: var(--ring-hearing); box-shadow: 0 0 0 2px rgba(255, 59, 92, 0.3), 0 0 16px var(--ring-hearing-soft); }
+    .op-tile.tx.rx  { border-color: var(--ring-tx); box-shadow: 0 0 0 2px rgba(244, 114, 182, 0.35), 0 0 0 4px rgba(255, 59, 92, 0.25), 0 0 20px var(--ring-tx-soft); }
     .op-tile.selected {
       border-color: var(--neon-cyan);
       box-shadow: 0 0 0 2px rgba(94, 234, 212, 0.4), 0 0 26px rgba(94, 234, 212, 0.35);
@@ -388,7 +393,7 @@
       width: 0%;
       transition: width 0.2s linear;
     }
-    .op-tile.tx .bar .fill { background: linear-gradient(90deg, var(--tx-red), var(--neon-magenta)); }
+    .op-tile.tx .bar .fill { background: linear-gradient(90deg, var(--ring-tx), var(--neon-magenta)); }
     .op-tile .bo-pct { font-variant-numeric: tabular-nums; min-width: 2.5rem; text-align: right; color: var(--text-dim); }
 
     .op-tile .ntx-row {
@@ -397,7 +402,7 @@
       display: flex; justify-content: space-between; align-items: baseline;
     }
     .op-tile .ntx-row .countdown { font: 600 0.85rem ui-monospace, monospace; color: var(--neon-cyan); }
-    .op-tile .ntx-row .countdown.tx-on { color: var(--tx-red); }
+    .op-tile .ntx-row .countdown.tx-on { color: var(--ring-tx); }
     .op-tile .ntx-row .countdown.idle  { color: var(--muted); }
 
     .op-tile .metrics {
@@ -533,8 +538,8 @@
       stroke-width: 1;
       pointer-events: none;
     }
-    svg .op-ring-tx { fill: none; stroke: var(--tx-red); stroke-width: 2.5; pointer-events: none; }
-    svg .op-ring-rx { fill: none; stroke: var(--rx-green); stroke-width: 1.75; pointer-events: none; }
+    svg .op-ring-tx { fill: none; stroke: var(--ring-tx); stroke-width: 2.5; pointer-events: none; }
+    svg .op-ring-rx { fill: none; stroke: var(--ring-hearing); stroke-width: 2; pointer-events: none; }
     svg .op-ring-sel {
       fill: none; stroke: var(--neon-cyan); stroke-width: 2;
       pointer-events: none;
@@ -573,9 +578,10 @@
     <p>
       Discrete-time model of GPS-slotted p-persistent CSMA from
       <code>Docs/contest_queue_algorithm.md</code>. The map is a
-      <strong>flat grid world</strong> for visual debugging: Maidenhead labels
-      are cosmetic, and anyone inside a transmitter’s green range disk hears
-      the signal. Click any operator dot or tile to inspect its contacts. See
+      <strong>flat grid world</strong> for visual debugging (edges do
+      <strong>not</strong> wrap): Maidenhead labels are cosmetic, and anyone
+      inside a transmitter’s green range disk hears the signal. Click any
+      operator dot or tile to inspect its contacts. See
       <code>Docs/contesting_mode.md</code>.
     </p>
   </header>
@@ -701,10 +707,10 @@
   </div>
 
   <div class="legend">
-    <span class="lg"><span class="swatch tx"></span> Transmitting</span>
-    <span class="lg"><span class="swatch rx"></span> Hearing</span>
+    <span class="lg"><span class="swatch tx"></span> Transmitting (on air)</span>
+    <span class="lg"><span class="swatch rx"></span> Hearing (carrier busy — defer)</span>
     <span class="lg"><span class="swatch tx-range"></span> TX range</span>
-    <span class="lg"><span class="swatch rx-flow"></span> Live RX path</span>
+    <span class="lg"><span class="swatch rx-flow"></span> Live RX path (from TX)</span>
     <span class="lg"><span class="swatch heard"></span> Contact heard</span>
     <span class="lg"><span class="swatch acked"></span> Contact ACKed</span>
     <span class="lg" style="margin-left:auto;color:var(--muted);">Click a dot or tile to inspect</span>
@@ -816,14 +822,14 @@
     return (km / UNIT_PER_MAP_DEG) * (VIEW_H / (LAT_MAX - LAT_MIN));
   }
 
-  /** True iff listener is inside the drawn TX range disk (Euclidean on the flat map). */
+  /** True iff listener is inside the drawn TX range disk (Euclidean on the flat map; no edge wrap). */
   function inTxRangeSvg(listener, transmitter) {
     const a = latLonToXy(transmitter.lat, transmitter.lon);
     const b = latLonToXy(listener.lat, listener.lon);
     const r = kmToSvgR(txRadiusKm(transmitter.pwr));
     const dx = b.x - a.x;
     const dy = b.y - a.y;
-    return dx * dx + dy * dy <= r * r;
+    return (dx * dx + dy * dy) <= (r * r);
   }
 
   /** Cosmetic grid label from flat map coords (not a real-Earth locator). */
@@ -1242,6 +1248,7 @@
       if (!op.needsSend || op.isTransmitting) continue;
       const atMs = Math.max(op.nextTxMs, simMs);
       if (channelBusyForOp(op, atMs)) {
+        // Carrier sense defer: only when canHear sees an active TX in range.
         applyBackoff(op);
         continue;
       }
@@ -1459,11 +1466,15 @@
 
   function updateRxSignalLines() {
     const active = new Set();
+    // Every hearing relationship gets a path to its TX source — including when
+    // the listener is also transmitting (still useful for CS debugging).
+    // Flat map only: never draw a path longer than the TX disk (no edge wrap).
     for (const listener of activeOperators()) {
-      if (!listener.isHearing || listener.isTransmitting) continue;
+      if (!listener.isHearing) continue;
       for (const txId of listener.hearingFromIds) {
         const tx = operatorById(txId);
         if (!tx || !tx.isTransmitting) continue;
+        if (!inTxRangeSvg(listener, tx)) continue;
         const a = latLonToXy(tx.lat, tx.lon);
         const b = latLonToXy(listener.lat, listener.lon);
         const key = rxLineKey(tx.id, listener.id);
@@ -1497,6 +1508,7 @@
     ringRx.setAttribute("class", "op-ring-rx");
     ringRx.setAttribute("r", "9");
     ringRx.setAttribute("opacity", "0");
+    ringRx.setAttribute("filter", "url(#glow)");
 
     const ringTx = document.createElementNS(SVG_NS, "circle");
     ringTx.setAttribute("class", "op-ring-tx");
@@ -1549,7 +1561,8 @@
       const e = dotEls.get(op.id);
       if (!e) continue;
       e.ringTx.setAttribute("opacity", op.isTransmitting ? "1" : "0");
-      e.ringRx.setAttribute("opacity", op.isHearing && !op.isTransmitting ? "1" : "0");
+      // Hearing ring whenever CS detects a TX (even if this op is also on air).
+      e.ringRx.setAttribute("opacity", op.isHearing ? "1" : "0");
       const sel = (op.id === selectedOpId);
       e.ringSel.setAttribute("opacity", sel ? "1" : "0");
       if (sel) {
@@ -1655,7 +1668,7 @@
       if (!entry) continue;
       const { tile, refs } = entry;
       tile.classList.toggle("tx", op.isTransmitting);
-      tile.classList.toggle("rx", op.isHearing && !op.isTransmitting);
+      tile.classList.toggle("rx", op.isHearing);
       tile.classList.toggle("selected", op.id === selectedOpId);
 
       const frac = backoffFraction(op);
