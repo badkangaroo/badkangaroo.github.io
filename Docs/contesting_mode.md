@@ -217,18 +217,21 @@ The message format reserves space for **ACK arrays**—lists of Message IDs that
 
 1. **Recording transmissions** — When a station successfully decodes another operator's transmission, it records the Message ID in its received log
 2. **Queueing ACKs** — The receiving station adds the sender's Message ID to its pending ACK list
-3. **Piggybacking** — When the receiver transmits its next message, it includes ACKs for all recently received stations
-4. **Confirmation** — The original sender sees its Message ID acknowledged and marks the contact as confirmed
+3. **Batching** — After its own TX, a station skips the immediately following window and **listens through it**. If that window is silent (or the ACK queue hits the threshold), it contends on the **next** window after that with a **fresh random frame**
+4. **Piggybacking** — That next transmission includes ACKs for everyone in the pending list
+5. **Confirmation** — The original sender sees its Message ID acknowledged and marks the contact as confirmed
 
 ### ACK Behavior in Contest Mode
 
 | Event | Action |
 |-------|--------|
 | Decode incoming message | Record Message ID, add to pending ACK list |
+| After own TX completes | Skip next window; listen for activity |
+| Following window silent **or** pending heard ≥ threshold | Arm TX for the window after that + **new random frame** |
 | Transmit own message | Include pending ACKs in payload, clear pending list |
 | Receive ACK for own Message ID | Mark contact as **confirmed** (two-way) |
 
-ACKs piggyback on regular messages rather than consuming separate slots—this maximizes channel efficiency. A single transmission can acknowledge multiple received stations.
+ACKs piggyback on regular messages rather than consuming separate slots. Raising the **ACK queue** slider batches more hears per TX; lowering it ACKs sooner.
 
 See [codec.md](codec.md) for the ACK field layout and packing details.
 
@@ -289,7 +292,7 @@ Operators appear as colored dots at their map positions. Each has a translucent 
 When an operator transmits:
 1. Their dot gains a **red outline** for the duration of the transmission
 2. Every other operator **inside that transmitter’s green disk** gets a **green outline** and a live RX path line
-3. Operators **outside** the disk do not hear the signal and do not treat the channel as busy for carrier sense (hidden-node relative to that disk)
+3. Operators **outside** the disk do not hear the signal and do not treat the channel as busy for carrier sense (hidden-node relative to that disk). If a listener is inside **two or more** active TX disks at once, audio overlaps: they **decode neither** message and show a **red X** (RX collision).
 
 #### Contact graph (operator selected)
 
@@ -433,11 +436,11 @@ In a **regular contest**, operators can run full legal power (up to 1500W PEP in
 The simulator demonstrates the full acknowledgment cycle:
 
 ```
-1. Station A transmits (PWR: 5)     → A gets red outline; green TX disk visible
-2. B inside A’s disk copies A       → B green outline, logs A; D outside disk → no green, D may not sense busy
-3. Station C also inside A’s disk   → C green outline
-4. A's transmission ends            → Outlines clear
-5. Station B wins next slot         → B transmits with ACK for A
+1. Station A transmits (PWR: 5)     → A gets magenta on-air ring; green TX disk visible
+2. B inside A’s disk copies A       → B red hearing ring, logs A; pending ACK queue += A
+3. After TX, A skips next window    → following window left free for other ops
+4. A arms for next-next + new frame → when ACK queue ≥ threshold or following window starts
+5. Station B wins a later slot      → B transmits with ACK for A (and others pending)
 6. Station A receives B's ACK       → A marks contact with B as confirmed (if A is inside B’s disk)
 ```
 

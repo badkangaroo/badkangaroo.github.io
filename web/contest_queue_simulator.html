@@ -313,6 +313,22 @@
       border-color: var(--rx-green);
       border-radius: 2px;
     }
+    .swatch.collision {
+      background: transparent;
+      border-color: #ff3b5c;
+      position: relative;
+    }
+    .swatch.collision::before,
+    .swatch.collision::after {
+      content: "";
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 10px; height: 1.5px;
+      background: #ff3b5c;
+      transform-origin: center;
+    }
+    .swatch.collision::before { transform: translate(-50%, -50%) rotate(45deg); }
+    .swatch.collision::after  { transform: translate(-50%, -50%) rotate(-45deg); }
     .swatch.heard { background: transparent; border: 1px dashed var(--line-heard); }
     .swatch.acked { background: var(--line-acked); }
 
@@ -345,6 +361,10 @@
     .op-tile:hover { border-color: var(--border-hi); }
     .op-tile.tx     { border-color: var(--ring-tx); box-shadow: 0 0 0 2px rgba(244, 114, 182, 0.35), 0 0 20px var(--ring-tx-soft); }
     .op-tile.rx     { border-color: var(--ring-hearing); box-shadow: 0 0 0 2px rgba(255, 59, 92, 0.3), 0 0 16px var(--ring-hearing-soft); }
+    .op-tile.collision {
+      border-color: #ff3b5c;
+      box-shadow: 0 0 0 2px rgba(255, 59, 92, 0.45), 0 0 18px rgba(255, 59, 92, 0.35);
+    }
     .op-tile.tx.rx  { border-color: var(--ring-tx); box-shadow: 0 0 0 2px rgba(244, 114, 182, 0.35), 0 0 0 4px rgba(255, 59, 92, 0.25), 0 0 20px var(--ring-tx-soft); }
     .op-tile.selected {
       border-color: var(--neon-cyan);
@@ -540,6 +560,13 @@
     }
     svg .op-ring-tx { fill: none; stroke: var(--ring-tx); stroke-width: 2.5; pointer-events: none; }
     svg .op-ring-rx { fill: none; stroke: var(--ring-hearing); stroke-width: 2; pointer-events: none; }
+    svg .op-collision-x {
+      stroke: #ff3b5c;
+      stroke-width: 2.25;
+      stroke-linecap: round;
+      pointer-events: none;
+      filter: url(#glow);
+    }
     svg .op-ring-sel {
       fill: none; stroke: var(--neon-cyan); stroke-width: 2;
       pointer-events: none;
@@ -604,9 +631,9 @@
           <div class="slider-row">
             <label for="timingWindowInput">Timing window (s)</label>
             <div class="slider-control">
-              <input id="timingWindowInput" type="number" min="1" max="4" step="0.05" value="2" aria-label="Timing window seconds" />
-              <input id="timingWindowSlider" type="range" min="1" max="4" step="0.05" value="2" aria-label="Timing window slider" />
-              <span class="slider-val" id="timingWindowVal">2.0</span>
+              <input id="timingWindowInput" type="number" min="1" max="4" step="0.05" value="4" aria-label="Timing window seconds" />
+              <input id="timingWindowSlider" type="range" min="1" max="4" step="0.05" value="4" aria-label="Timing window slider" />
+              <span class="slider-val" id="timingWindowVal">4.0</span>
               <button type="button" class="step-btn" id="timingWindowInc" title="Increase timing window">+</button>
               <button type="button" class="step-btn" id="timingWindowDec" title="Decrease timing window">−</button>
             </div>
@@ -619,6 +646,16 @@
               <span class="slider-val" id="txFramesVal">20</span>
               <button type="button" class="step-btn" id="txFramesInc" title="Increase TX frames">+</button>
               <button type="button" class="step-btn" id="txFramesDec" title="Decrease TX frames">−</button>
+            </div>
+          </div>
+          <div class="slider-row">
+            <label for="ackBatchInput">ACK queue (heard)</label>
+            <div class="slider-control">
+              <input id="ackBatchInput" type="number" min="1" max="20" step="1" value="5" aria-label="ACK batch size" />
+              <input id="ackBatchSlider" type="range" min="1" max="20" step="1" value="5" aria-label="ACK batch size slider" />
+              <span class="slider-val" id="ackBatchVal">5</span>
+              <button type="button" class="step-btn" id="ackBatchInc" title="Increase ACK queue size">+</button>
+              <button type="button" class="step-btn" id="ackBatchDec" title="Decrease ACK queue size">−</button>
             </div>
           </div>
         </div>
@@ -641,6 +678,28 @@
               <option value="qrp" selected>QRP (1–10 W)</option>
               <option value="regular">Regular (≤1500 W)</option>
             </select>
+          </div>
+        </div>
+        <div class="slider-area" style="margin-top:0.65rem">
+          <div class="slider-row">
+            <label for="pwrMinInput">TX power min (W)</label>
+            <div class="slider-control">
+              <input id="pwrMinInput" type="number" min="1" max="100" step="1" value="1" aria-label="TX power minimum watts" />
+              <input id="pwrMinSlider" type="range" min="1" max="100" step="1" value="1" aria-label="TX power minimum slider" />
+              <span class="slider-val" id="pwrMinVal">1</span>
+              <button type="button" class="step-btn" id="pwrMinInc" title="Increase TX power min">+</button>
+              <button type="button" class="step-btn" id="pwrMinDec" title="Decrease TX power min">−</button>
+            </div>
+          </div>
+          <div class="slider-row">
+            <label for="pwrMaxInput">TX power max (W)</label>
+            <div class="slider-control">
+              <input id="pwrMaxInput" type="number" min="1" max="100" step="1" value="10" aria-label="TX power maximum watts" />
+              <input id="pwrMaxSlider" type="range" min="1" max="100" step="1" value="10" aria-label="TX power maximum slider" />
+              <span class="slider-val" id="pwrMaxVal">10</span>
+              <button type="button" class="step-btn" id="pwrMaxInc" title="Increase TX power max">+</button>
+              <button type="button" class="step-btn" id="pwrMaxDec" title="Decrease TX power max">−</button>
+            </div>
           </div>
         </div>
       </section>
@@ -709,6 +768,7 @@
   <div class="legend">
     <span class="lg"><span class="swatch tx"></span> Transmitting (on air)</span>
     <span class="lg"><span class="swatch rx"></span> Hearing (carrier busy — defer)</span>
+    <span class="lg"><span class="swatch collision"></span> RX collision (overlap — no decode)</span>
     <span class="lg"><span class="swatch tx-range"></span> TX range</span>
     <span class="lg"><span class="swatch rx-flow"></span> Live RX path (from TX)</span>
     <span class="lg"><span class="swatch heard"></span> Contact heard</span>
@@ -767,8 +827,15 @@
   // ── UI slider state (slot/frame controls; refined in later tasks) ──
   const TX_FRAMES_MIN = 10;
   const TX_FRAMES_MAX = 30;
-  let timingWindowSec = SLOT_SEC;
+  const ACK_BATCH_MIN = 1;
+  const ACK_BATCH_MAX = 20;
+  const PWR_ABS_MIN = 1;
+  const PWR_ABS_MAX = 100;
+  let timingWindowSec = 4.0;
   let txFrames = 20;
+  let ackBatchThreshold = 5; // pending heard ops before arming post-TX ACK send
+  let pwrMin = 1;
+  let pwrMax = 10;
 
   let slotMs = slotSec * 1000;        // 2000
   let txMs   = txTimeSec * 1000;      // 2350
@@ -776,6 +843,8 @@
   const SPAWN_MAX_MS = 15000;
   const DEPART_RATE_PER_SEC = 0.02 / 60;
   const FADE_OUT_MS = 320;
+  const ACK_LEAVE_THRESHOLD = 10; // confirmed ACKs before leaving the band
+  const IDLE_WINDOWS_FORCE_TX = 3; // no TX for this many windows → force next window
 
   const VIEW_W = 720;
   const VIEW_H = 540;
@@ -936,6 +1005,21 @@
   const elTxFramesVal = $("txFramesVal");
   const elTxFramesInc = $("txFramesInc");
   const elTxFramesDec = $("txFramesDec");
+  const elAckBatchInput = $("ackBatchInput");
+  const elAckBatchSlider = $("ackBatchSlider");
+  const elAckBatchVal = $("ackBatchVal");
+  const elAckBatchInc = $("ackBatchInc");
+  const elAckBatchDec = $("ackBatchDec");
+  const elPwrMinInput = $("pwrMinInput");
+  const elPwrMinSlider = $("pwrMinSlider");
+  const elPwrMinVal = $("pwrMinVal");
+  const elPwrMinInc = $("pwrMinInc");
+  const elPwrMinDec = $("pwrMinDec");
+  const elPwrMaxInput = $("pwrMaxInput");
+  const elPwrMaxSlider = $("pwrMaxSlider");
+  const elPwrMaxVal = $("pwrMaxVal");
+  const elPwrMaxInc = $("pwrMaxInc");
+  const elPwrMaxDec = $("pwrMaxDec");
   const btnRotation = $("btnRotation");
   const btnReset    = $("btnReset");
   const btnPause    = $("btnPause");
@@ -1026,7 +1110,7 @@
       lat, lon,
       gridSquare: latLonToGrid(lat, lon),
       colorHue: randInt(0, 359),
-      pwr: randInt(preset.pwrMin, preset.pwrMax),
+      pwr: randInt(pwrMin, pwrMax),
       gainDb: randInt(1, 10),
       joinedAtMs: simMs,
       firstTxAtMs: null,
@@ -1042,8 +1126,11 @@
       targetWindowIndex: 0,
       isTransmitting: false,
       isHearing: false,
+      isColliding: false,
       hearingFromIds: new Set(),
       needsSend: true,
+      postTxEndMs: null,         // after TX: observe following window, then arm next-next
+      postTxHeardInFollow: false, // true if any signal heard in the skipped following window
       txCount: 0,
       rxCount: 0,
       contacts: new Map(),
@@ -1165,11 +1252,33 @@
     return (Math.floor(at / slotMs) + 1) * slotMs;
   }
 
+  /** Window after the immediate next one (leave one free for other ops). */
+  function nextNextWindowStartMs(fromMs) {
+    return nextWindowStartMs(fromMs) + slotMs;
+  }
+
   function scheduleNextTx(op) {
     // Target the first window at/after backoffUntilSlot (binary exponential
     // backoff — see applyBackoff). backoffUntilSlot defaults to -1, so an op
     // that has never backed off simply targets the next window from simMs.
     const windowStart = Math.max(
+      nextWindowStartMs(simMs),
+      op.backoffUntilSlot * slotMs
+    );
+    const offsetMs = listenOffsetMs(op);
+    op.nextTxMs = windowStart + offsetMs;
+    op.scheduledAtMs = simMs;
+    op.targetWindowIndex = Math.floor(windowStart / slotMs);
+  }
+
+  /**
+   * After a successful TX: skip the immediately following window so neighbors
+   * can use it, then contend on the next-next window with a fresh random frame.
+   */
+  function schedulePostTx(op) {
+    const fromMs = op.postTxEndMs != null ? op.postTxEndMs : simMs;
+    const windowStart = Math.max(
+      nextNextWindowStartMs(fromMs),
       nextWindowStartMs(simMs),
       op.backoffUntilSlot * slotMs
     );
@@ -1195,7 +1304,8 @@
       occupantId: op.id,
       startMs,
       endMs: winEnd,
-      pendingAcks: new Set(op.pendingAcks)
+      pendingAcks: new Set(op.pendingAcks),
+      collideListenerIds: new Set() // listeners who saw overlapping audio during this burst
     });
     op.isTransmitting = false;
     recordServed(op);   // fairness monitor + attempts reset (R5)
@@ -1223,7 +1333,107 @@
 
   function postTxCooldown(op) {
     op.attempts = 0;
-    scheduleNextTx(op);
+    // After a successful TX, skip the following window (leave it for others),
+    // listen through it, then arm next-next with a fresh random frame.
+    op.needsSend = false;
+    op.nextTxMs = Infinity;
+    op.postTxEndMs = simMs;
+    op.postTxHeardInFollow = false;
+  }
+
+  function postTxFollowBounds(op) {
+    const start = nextWindowStartMs(op.postTxEndMs);
+    return { start: start, end: start + slotMs };
+  }
+
+  /** During the skipped following window, note whether any signal was heard. */
+  function observePostTxFollowWindows() {
+    for (const op of activeOperators()) {
+      if (op.postTxEndMs == null || op.needsSend || op.postTxHeardInFollow) continue;
+      const bounds = postTxFollowBounds(op);
+      if (simMs < bounds.start || simMs >= bounds.end) continue;
+      if (op.isHearing || op.isColliding || op.hearingFromIds.size > 0) {
+        op.postTxHeardInFollow = true;
+        continue;
+      }
+      for (const ch of channels) {
+        if (simMs < ch.startMs || simMs >= ch.endMs) continue;
+        const tx = operatorById(ch.occupantId);
+        if (tx && tx.active && canHear(op, tx)) {
+          op.postTxHeardInFollow = true;
+          break;
+        }
+      }
+    }
+  }
+
+  /**
+   * Arm next TX when ACK batch is full, or the following window has finished.
+   * If that following window was silent, schedulePostTx draws a new random
+   * frame for the next window (next-next from the completed TX).
+   */
+  function maybeArmPostTx(op) {
+    if (!op.active || op.leaving || op.isTransmitting) return;
+    if (op.needsSend) return;
+    if (op.postTxEndMs == null) return;
+
+    const batchFull = op.pendingAcks.size >= ackBatchThreshold;
+    const bounds = postTxFollowBounds(op);
+    const followComplete = simMs >= bounds.end;
+    if (!batchFull && !followComplete) return;
+
+    op.needsSend = true;
+    // Always a fresh random frame; silent follow → contend on the next window
+    // after the skipped one (next-next from TX end).
+    schedulePostTx(op);
+    op.postTxEndMs = null;
+    op.postTxHeardInFollow = false;
+  }
+
+  function armPostTxGatherers() {
+    for (const op of activeOperators()) maybeArmPostTx(op);
+  }
+
+  /**
+   * If an operator has not transmitted for IDLE_WINDOWS_FORCE_TX windows,
+   * force contention on the next window with a fresh random frame.
+   */
+  function maybeForceIdleTx() {
+    const nowSlot = currentSlotIndex();
+    for (const op of activeOperators()) {
+      if (op.leaving || op.isTransmitting) continue;
+      let onAir = false;
+      for (const ch of channels) {
+        if (ch.occupantId === op.id && simMs < ch.endMs) {
+          onAir = true;
+          break;
+        }
+      }
+      if (onAir) continue;
+
+      const idleWindows = nowSlot - op.lastServedSlot;
+      if (idleWindows < IDLE_WINDOWS_FORCE_TX) continue;
+
+      // Already aimed at this or the next window — leave the schedule alone.
+      if (
+        op.needsSend &&
+        op.nextTxMs != null &&
+        op.nextTxMs !== Infinity
+      ) {
+        const scheduledWindow = Math.floor(op.nextTxMs / slotMs);
+        if (scheduledWindow <= nowSlot + 1) continue;
+      }
+
+      op.needsSend = true;
+      op.postTxEndMs = null;
+      op.postTxHeardInFollow = false;
+      op.backoffUntilSlot = -1; // don't let BEB block the forced CQ
+      const windowStart = nextWindowStartMs(simMs);
+      const offsetMs = listenOffsetMs(op); // new random frame
+      op.nextTxMs = windowStart + offsetMs;
+      op.scheduledAtMs = simMs;
+      op.targetWindowIndex = Math.floor(windowStart / slotMs);
+    }
   }
 
   function processScheduledTx() {
@@ -1288,10 +1498,14 @@
     totalTxBursts++;
     tx.txCount++;
 
+    const collided = ch.collideListenerIds || new Set();
     const ackedListeners = [];
     for (const listener of activeOperators()) {
       if (listener === tx) continue;
       if (!canHear(listener, tx)) continue;
+      // Overlapping audio at this listener → neither message decodes.
+      if (collided.has(listener.id)) continue;
+
       listener.rxCount++;
 
       const wasAck = ch.pendingAcks.has(listener.id);
@@ -1323,7 +1537,13 @@
 
     tx.pendingAcks.clear();
     postTxCooldown(tx);
-    tx.needsSend = true;
+    // Listeners may have just filled their ACK batch — check arming.
+    for (const listener of ackedListeners) maybeArmPostTx(listener);
+    maybeArmPostTx(tx);
+
+    // Goal complete → leave the band and free a seat for a new operator.
+    maybeLeaveAfterAcks(tx);
+    for (const listener of ackedListeners) maybeLeaveAfterAcks(listener);
   }
 
   // ── Channel state propagation each tick ──────────────────────────────────
@@ -1331,6 +1551,7 @@
     for (const o of operators) {
       o.isTransmitting = false;
       o.isHearing = false;
+      o.isColliding = false;
       o.hearingFromIds.clear();
     }
     for (const ch of channels) {
@@ -1338,12 +1559,26 @@
       const tx = operatorById(ch.occupantId);
       if (!tx || !tx.active) continue;
       tx.isTransmitting = true;
+      if (!ch.collideListenerIds) ch.collideListenerIds = new Set();
       for (const listener of activeOperators()) {
         if (listener === tx) continue;
-        if (canHear(listener, tx)) {
-          listener.isHearing = true;
-          listener.hearingFromIds.add(tx.id);
+        if (canHear(listener, tx)) listener.hearingFromIds.add(tx.id);
+      }
+    }
+    // Clean single-TX copy vs multi-TX overlap (can't decode either).
+    for (const listener of activeOperators()) {
+      const n = listener.hearingFromIds.size;
+      if (n > 1) {
+        listener.isColliding = true;
+        listener.isHearing = false;
+        for (const ch of channels) {
+          if (simMs < ch.startMs || simMs >= ch.endMs) continue;
+          const tx = operatorById(ch.occupantId);
+          if (!tx || !listener.hearingFromIds.has(tx.id)) continue;
+          ch.collideListenerIds.add(listener.id);
         }
+      } else if (n === 1) {
+        listener.isHearing = true;
       }
     }
   }
@@ -1390,11 +1625,26 @@
     const pPerMs = DEPART_RATE_PER_SEC / 1000;
     for (const op of live) {
       if (op.contacts.size < 3) continue;
+      // ACK-goal leavers are handled in maybeLeaveAfterAcks
+      if (op.ackedPeerIds.size >= ACK_LEAVE_THRESHOLD) continue;
       if (rand() < pPerMs * simDt) {
         beginDepart(op);
         if (activeOperators().length <= 2) break;
       }
     }
+  }
+
+  /** Leave the band after collecting enough confirmed ACKs; refill with a new op. */
+  function maybeLeaveAfterAcks(op) {
+    if (!op || !op.active || op.leaving) return;
+    if (op.ackedPeerIds.size < ACK_LEAVE_THRESHOLD) return;
+    // Don't yank a station mid-burst
+    for (const ch of channels) {
+      if (ch.occupantId === op.id && simMs < ch.endMs) return;
+    }
+    if (activeOperators().length <= 2) return;
+    beginDepart(op);
+    if (activeOperators().length < maxOps) spawnOne();
   }
 
   function beginDepart(op) {
@@ -1466,11 +1716,9 @@
 
   function updateRxSignalLines() {
     const active = new Set();
-    // Every hearing relationship gets a path to its TX source — including when
-    // the listener is also transmitting (still useful for CS debugging).
-    // Flat map only: never draw a path longer than the TX disk (no edge wrap).
+    // Only draw clean single-TX decode paths (no overlap collisions).
     for (const listener of activeOperators()) {
-      if (!listener.isHearing) continue;
+      if (!listener.isHearing || listener.isColliding) continue;
       for (const txId of listener.hearingFromIds) {
         const tx = operatorById(txId);
         if (!tx || !tx.isTransmitting) continue;
@@ -1522,6 +1770,24 @@
     ringSel.setAttribute("opacity", "0");
     ringSel.setAttribute("filter", "url(#glow)");
 
+    const collideX = document.createElementNS(SVG_NS, "g");
+    collideX.setAttribute("class", "op-collision");
+    collideX.setAttribute("opacity", "0");
+    const x1 = document.createElementNS(SVG_NS, "line");
+    x1.setAttribute("class", "op-collision-x");
+    x1.setAttribute("x1", "-7");
+    x1.setAttribute("y1", "-7");
+    x1.setAttribute("x2", "7");
+    x1.setAttribute("y2", "7");
+    const x2 = document.createElementNS(SVG_NS, "line");
+    x2.setAttribute("class", "op-collision-x");
+    x2.setAttribute("x1", "7");
+    x2.setAttribute("y1", "-7");
+    x2.setAttribute("x2", "-7");
+    x2.setAttribute("y2", "7");
+    collideX.appendChild(x1);
+    collideX.appendChild(x2);
+
     const dot = document.createElementNS(SVG_NS, "circle");
     dot.setAttribute("class", "op-dot");
     dot.setAttribute("r", "5.5");
@@ -1542,10 +1808,11 @@
     g.appendChild(ringTx);
     g.appendChild(ringSel);
     g.appendChild(dot);
+    g.appendChild(collideX);
     g.appendChild(hit);
     dotsLayer.appendChild(g);
 
-    dotEls.set(op.id, { group: g, range, dot, hit, ringTx, ringRx, ringSel });
+    dotEls.set(op.id, { group: g, range, dot, hit, ringTx, ringRx, ringSel, collideX });
   }
 
   function removeMapDot(op) {
@@ -1561,8 +1828,8 @@
       const e = dotEls.get(op.id);
       if (!e) continue;
       e.ringTx.setAttribute("opacity", op.isTransmitting ? "1" : "0");
-      // Hearing ring whenever CS detects a TX (even if this op is also on air).
-      e.ringRx.setAttribute("opacity", op.isHearing ? "1" : "0");
+      e.ringRx.setAttribute("opacity", op.isHearing && !op.isColliding ? "1" : "0");
+      if (e.collideX) e.collideX.setAttribute("opacity", op.isColliding ? "1" : "0");
       const sel = (op.id === selectedOpId);
       e.ringSel.setAttribute("opacity", sel ? "1" : "0");
       if (sel) {
@@ -1598,6 +1865,7 @@
         '<span class="bo-pct mono">—</span>' +
       '</div>' +
       '<div class="ntx-row"><span class="lbl">Next TX</span><span class="countdown mono">—</span></div>' +
+      '<div class="ntx-row"><span class="lbl">ACK Q</span><span class="ackq mono">0/5</span></div>' +
       '<div class="metrics">' +
         '<div class="m"><span class="lbl">TX</span><span class="val m-tx">0</span></div>' +
         '<div class="m"><span class="lbl">RX</span><span class="val m-rx">0</span></div>' +
@@ -1614,6 +1882,7 @@
       fill: tile.querySelector(".bar .fill"),
       boPct: tile.querySelector(".bo-pct"),
       countdown: tile.querySelector(".countdown"),
+      ackq: tile.querySelector(".ackq"),
       mTx: tile.querySelector(".m-tx"),
       mRx: tile.querySelector(".m-rx"),
       mAck: tile.querySelector(".m-ack"),
@@ -1668,7 +1937,8 @@
       if (!entry) continue;
       const { tile, refs } = entry;
       tile.classList.toggle("tx", op.isTransmitting);
-      tile.classList.toggle("rx", op.isHearing);
+      tile.classList.toggle("rx", op.isHearing && !op.isColliding);
+      tile.classList.toggle("collision", op.isColliding);
       tile.classList.toggle("selected", op.id === selectedOpId);
 
       const frac = backoffFraction(op);
@@ -1688,6 +1958,13 @@
       if (op.isTransmitting) {
         refs.countdown.textContent = "On air";
         refs.countdown.className = "countdown mono tx-on";
+      } else if (op.postTxEndMs != null && !op.needsSend) {
+        const bounds = postTxFollowBounds(op);
+        const remain = Math.max(0, bounds.end - simMs);
+        const heard = op.postTxHeardInFollow ? "heard" : "silent";
+        refs.countdown.textContent =
+          "Listen " + fmtCountdown(remain) + " · " + heard + " · Q" + op.pendingAcks.size;
+        refs.countdown.className = "countdown mono";
       } else if (!op.needsSend) {
         refs.countdown.textContent = "Idle";
         refs.countdown.className = "countdown mono idle";
@@ -1699,9 +1976,10 @@
         refs.countdown.className = "countdown mono";
       }
 
+      refs.ackq.textContent = op.pendingAcks.size + "/" + ackBatchThreshold;
       refs.mTx.textContent = String(op.txCount);
       refs.mRx.textContent = String(op.rxCount);
-      refs.mAck.textContent = String(op.ackedPeerIds.size);
+      refs.mAck.textContent = op.ackedPeerIds.size + "/" + ACK_LEAVE_THRESHOLD;
       refs.mMade.textContent = String(op.contacts.size);
 
       if (op.firstTxAtMs != null) {
@@ -1756,7 +2034,7 @@
     popGain.textContent = "+" + op.gainDb + " dB";
     popTx.textContent = String(op.txCount);
     popRx.textContent = String(op.rxCount);
-    popAck.textContent = String(op.ackedPeerIds.size);
+    popAck.textContent = op.ackedPeerIds.size + "/" + ACK_LEAVE_THRESHOLD;
     popMade.textContent = String(op.contacts.size);
 
     if (op.contacts.size === 0) {
@@ -1868,6 +2146,10 @@
     processScheduledTx();
 
     updateChannelStates();
+    observePostTxFollowWindows();
+    armPostTxGatherers();
+    maybeForceIdleTx();
+
     updateRxSignalLines();
     updateMapDots();
     updateTiles();
@@ -1893,13 +2175,33 @@
   }
 
   // ── Lifecycle ───────────────────────────────────────────────────────────
+  function refreshOperatorPowerVisuals(op) {
+    const entry = dotEls.get(op.id);
+    if (entry && entry.range) {
+      entry.range.setAttribute("r", kmToSvgR(txRadiusKm(op.pwr)).toFixed(1));
+    }
+    const tile = tileEls.get(op.id);
+    if (tile && tile.refs && tile.refs.pwr) {
+      tile.refs.pwr.textContent = "PWR " + op.pwr;
+    }
+  }
+
+  function reshuffleOperatorPowers() {
+    for (const o of operators) {
+      o.pwr = randInt(pwrMin, pwrMax);
+      refreshOperatorPowerVisuals(o);
+    }
+    channels = [];
+    clearRxSignalLines();
+  }
+
   function applyPresetFromUi() {
     presetKey = elMode.value === "regular" ? "regular" : "qrp";
     preset = PRESETS[presetKey];
-    for (const o of operators) {
-      o.pwr = randInt(preset.pwrMin, preset.pwrMax);
-    }
-    channels = [];
+    // Load preset power band into the sliders, then reshuffle live ops.
+    setPwrMin(preset.pwrMin, { skipReshuffle: true });
+    setPwrMax(preset.pwrMax, { skipReshuffle: true });
+    reshuffleOperatorPowers();
   }
 
   function reset() {
@@ -1912,8 +2214,11 @@
     presetKey = elMode.value === "regular" ? "regular" : "qrp";
     preset = PRESETS[presetKey];
     setTxTimeSec(parseFloat(elTxTimeInput.value) || 3);
-    setTimingWindowSec(parseFloat(elTimingWindowInput.value) || 10);
+    setTimingWindowSec(parseFloat(elTimingWindowInput.value) || 4);
     setTxFrames(parseInt(elTxFramesInput.value, 10) || 20);
+    setAckBatchThreshold(parseInt(elAckBatchInput.value, 10) || 5);
+    setPwrMin(parseInt(elPwrMinInput.value, 10) || preset.pwrMin, { skipReshuffle: true });
+    setPwrMax(parseInt(elPwrMaxInput.value, 10) || preset.pwrMax, { skipReshuffle: true });
 
     operators = [];
     operatorsById = new Map();
@@ -2047,6 +2352,43 @@
     elTxFramesVal.textContent = str;
   }
 
+  function setAckBatchThreshold(v) {
+    ackBatchThreshold = clamp(Math.round(v), ACK_BATCH_MIN, ACK_BATCH_MAX);
+    const str = String(ackBatchThreshold);
+    elAckBatchInput.value = str;
+    elAckBatchSlider.value = str;
+    elAckBatchVal.textContent = str;
+    armPostTxGatherers();
+  }
+
+  function setPwrMin(v, opts) {
+    pwrMin = clamp(Math.round(v), PWR_ABS_MIN, PWR_ABS_MAX);
+    if (pwrMin > pwrMax) pwrMax = pwrMin;
+    const minStr = String(pwrMin);
+    const maxStr = String(pwrMax);
+    elPwrMinInput.value = minStr;
+    elPwrMinSlider.value = minStr;
+    elPwrMinVal.textContent = minStr;
+    elPwrMaxInput.value = maxStr;
+    elPwrMaxSlider.value = maxStr;
+    elPwrMaxVal.textContent = maxStr;
+    if (!(opts && opts.skipReshuffle) && operators.length) reshuffleOperatorPowers();
+  }
+
+  function setPwrMax(v, opts) {
+    pwrMax = clamp(Math.round(v), PWR_ABS_MIN, PWR_ABS_MAX);
+    if (pwrMax < pwrMin) pwrMin = pwrMax;
+    const minStr = String(pwrMin);
+    const maxStr = String(pwrMax);
+    elPwrMinInput.value = minStr;
+    elPwrMinSlider.value = minStr;
+    elPwrMinVal.textContent = minStr;
+    elPwrMaxInput.value = maxStr;
+    elPwrMaxSlider.value = maxStr;
+    elPwrMaxVal.textContent = maxStr;
+    if (!(opts && opts.skipReshuffle) && operators.length) reshuffleOperatorPowers();
+  }
+
   function bindTimingRow({ input, slider, display, btnInc, btnDec, read, write, step }) {
     slider.addEventListener("input", () => write(parseFloat(slider.value)));
     input.addEventListener("change", () => write(parseFloat(input.value)));
@@ -2085,7 +2427,40 @@
       write: setTxFrames,
       step: 1
     });
+    bindTimingRow({
+      input: elAckBatchInput,
+      slider: elAckBatchSlider,
+      display: elAckBatchVal,
+      btnInc: elAckBatchInc,
+      btnDec: elAckBatchDec,
+      read: () => ackBatchThreshold,
+      write: setAckBatchThreshold,
+      step: 1
+    });
+    bindTimingRow({
+      input: elPwrMinInput,
+      slider: elPwrMinSlider,
+      display: elPwrMinVal,
+      btnInc: elPwrMinInc,
+      btnDec: elPwrMinDec,
+      read: () => pwrMin,
+      write: setPwrMin,
+      step: 1
+    });
+    bindTimingRow({
+      input: elPwrMaxInput,
+      slider: elPwrMaxSlider,
+      display: elPwrMaxVal,
+      btnInc: elPwrMaxInc,
+      btnDec: elPwrMaxDec,
+      read: () => pwrMax,
+      write: setPwrMax,
+      step: 1
+    });
     syncTxTimeUi();
+    setAckBatchThreshold(ackBatchThreshold);
+    setPwrMin(pwrMin, { skipReshuffle: true });
+    setPwrMax(pwrMax, { skipReshuffle: true });
   }
 
   // ── Event wiring ────────────────────────────────────────────────────────
