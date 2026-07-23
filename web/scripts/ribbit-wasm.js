@@ -80,6 +80,15 @@ class MessageEncoder {
             messageType: opts.messageType
         };
 
+        if (opts.timestamp) {
+            messageData.timestamp = opts.timestamp;
+        }
+
+        // Contest Mode ACK array payload (pre-packed bitstream from ACKDistributor)
+        if (opts.ackPayload) {
+            messageData.ackPayload = opts.ackPayload;
+        }
+
         // Create the bitstream using MessageCodec
         const packedMessage = this.codec.EncodeMessage(messageData);
 

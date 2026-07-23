@@ -1,6 +1,19 @@
 "use strict";
 import { nibble, alphabit, alphanumbit, verifyNibble, verifyNibbit, verifyNibblit } from "./headerBitTypes.js";
 
+// ACK unpacker: prefer CommonJS require (Node/Jest), else browser globalThis bridge
+function getACKPacker() {
+    try {
+        if (typeof module !== "undefined" && module.exports) {
+            return require("./ackPacker.js").ACKPacker;
+        }
+    } catch (_) { /* ignore */ }
+    if (typeof globalThis !== "undefined" && globalThis.__ribbitAckPacker) {
+        return globalThis.__ribbitAckPacker.ACKPacker;
+    }
+    return null;
+}
+
 /**
  * MessageCodec - Complete encoding/decoding API for Ribbit messages
  * 
@@ -533,7 +546,12 @@ export class MessageCodec {
         if (message) {
             bitstream += this.GetMessageBitStream(message);                     // Variable
         }
-        
+
+        // Append pre-packed ACK array for Contest Mode (Type 2)
+        if (messageType === 2 && data.ackPayload) {
+            bitstream += data.ackPayload;
+        }
+
         return bitstream;
     }
 
@@ -595,11 +613,28 @@ export class MessageCodec {
         const messageBitLength = messageLength * 8;
         const messageBits = bitstream.slice(offset, offset + messageBitLength);
         offset += messageBitLength;
-        
+
+        const messageType = this.BitStreamToMessageType(messageTypeBits);
+
+        // Extract ACK array for Contest Mode messages (Type 2)
+        let ackArray = { entries: [], count: 0 };
+        if (messageType === 2) {
+            if (offset < bitstream.length) {
+                const ackBitstream = bitstream.slice(offset);
+                const ACKPacker = getACKPacker();
+                if (ACKPacker) {
+                    ackArray = ACKPacker.unpack(ackBitstream);
+                } else {
+                    ackArray = { entries: [], count: 0, rawBitstream: ackBitstream };
+                }
+            }
+        }
+
         // Decode all fields
         return {
             callsign: this.BitStreamToCallsign(callsignBits),
             timestamp: this.BitStreamToTimestamp(timestampBits),
+            timestampRaw: parseInt(timestampBits, 2),
             gridsquare: this.BitStreamToGridsquare(gridsquareBits),
             emergency: this.BitStreamToEmergency(emergencyBit),
             ntp: this.BitStreamToNTP(ntpBit),
@@ -607,10 +642,13 @@ export class MessageCodec {
             firstNameLength: firstNameLength,
             lastNameLength: lastNameLength,
             messageLength: messageLength,
-            messageType: this.BitStreamToMessageType(messageTypeBits),
+            messageType: messageType,
             firstName: firstNameLength > 0 ? this.BitStreamToName(firstNameBits) : '',
             lastName: lastNameLength > 0 ? this.BitStreamToName(lastNameBits) : '',
-            message: messageLength > 0 ? this.BitStreamToMessage(messageBits) : ''
+            message: messageLength > 0 ? this.BitStreamToMessage(messageBits) : '',
+            ackArray: ackArray,
+            // 80-bit Message_ID components for ACK accumulation
+            messageIdBits: callsignBits + timestampBits + emergencyBit,
         };
     }
 

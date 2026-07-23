@@ -391,6 +391,16 @@ document.addEventListener("DOMContentLoaded", (e) => {
             this.decodeErrorHashes = new Set();
             this.decodeErrorTimes = new Map(); // Map of hash -> timestamp
             this.DECODE_ERROR_DEBOUNCE_MS = 5000; // Don't show same decode error within 5 seconds
+
+            // Operator ACK accumulation (Contest Mode Type 2)
+            this.ackAccumulator = null;
+            this.ackPacker = null;
+            this.ackDistributor = null;
+            this.ackProcessor = null;
+            this.localTransmittedIds = new Set();
+            this._ackSlotTimer = null;
+            this._pendingAckFlight = false;
+
             this.init();
         }
 
@@ -430,6 +440,9 @@ document.addEventListener("DOMContentLoaded", (e) => {
 
                 // Initialize real-time decoding
                 this.setupRealTimeDecoding();
+
+                // Initialize Contest Mode ACK accumulation stack
+                this.initAckStack();
 
                 this.isInitialized = true;
                 console.log('✓ Ribbit App ready!');
@@ -544,16 +557,42 @@ document.addEventListener("DOMContentLoaded", (e) => {
             try {
                 console.log('Encoding message:', message);
 
-                // Use the new friendly API with just the message text
-                // The metadata (callsign, grid, etc.) is handled by the options
-                const audioBuffer = await this.ribbit.encodeMessage(message, {
+                this.refreshAckLocalCallsign();
+
+                // Contest Mode (Type 2): piggyback packed ACK array
+                // Chat remains Type 1; Contest uses Type 2 when modeTitle indicates CONTEST
+                const modeEl = document.getElementById('modeTitle');
+                const isContestMode = modeEl && /contest/i.test(modeEl.textContent || '');
+                const messageType = isContestMode ? 2 : 1;
+                const encodeTimestamp = new Date();
+
+                const encodeOpts = {
                     callsign: settings.callsign,
                     gridsquare: settings.gridsquare,
                     name: settings.name,
                     emergency: false,
                     gps: settings.gps === true,
-                    messageType: 1
-                });
+                    messageType,
+                    timestamp: encodeTimestamp,
+                };
+
+                if (messageType === 2 && this.ackDistributor) {
+                    // Build confirmation set from processor
+                    const confirmations = new Set();
+                    if (this.ackProcessor) {
+                        for (const c of this.ackProcessor.confirmations) {
+                            confirmations.add(c.acknowledgerCallsign);
+                        }
+                    }
+                    const { bitstream: ackPayload } =
+                        this.ackDistributor.preparePayload(confirmations);
+                    encodeOpts.ackPayload = ackPayload;
+                    this._pendingAckFlight = true;
+                }
+
+                // Use the new friendly API with just the message text
+                // The metadata (callsign, grid, etc.) is handled by the options
+                const audioBuffer = await this.ribbit.encodeMessage(message, encodeOpts);
 
                 console.log('✓ Message encoded, audio length:', audioBuffer.length);
                 console.log('✓ Message encoded, audio bit array 2 content:', audioBuffer);
@@ -561,8 +600,25 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 // if all of the values are 0 then we had an encoding problem
                 if (audioBuffer.every(value => value === 0)) {
                     this.showError('Failed to encode message: audio buffer is silent');
+                    if (this._pendingAckFlight && this.ackDistributor) {
+                        this.ackDistributor.onTransmitFailure();
+                        this._pendingAckFlight = false;
+                    }
                     return;
                 }
+
+                // Track local Message_ID for Contest Mode contact confirmation
+                if (messageType === 2 && this.ribbit && this.ribbit.codec) {
+                    try {
+                        const idBits =
+                            this.ribbit.codec.GetCallsignBitStream(settings.callsign) +
+                            this.ribbit.codec.GetTimestampBitStream(encodeTimestamp) +
+                            this.ribbit.codec.GetEmergencyBit(false);
+                        const idHex = this.messageIdBitsToHex(idBits);
+                        if (idHex) this.localTransmittedIds.add(idHex);
+                    } catch (_) { /* non-fatal */ }
+                }
+
                 // Save to message history for display
                 const header = `${settings.name}|${settings.callsign}|${settings.gridsquare}`;
                 const fullMessage = `${header}&=${message}`;
@@ -574,9 +630,18 @@ document.addEventListener("DOMContentLoaded", (e) => {
                 // Play the audio
                 await this.playAudio(audioBuffer);
 
+                if (this._pendingAckFlight && this.ackDistributor) {
+                    this.ackDistributor.onTransmitSuccess();
+                    this._pendingAckFlight = false;
+                }
+
             } catch (error) {
                 console.error('Encoding failed:', error);
                 this.showError('Failed to encode message: ' + error.message);
+                if (this._pendingAckFlight && this.ackDistributor) {
+                    this.ackDistributor.onTransmitFailure();
+                    this._pendingAckFlight = false;
+                }
                 // Resume listening even if encoding fails
                 this.listen = true;
                 console.log('Audio listening resumed after encoding error');
@@ -640,6 +705,10 @@ document.addEventListener("DOMContentLoaded", (e) => {
                     source.onerror = (error) => {
                         console.error('Audio playback error:', error);
                         this.listen = true;
+                        if (this._pendingAckFlight && this.ackDistributor) {
+                            this.ackDistributor.onTransmitFailure();
+                            this._pendingAckFlight = false;
+                        }
                         reject(error);
                     };
 
@@ -838,6 +907,31 @@ document.addEventListener("DOMContentLoaded", (e) => {
                     // #endregion
 
                     console.log("Received (from WASM fetchDecoded callback):", decodedResult.callsign, decodedResult.text);
+
+                    // Contest Mode ACK accumulation / processing
+                    if (decoded.messageType === 2 && this.ackAccumulator && this.ackProcessor) {
+                        this.refreshAckLocalCallsign();
+                        const slot = this.currentAckSlot();
+                        const messageId = this.messageIdBitsToHex(decoded.messageIdBits);
+                        this.ackAccumulator.addFromDecode(
+                            {
+                                messageId,
+                                callsign: decoded.callsign,
+                                timestamp: decoded.timestampRaw != null
+                                    ? decoded.timestampRaw
+                                    : 0,
+                                emergency: !!decoded.emergency,
+                            },
+                            decoded.callsign,
+                            slot
+                        );
+                        this.ackProcessor.processIncoming(
+                            decoded.callsign,
+                            decoded.ackArray || { entries: [], count: 0 },
+                            this.localTransmittedIds,
+                            slot
+                        );
+                    }
 
                     const metadata = {
                         callsign: decodedResult.callsign,
@@ -1066,6 +1160,75 @@ document.addEventListener("DOMContentLoaded", (e) => {
                     console.error(errorMsg);
                     this.showError(errorMsg);
                 });
+        }
+
+        /**
+         * Initialize Contest Mode ACK accumulation components.
+         * Spec: operator-ack-accumulation (task 7.2)
+         */
+        initAckStack() {
+            const packerApi = globalThis.__ribbitAckPacker;
+            const accumApi = globalThis.__ribbitAckAccumulator;
+            const procApi = globalThis.__ribbitAckProcessor;
+            const distApi = globalThis.__ribbitAckDistributor;
+
+            if (!packerApi || !accumApi || !procApi || !distApi) {
+                console.warn('ACK modules not loaded; Contest Mode ACK accumulation disabled');
+                return;
+            }
+
+            const settings = this.getSettings();
+            const localCallsign = (settings.callsign || '').toUpperCase();
+
+            this.ackAccumulator = new accumApi.ACKAccumulator({
+                localCallsign,
+                maxPendingEntries: 50,
+                expirationSlots: 60,
+                maxHopCount: 3,
+            });
+            this.ackPacker = new packerApi.ACKPacker(this.ackAccumulator);
+            this.ackDistributor = new distApi.ACKDistributor(
+                this.ackAccumulator,
+                this.ackPacker
+            );
+            this.ackProcessor = new procApi.ACKProcessor(this.ackAccumulator, {
+                maxHopCount: 3,
+                getCurrentSlot: () => this.currentAckSlot(),
+            });
+
+            // Slot-tick timer (2-second UTC grid) for ACK expiration
+            if (this._ackSlotTimer) {
+                clearInterval(this._ackSlotTimer);
+            }
+            this._ackSlotTimer = setInterval(() => {
+                if (this.ackAccumulator) {
+                    this.ackAccumulator.expireEntries(this.currentAckSlot());
+                }
+            }, 2000);
+
+            console.log('✓ ACK accumulation stack initialized for', localCallsign || '(no callsign)');
+        }
+
+        /** Current 2-second UTC slot index. */
+        currentAckSlot() {
+            return Math.floor(Date.now() / 2000);
+        }
+
+        /** Convert 80-bit Message_ID bitstream to 20-char hex. */
+        messageIdBitsToHex(bits) {
+            if (!bits || bits.length < 80) return '';
+            let hex = '';
+            for (let i = 0; i < 80; i += 4) {
+                hex += parseInt(bits.slice(i, i + 4), 2).toString(16);
+            }
+            return hex;
+        }
+
+        /** Refresh local callsign on ACK accumulator when settings change. */
+        refreshAckLocalCallsign() {
+            if (!this.ackAccumulator) return;
+            const settings = this.getSettings();
+            this.ackAccumulator.config.localCallsign = (settings.callsign || '').toUpperCase();
         }
 
         getSettings() {
